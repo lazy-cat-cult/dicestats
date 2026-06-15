@@ -1,5 +1,5 @@
-import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter, TaggedDie, SimJob, SimResult, PipelineValue, VectorFunction } from '@/types';
-import { compare } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter, TaggedDie, SimJob, SimResult } from '@/types';
+import { matchConditions, findSides } from '@/domain/matching';
 import { evaluatePipeline } from '@/domain/resolve';
 import { evaluateOutcomes } from '@/domain/classify';
 
@@ -15,25 +15,6 @@ function rollPool(pool: DicePool): TaggedDie[] {
     }
   }
   return dice;
-}
-
-function matchClause(die: TaggedDie, clause: import('@/types').ConditionClause): boolean {
-  if (clause.field === 'face') {
-    return compare(die.face, clause.operator, clause.value);
-  }
-  if (clause.field === 'tag') {
-    if (clause.operator === '=') return die.tag === clause.value;
-    if (clause.operator === '!=') return die.tag !== clause.value;
-  }
-  return false;
-}
-
-function matchConditions(die: TaggedDie, chain: import('@/types').ConditionChain): boolean {
-  if (chain.clauses.length === 0) return false;
-  if (chain.connector === 'and') {
-    return chain.clauses.every((c) => matchClause(die, c));
-  }
-  return chain.clauses.some((c) => matchClause(die, c));
 }
 
 function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[], termsSides: { sides: number; tag: string }[]): TaggedDie[] {
@@ -83,14 +64,6 @@ function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[],
   return result;
 }
 
-function findSides(tag: string, terms: { sides: number; tag: string }[]): number {
-  if (tag !== '') {
-    const match = terms.find((t) => t.tag === tag);
-    if (match) return match.sides;
-  }
-  return terms[0]?.sides ?? 6;
-}
-
 function simulateOnce(
   pool: DicePool,
   rerollConditions: RerollCondition[],
@@ -136,8 +109,6 @@ function runSimulation(
     outcomeCounts.set(o.name, 0);
   }
   const distribution = new Map<number, number>();
-
-  let cancelled = false;
 
   for (let i = 0; i < iterations; i++) {
     if (i % 10000 === 0) {

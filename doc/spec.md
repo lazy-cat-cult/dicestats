@@ -85,7 +85,7 @@ Constraints:
 - `sides` must be >= 1 and <= 999.
 - Standard die options in UI: d4, d6, d8, d10, d12, d20, d100. A "custom" option allows arbitrary sides.
 - `tag` is a free-text label used to differentiate dice in resolution. Tags are **not** required to be unique. Multiple terms may share a tag; tag-based operations match all dice from all terms with that tag.
-- Keep and modifier functionality is expressed through the resolution pipeline using `keep_highest`, `keep_lowest`, `sum`, and `add` operations rather than as pool-level properties.
+- Keep and modifier functionality is expressed through the resolution pipeline using `max`, `min`, `sum`, and `add` operations rather than as pool-level properties.
 
 ### 4.2. Reroll Conditions
 
@@ -142,15 +142,15 @@ type ConditionChain = {
 
 type VectorFunction =
   | { fn: 'filter';   conditions: ConditionChain }
-  | { fn: 'remove';   conditions: ConditionChain }
-  | { fn: 'keep_highest'; count: number }    // keep N highest dice by face value
-  | { fn: 'keep_lowest';  count: number };   // keep N lowest dice by face value
+  | { fn: 'remove';   conditions: ConditionChain };
 
 type ScalarBinaryOp = 'add' | 'subtract' | 'multiply' | 'divide';
 
 type ScalarFunction =
   | 'count'                                              // vector → scalar (number of elements)
   | 'sum'                                                // vector → scalar (sum of face values)
+  | 'max'                                                // vector → scalar (maximum face value)
+  | 'min'                                                // vector → scalar (minimum face value)
   | { fn: ScalarBinaryOp; operand: 'literal'; value: number }    // scalar op literal → scalar
   | { fn: ScalarBinaryOp; operand: 'named'; source2: string }     // scalar op named scalar → scalar
   | { fn: 'ceil' }                                              // scalar → scalar
@@ -163,9 +163,10 @@ type NamedValue =
 
 The output type is **derived** from the operation, not stored:
 - `filter` and `remove` always produce a **vector**.
-- `keep_highest` and `keep_lowest` always produce a **vector**.
 - `count` always produces a **scalar**.
 - `sum` always produces a **scalar**.
+- `max` always produces a **scalar**.
+- `min` always produces a **scalar**.
 - Binary math functions (`add`, `subtract`, `multiply`, `divide`) always produce a **scalar**.
 - `ceil` and `floor` always produce a **scalar**.
 
@@ -180,7 +181,7 @@ The output type is **derived** from the operation, not stored:
 - Pipeline names must be unique and match `/^[a-zA-Z_][a-zA-Z0-9_]*$/`.
 
 **Built-in sources:**
-- `rolled`: the flat array of all dice face values after reroll/explode processing and keep rule application. Each element carries `{ face: number, tag: string }`.
+- `rolled`: the flat array of all dice face values after reroll/explode processing. Each element carries `{ face: number, tag: string }`.
 
 ### 4.4. Outcomes
 
@@ -258,7 +259,6 @@ interface SimResult {
 - If any pipeline row exists, the distribution uses the **last scalar pipeline value**.
 - If no pipeline exists, the distribution uses the sum of all dice face values.
 - This ensures the histogram always shows a meaningful distribution of numeric results.
-- This ensures the histogram always shows a meaningful distribution of numeric results.
 
 ```typescript
 interface SimJob {
@@ -305,21 +305,21 @@ interface SimJob {
     sum = Σ(all_dice.face)
 
 5. Evaluate resolution pipeline (in row order):
-    For each NamedValue row:
-      source_value = lookup(row.source)
-      If row.op is VectorFunction:
-        If 'filter': apply filter conditions to source_value (vector of {face, tag})
-        If 'remove': remove matching elements from source_value
-        If 'keep_highest': keep N highest dice by face value, preserving original order
-        If 'keep_lowest': keep N lowest dice by face value, preserving original order
-        Result is a vector
-      If row.op is ScalarFunction:
-        If 'count': result = source_value.length (if vector) or error (if scalar)
-        If 'sum': result = Σ(dice.face) for each die in source_value (if vector)
-        If binary op with literal: result = source_value op row.op.value
-        If binary op with named: result = source_value op lookup(row.source2)
-        If 'ceil'/'floor': result = Math.ceil/floor(source_value)
-      Store result under row.name
+     For each NamedValue row:
+       source_value = lookup(row.source)
+       If row.op is VectorFunction:
+         If 'filter': apply filter conditions to source_value (vector of {face, tag})
+         If 'remove': remove matching elements from source_value
+         Result is a vector
+       If row.op is ScalarFunction:
+         If 'count': result = source_value.length (if vector) or error (if scalar)
+         If 'sum': result = Σ(dice.face) for each die in source_value (if vector)
+         If 'max': result = max(dice.face) for each die in source_value (if vector)
+         If 'min': result = min(dice.face) for each die in source_value (if vector)
+         If binary op with literal: result = source_value op row.op.value
+         If binary op with named: result = source_value op lookup(row.source2)
+         If 'ceil'/'floor': result = Math.ceil/floor(source_value)
+       Store result under row.name
 
  6. Evaluate outcomes (in order):
    For each Outcome:
@@ -389,7 +389,7 @@ Steps 1–3 must be valid before the Run button is enabled.
 - Tag input: text field with autocomplete from existing tags. Tags are displayed with auto-assigned colors for visual differentiation. Colors are assigned in order from a fixed palette: `['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']`. Tags in the dice notation preview appear as colored dots (●) next to the die notation.
 - Live dice notation preview (e.g. "2d20 ●red + 4d6 ●blue").
 - Minimum one term always present (delete disabled when only one remains).
-- Keep rules and flat modifiers are expressed through the resolution pipeline (§4.3) using `keep_highest`, `keep_lowest`, `sum`, and `add` operations.
+- Keep rules and flat modifiers are expressed through the resolution pipeline (§4.3) using `max`, `min`, `sum`, and `add` operations.
 
 ### 6.4. Reroll Conditions Editor
 
@@ -411,14 +411,14 @@ Steps 1–3 must be valid before the Run button is enabled.
 - `name` is a text identifier (alphanumeric + underscore, must be unique, max 30 chars)
 - `source` dropdown: `rolled` or any previously defined named value
 - `function` dropdown adapts based on source type:
-  - Vector source: filter, remove, keep_highest, keep_lowest, count, sum
+  - Vector source: filter, remove, count, sum, max, min
   - Scalar source: add, subtract, multiply, divide, ceil, floor
-- For vector functions: compound condition editor (same as reroll conditions) for filter/remove; count input for keep_highest/keep_lowest
+- For vector functions: compound condition editor (same as reroll conditions) for filter/remove; no additional arguments for count, sum, max, min
 - For binary math functions: toggle between "literal" (number input) and "named value" (dropdown of prior scalar named values)
 - For ceil/floor: no additional arguments
 - Move up/down buttons, delete button
 - Invalid references highlighted in red with tooltip explaining the error
-- Type mismatch errors (e.g. `count` on scalar source) highlighted in red
+- Type mismatch errors (e.g. `count` or `max` on scalar source) highlighted in red
 - "Add named value" button (maximum 20 rows)
 - Empty state: "No pipeline steps. Outcomes will reference rolled values directly."
 
@@ -465,7 +465,7 @@ Quick-start buttons that fill in all steps with pre-configured values:
 | Preset | Dice Pool | Reroll | Pipeline | Outcomes | Parameters |
 |---|---|---|---|---|---|
 | D&D 5e — d20 | 1d20 | none | none | "Hit" when rolled >= DC | DC sweep 5,10,15,20 |
-| D&D 5e — Advantage | 2d20 | none | kept=keep_highest rolled count=1 | "Hit" when kept >= DC | DC sweep 5,10,15,20 |
+| D&D 5e — Advantage | 2d20 | none | best=max rolled | "Hit" when best >= DC | DC sweep 5,10,15,20 |
 | PbtA — 2d6 | 2d6 | none | none | "Miss" ≤6, "Partial" 7-9, "Full" ≥10 | — |
 | Shadowrun — Xd6 | 5d6 | none | hits=filter rolled >=5; hit_count=count hits | "1+ hits" hit_count >=1 | dice count 1..10 |
 | Vampire V5 | 3d10 tag:normal + 2d10 tag:hunger | none | (see §9.4) | (see §9.4) | — |
@@ -535,9 +535,9 @@ Parameter: DC sweep 5, 10, 15, 20
 Pool: 2d20
 Reroll: none
 Pipeline:
-  kept = keep_highest rolled count=1
+  best = max rolled
 Outcomes:
-  "Hit" when kept >= DC
+  "Hit" when best >= DC
 Parameter: DC sweep 5, 10, 15, 20
 ```
 
@@ -600,7 +600,7 @@ The following conditions must be validated before enabling the Run button:
 | 7 | At least one condition per outcome | Warning (not block) |
 | 8 | Reroll conditions: repeat >= 1 | Block |
 | 9 | Tag references in reroll/resolve conditions reference existing tags | Warning |
-| 10 | Pipeline type mismatch: `count` or `sum` applied to scalar source | Block |
+| 10 | Pipeline type mismatch: `count`, `sum`, `max`, or `min` applied to scalar source | Block |
 | 11 | Pipeline type mismatch: binary op applied to vector source | Block |
 | 12 | At most one outcome with `isDefault = true` | Block |
 | 13 | `source2` in binary ops must reference a scalar named value | Block |
@@ -741,71 +741,49 @@ dev/dice/
 
 ## 17. Migration Notes (from current implementation)
 
-The current implementation has the following significant differences from this spec:
+### Key differences from original v1 spec
 
-### Key differences
-
-| Aspect | Current (v1) | Spec (v2) |
+| Aspect | Original v1 | Current v2/v3 |
 |---|---|---|
 | `DiceTerm` | No `id`, no `tag` | Has `id` (UUID), `tag` |
-| `DicePool` | `keep?: KeepRule`, `explode?: ExplodeMode` | `keep?: KeepRule`, no `explode` (moved to `RerollCondition`) |
+| `DicePool` | `keep?: KeepRule`, `explode?: ExplodeMode` | No `keep` or `explode` (moved to pipeline `max`/`min` and `RerollCondition`) |
 | Outcomes | `ThresholdOutcome \| PoolSuccessOutcome` | Unified `Outcome` with `source`, `conditions[]`, `connector` |
-| Parameters | `applyTo: 'modifier' \| 'count' \| 'threshold_value'` | `target: 'pool.count' \| 'pool.modifier' \| 'pool.sides' \| 'outcome.value'` with ID references |
+| Parameters | `applyTo: 'modifier' \| 'count' \| 'threshold_value'` | `target: 'pool.count' \| 'pool.sides' \| 'outcome.value' \| 'pipeline.literal'` with ID references |
 | Reroll/Explode | Pool-level `ExplodeMode` enum | Per-condition `RerollCondition[]` with compound conditions |
-| Resolution | None | `NamedValue[]` pipeline with filter/remove/count/math |
+| Resolution | None | `NamedValue[]` pipeline with filter/remove/count/sum/max/min/math |
+| Keep rules | `keep_highest`/`keep_lowest` vector ops | `max`/`min` scalar ops (return single value, not vector) |
 | Comparison operators | `'=='` | `'='` (user-facing) |
 
-### Known bugs in current implementation
+### Design change: keep_highest/keep_lowest → max/min
 
-- `roller.ts:57`: `allKept` pushes original `termRolls` instead of kept values — `rollPool` keep logic is buggy
-- `app.tsx:17`: `configLoaded` flag via closure is not idiomatic Preact; should use `useEffect`
-- `sim.worker.ts:29-38`: `keepHighest`/`keepLowest` sort by value, losing tag information on kept dice
-- Russian-language strings in `presets.ts` and `app-state.ts` must be replaced with English
+The original spec defined `keep_highest` and `keep_lowest` as **vector** operations (returning a subset of N dice). The implementation replaces these with `max` and `min` as **scalar** operations that return a single number — the maximum or minimum face value in the vector.
 
-### Migration phases
+This changes the usage pattern:
+- Old: `kept = keep_highest rolled count=1` → `sum = sum kept` (two steps: vector then scalar)
+- New: `best = max rolled` (one step: directly a scalar)
 
-**Phase 1: Dice tags** (low risk)
-- Add `id` and `tag` fields to `DiceTerm`. Existing code creates terms without these; add defaults (`id: crypto.randomUUID()`, `tag: ""`).
-- Update `DicePoolEditor` to include tag input with color indicator.
-- Update roll logic to propagate `{ face, tag }` instead of plain `number`.
+For the common case of "roll N dice and take the best/worst," `max`/`min` is simpler and more direct. The `keep_highest`/`keep_lowest` pattern of keeping N dice can be approximated with `filter` conditions if needed, though it cannot replicate "keep N highest" exactly.
 
-**Phase 2: Reroll conditions** (medium risk)
-- Add `RerollCondition` type and `ConditionClause`/`ConditionChain` types.
-- Create `RerollEditor` component.
-- Add `domain/reroll.ts` with `applyRerollConditions()`.
-- Replace `DicePool.explode` with `RerollCondition[]`. Presets using `ExplodeMode` must be converted.
-- Integrate into simulation worker.
+### Known issues in current implementation
 
-**Phase 3: Resolution pipeline** (high risk — combined with Phase 4)
-- Add `NamedValue` type with `VectorFunction` and `ScalarFunction`.
-- Create `PipelineEditor` component.
-- Add `domain/resolve.ts` with `evaluatePipeline()`.
-- Integrate into simulation worker.
-- Wire outcomes to pipeline outputs.
-- **Must be done together with Phase 4** because outcomes need to reference pipeline named values.
+- `sim.worker.ts` duplicates `rollDie`, `rollPool`, `matchClause`, `matchConditions`, `applyRerollConditions`, and `findSides` from domain modules (necessary for worker isolation — cannot import from domain modules that may reference Preact/DOM)
+- Code duplication: `matchClause()` and `matchConditions()` are duplicated across `reroll.ts`, `classify.ts`, `resolve.ts`, and `sim.worker.ts`
 
-**Phase 4: Outcome refactor** (combined with Phase 3)
-- Replace `ThresholdOutcome` and `PoolSuccessOutcome` with unified `Outcome` type.
-- Update `OutcomeEditor` to reference pipeline values via `source` field.
-- Validate outcome references against pipeline.
-- Convert presets to new outcome format.
+### Completed migration phases
 
-**Phase 5: Validation and UX polish**
-- Add `validation.ts` with `validateConfig()`.
-- Add inline validation highlighting with error tooltips.
-- Add parameter sweep warnings.
-- Mobile layout fixes.
-- English localization of all UI strings.
-- Fix `rollPool` keep bug.
-- Add `version` field to saved configs and migration logic.
+**Phase 1: Dice tags** — ✅ Complete
+**Phase 2: Reroll conditions** — ✅ Complete  
+**Phase 3: Resolution pipeline** — ✅ Complete (with `max`/`min` instead of `keep_highest`/`keep_lowest`)
+**Phase 4: Outcome refactor** — ✅ Complete (combined with Phase 3)
+**Phase 5: Validation and UX polish** — ✅ Complete (validation.ts, persistence.ts migration, English UI strings)
 
 ### Persistence migration
 
-Old configs (version 1 or missing) must be converted on load:
-- Add `id` and `tag` to each `DiceTerm`
-- Convert `explode` to `RerollCondition` if present
-- Convert `ThresholdOutcome` / `PoolSuccessOutcome` to unified `Outcome`
-- Convert `Parameter.applyTo` to new `target` format
+Old configs are migrated on load:
+- **v3**: Converts `keep_highest`/`keep_lowest` pipeline ops to `max`/`min`
+- **v1/v2**: Converts `pool.keep` to pipeline `max`/`min`, modifiers to pipeline math, old outcome types to unified `Outcome`, parameter `applyTo` to `target` with ID references
+- Adds `id` and `tag` to each `DiceTerm` where missing
+- Converts `explode` to `RerollCondition` if present
 - Add empty `pipeline` and `rerollConditions` arrays
 
 ---
@@ -820,7 +798,7 @@ Old configs (version 1 or missing) must be converted on load:
 | 4 | Maximum pipeline rows? | **Resolved**: 20 rows. |
 | 5 | Should presets store full configuration? | **Resolved**: Yes — pool, reroll, pipeline, outcomes, and parameters. |
 | 6 | URL-based config sharing? | **Future**: Not in v2. Consider for v3. |
-| 7 | Distribution histogram key after pipeline? | **Resolved**: Always use the sum of kept rolls + modifiers. Pipeline values are for outcomes, not distribution. |
+| 7 | Distribution histogram key after pipeline? | **Resolved**: Use the last scalar pipeline value if any pipeline rows exist; otherwise use the sum of all dice face values. |
 | 8 | `Comparison` operator: `=` vs `==`? | **Resolved**: Use `=` in user-facing types (`ConditionOperator`). Convert to `===` at runtime. |
 
 ---
@@ -838,7 +816,7 @@ Old configs (version 1 or missing) must be converted on load:
 | Named value | An intermediate result in the pipeline, referenced by name |
 | Outcome | A named condition on pipeline results that determines success/failure |
 | Parameter sweep | Running simulation multiple times with varying input values |
-| Keep rule | Select N highest or lowest dice from a pool (implemented via pipeline `keep_highest`/`keep_lowest`) |
+| Keep rule | Select highest or lowest dice value from a pool (implemented via pipeline `max`/`min`) |
 | Condition chain | A compound condition with multiple clauses connected by AND/OR |
 
 ---
@@ -846,12 +824,12 @@ Old configs (version 1 or missing) must be converted on load:
 ## Appendix B: Edge Cases
 
 1. **Reroll + tag**: A reroll condition with `field: 'tag', value: 'hunger'` matches only dice tagged "hunger". Other dice are unaffected.
-2. **Explode + keep**: Explosion adds dice **before** the resolution pipeline. Keep operations in the pipeline operate on the full post-explosion pool.
+2. **Explode + max/min**: Explosion adds dice **before** the resolution pipeline. `max` and `min` operate on the full post-explosion pool.
 3. **Empty pipeline**: If no pipeline rows exist, outcomes reference `rolled` directly.
 4. **Scalar type mismatch**: Using `count` on a named value that is already a scalar is a validation error (§10 rule 10).
 5. **Explode safety cap**: A single original die cannot generate more than 100 extra dice from explosions in one iteration. This is per-original-die, not per-term.
 6. **Parameter sweep multiplication**: If two parameters exist with 5 values each, total runs = 5 × 5 × 1,000,000 = 25,000,000. UI must warn at 10M and confirm at 50M.
 7. **Divide by zero**: Pipeline `divide` operations with a literal `0` produce a validation warning. At runtime, division by zero returns `0`.
-8. **Keep on empty pool**: If keep rule says "keep highest 3" but only 2 dice exist, keep all dice.
+8. **Max/min on empty pool**: `max` or `min` on an empty vector returns `-Infinity`/`Infinity` respectively — avoid with `none?` outcome conditions or by ensuring at least one die exists.
 9. **Reroll on reroll**: After condition 1 rerolls a die, condition 2 sees the new value. Conditions cascade through the full list.
 10. **Same source twice in binary op**: `source` and `source2` pointing to the same named value is allowed (e.g. `double_count = multiply count by 2` via literal, or `difference = subtract A from A` which is valid but produces 0).

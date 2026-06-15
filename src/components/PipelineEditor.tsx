@@ -19,12 +19,25 @@ function emptyNamedValue(): NamedValue {
   };
 }
 
-function getAvailableSources(pipeline: NamedValue[], currentIndex: number): { id: string; label: string }[] {
-  const sources = [{ id: 'rolled', label: 'rolled' }];
+function getOutputType(nv: NamedValue): 'vector' | 'scalar' {
+  const op = nv.op;
+  if (typeof op === 'string') {
+    if (op === 'count' || op === 'sum' || op === 'max' || op === 'min') return 'scalar';
+    return 'vector';
+  }
+  if (typeof op === 'object' && 'fn' in op) {
+    if (op.fn === 'filter' || op.fn === 'remove') return 'vector';
+    return 'scalar';
+  }
+  return 'vector';
+}
+
+function getAvailableSources(pipeline: NamedValue[], currentIndex: number): { id: string; label: string; type: 'vector' | 'scalar' }[] {
+  const sources: { id: string; label: string; type: 'vector' | 'scalar' }[] = [{ id: 'rolled', label: 'rolled', type: 'vector' }];
   for (let i = 0; i < currentIndex && i < pipeline.length; i++) {
     const nv = pipeline[i];
     if (nv.name) {
-      sources.push({ id: nv.name, label: nv.name });
+      sources.push({ id: nv.name, label: nv.name, type: getOutputType(nv) });
     }
   }
   return sources;
@@ -66,7 +79,7 @@ export function PipelineEditor() {
     for (let i = 0; i < currentPipe.length; i++) {
       const nv = currentPipe[i];
       if (nv.name && nv.source) {
-        const type = inferSourceType(nv, currentPipe.slice(0, i));
+        const type = getOutputType(nv);
         if (type === 'scalar') names.push(nv.name);
       }
     }
@@ -97,17 +110,20 @@ export function PipelineEditor() {
         const nameDuplicate = nv.name && pipe.filter((p) => p.name === nv.name).length > 1;
         const sourceInvalid = nv.source !== 'rolled' && !pipe.find((p) => p.name === nv.source);
 
+        const outputType = getOutputType(nv);
+
         return (
-          <div key={nv.id} class={`border rounded p-3 mb-3 ${nameInvalid || nameDuplicate || sourceInvalid ? 'border-red-300 bg-red-50' : 'bg-gray-50'}`}>
+          <div key={nv.id} class={`border rounded p-3 mb-3 ${nameInvalid || nameDuplicate || sourceInvalid ? 'border-red-300 bg-red-50' : outputType === 'scalar' ? 'border-green-300 bg-green-50' : 'bg-gray-50'}`}>
             <div class="flex items-center gap-2 mb-2 flex-wrap">
               <input
                 type="text"
                 value={nv.name}
                 placeholder="name"
                 maxLength={30}
-                class={`w-28 px-2 py-1 border rounded text-sm font-mono ${nameInvalid || nameDuplicate ? 'border-red-400' : ''}`}
+                class={`w-28 px-2 py-1 border rounded text-sm font-mono ${nameInvalid || nameDuplicate ? 'border-red-400' : outputType === 'scalar' ? 'text-green-700 border-green-400' : ''}`}
                 onInput={(e) => updateRow(i, { name: (e.target as HTMLInputElement).value })}
               />
+              <span class={`text-xs px-1.5 py-0.5 rounded ${outputType === 'scalar' ? 'bg-green-200 text-green-800' : 'bg-blue-200 text-blue-800'}`}>{outputType === 'scalar' ? 'num' : 'vec'}</span>
               <span class="text-gray-500 text-sm">=</span>
               <select
                 value={nv.source}
@@ -115,7 +131,7 @@ export function PipelineEditor() {
                 onChange={(e) => updateRow(i, { source: (e.target as HTMLSelectElement).value })}
               >
                 {sources.map((s) => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
+                  <option key={s.id} value={s.id}>{s.label} ({s.type === 'scalar' ? 'num' : 'vec'})</option>
                 ))}
               </select>
 
