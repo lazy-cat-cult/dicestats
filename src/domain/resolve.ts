@@ -1,4 +1,4 @@
-import type { NamedValue, TaggedDie, PipelineValue, VectorFunction, ScalarFunction, ScalarBinaryOp } from '@/types';
+import type { NamedValue, TaggedDie, PipelineValue, VectorFunction, ScalarFunction, ScalarBinaryOp, ScalarLiteralOp, ScalarNamedOp, ScalarCeilFloorOp, ScalarMaxMinNamedOp } from '@/types';
 import { matchConditions } from '@/domain/matching';
 
 function applyVectorOp(source: TaggedDie[], op: VectorFunction, termsSides: { sides: number; tag: string }[]): TaggedDie[] {
@@ -18,6 +18,22 @@ function applyScalarBinary(left: number, op: ScalarBinaryOp, right: number): num
     case 'multiply': return left * right;
     case 'divide': return right === 0 ? 0 : left / right;
   }
+}
+
+function isScalarLiteralOp(op: ScalarFunction): op is ScalarLiteralOp {
+  return typeof op === 'object' && op !== null && 'operand' in op && op.operand === 'literal';
+}
+
+function isScalarNamedOp(op: ScalarFunction): op is ScalarNamedOp {
+  return typeof op === 'object' && op !== null && 'operand' in op && op.operand === 'named';
+}
+
+function isScalarCeilFloorOp(op: ScalarFunction): op is ScalarCeilFloorOp {
+  return typeof op === 'object' && op !== null && (op.fn === 'ceil' || op.fn === 'floor');
+}
+
+function isScalarMaxMinNamedOp(op: ScalarFunction): op is ScalarMaxMinNamedOp {
+  return typeof op === 'object' && op !== null && 'operand' in op && op.operand === 'named' && (op.fn === 'max' || op.fn === 'min');
 }
 
 export function evaluatePipeline(
@@ -52,24 +68,18 @@ export function evaluatePipeline(
       env.set(nv.name, Math.min(...arr.map((d) => d.face)));
     } else if (typeof op === 'object' && op !== null && 'fn' in op) {
       if (typeof sourceVal !== 'number') continue;
-      if (op.fn === 'ceil') {
-        env.set(nv.name, Math.ceil(sourceVal));
-      } else if (op.fn === 'floor') {
-        env.set(nv.name, Math.floor(sourceVal));
-      } else if (op.fn === 'max' && (op as any).operand === 'named') {
-        const rightVal = env.get((op as any).source2 as string);
+      if (isScalarCeilFloorOp(op)) {
+        env.set(nv.name, op.fn === 'ceil' ? Math.ceil(sourceVal) : Math.floor(sourceVal));
+      } else if (isScalarMaxMinNamedOp(op)) {
+        const rightVal = env.get(op.source2);
         if (typeof rightVal !== 'number') continue;
-        env.set(nv.name, Math.max(sourceVal, rightVal));
-      } else if (op.fn === 'min' && (op as any).operand === 'named') {
-        const rightVal = env.get((op as any).source2 as string);
+        env.set(nv.name, op.fn === 'max' ? Math.max(sourceVal, rightVal) : Math.min(sourceVal, rightVal));
+      } else if (isScalarLiteralOp(op)) {
+        env.set(nv.name, applyScalarBinary(sourceVal, op.fn, op.value));
+      } else if (isScalarNamedOp(op)) {
+        const rightVal = env.get(op.source2);
         if (typeof rightVal !== 'number') continue;
-        env.set(nv.name, Math.min(sourceVal, rightVal));
-      } else if ((op as any).operand === 'literal') {
-        env.set(nv.name, applyScalarBinary(sourceVal, op.fn as ScalarBinaryOp, (op as any).value as number));
-      } else if ((op as any).operand === 'named') {
-        const rightVal = env.get((op as any).source2 as string);
-        if (typeof rightVal !== 'number') continue;
-        env.set(nv.name, applyScalarBinary(sourceVal, op.fn as ScalarBinaryOp, rightVal));
+        env.set(nv.name, applyScalarBinary(sourceVal, op.fn, rightVal));
       }
     }
   }
@@ -78,16 +88,24 @@ export function evaluatePipeline(
 }
 
 export function getPipelineType(nv: NamedValue, pipeline: NamedValue[]): 'vector' | 'scalar' | null {
-  let sourceType: 'vector' | 'scalar' | null = null;
   if (nv.source === 'rolled') {
-    sourceType = 'vector';
-  } else {
-    const source = pipeline.find((p) => p.name === nv.source);
-    if (!source) return null;
-    sourceType = getPipelineType(source, pipeline);
-    if (sourceType === 'vector') {
-      if (source.op === 'count' || source.op === 'sum') sourceType = 'scalar';
+    const op = nv.op;
+    if (op === 'count' || op === 'sum' || op === 'max' || op === 'min') return 'scalar';
+    if (typeof op === 'object' && op !== null) {
+      if (op.fn === 'filter' || op.fn === 'remove') return 'vector';
+      return 'scalar';
     }
+    return 'vector';
+  }
+
+  const source = pipeline.find((p) => p.name === nv.source);
+  if (!source) return null;
+  const sourceType = getPipelineType(source, pipeline);
+  if (sourceType === null) return null;
+
+  let nextType: 'vector' | 'scalar' = sourceType;
+  if (sourceType === 'vector' && (source.op === 'count' || source.op === 'sum')) {
+    nextType = 'scalar';
   }
 
   const op = nv.op;
@@ -97,5 +115,5 @@ export function getPipelineType(nv: NamedValue, pipeline: NamedValue[]): 'vector
     return 'scalar';
   }
 
-  return sourceType;
+  return nextType;
 }

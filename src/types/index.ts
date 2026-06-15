@@ -50,6 +50,16 @@ export type ScalarFunction =
   | { fn: 'max'; operand: 'named'; source2: string }
   | { fn: 'min'; operand: 'named'; source2: string };
 
+export type ScalarLiteralOp = { fn: ScalarBinaryOp; operand: 'literal'; value: number };
+export type ScalarNamedOp = { fn: ScalarBinaryOp; operand: 'named'; source2: string };
+export type ScalarCeilFloorOp = { fn: 'ceil' | 'floor' };
+export type ScalarMaxMinNamedOp = { fn: 'max' | 'min'; operand: 'named'; source2: string };
+export type ScalarObjectFunction =
+  | ScalarLiteralOp
+  | ScalarNamedOp
+  | ScalarCeilFloorOp
+  | ScalarMaxMinNamedOp;
+
 export type NamedValue =
   | { id: string; name: string; source: string; op: VectorFunction; comment: string }
   | { id: string; name: string; source: string; op: ScalarFunction; comment: string };

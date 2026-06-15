@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { DicePool, Outcome, OutcomeCondition, NamedValue, TaggedDie } from '@/types';
+import type { DicePool, Outcome, NamedValue, PipelineValue } from '@/types';
 import { rollPool } from '@/domain/roller';
 import { evaluateOutcomes } from '@/domain/classify';
 import { evaluatePipeline } from '@/domain/resolve';
@@ -111,7 +111,7 @@ describe('dice mechanics: outcomes with pipeline', () => {
       { id: 'o1', name: 'Hit', source: 'rolled', conditions: [{ op: 'any', subCondition: '>=' as const, value: 1 }], connector: 'and', comment: '', isDefault: false },
     ];
 
-    const env = new Map<string, any>();
+    const env = new Map<string, PipelineValue>();
     let hitCount = 0;
     const N = 10000;
     for (let i = 0; i < N; i++) {

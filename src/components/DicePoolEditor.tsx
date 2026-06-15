@@ -1,6 +1,6 @@
 import { useState, useRef } from 'preact/hooks';
 import { dicePool, dicePoolNotation, getTagColor, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind } from '@/state/app-state';
-import type { DicePool, DiceTerm, Parameter } from '@/types';
+import type { DiceTerm, Parameter } from '@/types';
 import { SweepIndicator } from '@/components/SweepIndicator';
 import { SweepPopover } from '@/components/SweepPopover';
 
@@ -17,10 +17,6 @@ export function DicePoolEditor() {
   const paramsCount = parameters.value.length;
   const [popover, setPopover] = useState<PopoverState | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-
-  function updatePool(partial: Partial<DicePool>) {
-    dicePool.value = { ...dicePool.value, ...partial };
-  }
 
   function updateTerm(index: number, partial: Partial<DiceTerm>) {
     const terms = dicePool.value.terms.map((t, i) => (i === index ? { ...t, ...partial } : { ...t }));

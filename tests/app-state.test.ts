@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { hashIdToColor, activeSweepsByTarget, totalIterations, dicePoolNotation } from '@/state/app-state';
-import { parameters, dicePool, outcomes, pipeline, resetToDefaults } from '@/state/app-state';
-import { DICE_CONDITION_TYPES } from '@/types';
-import type { Parameter, NamedValue, Outcome } from '@/types';
+import { parameters, dicePool, resetToDefaults } from '@/state/app-state';
+import type { Parameter } from '@/types';
 
 describe('hashIdToColor', () => {
   it('returns a valid color from the palette for any non-empty id', () => {

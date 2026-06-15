@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { outcomes, pipeline, dicePool, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind } from '@/state/app-state';
+import { outcomes, pipeline, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind } from '@/state/app-state';
 import type { Outcome, OutcomeCondition, ConditionOperator, DiceConditionType, NamedValue, Parameter } from '@/types';
 import { DICE_CONDITION_TYPES } from '@/types';
 import { SweepIndicator } from '@/components/SweepIndicator';

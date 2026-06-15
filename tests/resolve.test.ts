@@ -166,7 +166,7 @@ describe('evaluatePipeline', () => {
         id: 'p0',
         name: 'cnt',
         source: 'rolled',
-        op: 'count' as any,
+        op: 'count',
         comment: '',
       },
       {
@@ -185,7 +185,7 @@ describe('evaluatePipeline', () => {
         id: 'p0',
         name: 'cnt',
         source: 'rolled',
-        op: 'count' as any,
+        op: 'count',
         comment: '',
       },
       {
@@ -207,7 +207,7 @@ describe('evaluatePipeline', () => {
         id: 'p0',
         name: 'cnt',
         source: 'rolled',
-        op: 'count' as any,
+        op: 'count',
         comment: '',
       },
       {
@@ -246,7 +246,7 @@ describe('evaluatePipeline', () => {
         id: 'p0',
         name: 'cnt',
         source: 'rolled',
-        op: 'count' as any,
+        op: 'count',
         comment: '',
       },
       {

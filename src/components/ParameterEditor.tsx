@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { parameters, dicePool, outcomes, pipeline, highlightTargetId, highlightTargetKind, activeSweepsByTarget } from '@/state/app-state';
+import { parameters, dicePool, outcomes, pipeline, highlightTargetId, highlightTargetKind } from '@/state/app-state';
 import { isScalarCondition as isScalarCond, isBinaryMathLiteral as isBML } from '@/utils/validation';
 import type { Parameter, ParameterTarget, NamedValue } from '@/types';
 

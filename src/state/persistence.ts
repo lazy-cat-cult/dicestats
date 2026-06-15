@@ -1,12 +1,73 @@
-import type { SavedConfig } from '@/types';
-import type { DicePool, Outcome, Parameter, RerollCondition, NamedValue } from '@/types';
+import type { SavedConfig, DicePool, Outcome, Parameter, RerollCondition, NamedValue, ParameterTarget, OutcomeCondition } from '@/types';
 import { dicePool, outcomes, parameters, rerollConditions, pipeline } from './app-state';
 
 const STORAGE_KEY = 'dice-calc-config';
 
+interface V1Outcome {
+  id?: string;
+  label?: string;
+  kind?: 'threshold' | 'pool_success' | string;
+  comparison?: string;
+  value?: number;
+  threshold?: number;
+  source?: string;
+  conditions?: unknown[];
+  connector?: 'and' | 'or';
+  comment?: string;
+  isDefault?: boolean;
+}
+
+interface V1Term {
+  id?: string;
+  count?: number;
+  sides?: number;
+  tag?: string;
+  modifier?: number;
+}
+
+interface V1Keep {
+  kind: 'highest' | 'lowest';
+  count?: number;
+}
+
+interface V1Pool {
+  terms?: V1Term[];
+  keep?: V1Keep;
+}
+
+interface V1Parameter {
+  id?: string;
+  label?: string;
+  values?: number[];
+  target?: string;
+  applyTo?: string;
+  targetTermId?: string;
+  targetTermIndex?: number;
+  targetOutcomeId?: string;
+  targetOutcomeIndex?: number;
+}
+
+interface V1Config {
+  version: number;
+  pool?: V1Pool;
+  rerollConditions?: RerollCondition[];
+  pipeline?: NamedValue[];
+  outcomes?: V1Outcome[];
+  parameters?: V1Parameter[];
+}
+
+interface V3Config {
+  version: number;
+  outcomes?: Array<{ conditions?: unknown[] } & Record<string, unknown>>;
+  pipeline?: NamedValue[];
+  pool?: V1Pool;
+  rerollConditions?: RerollCondition[];
+  parameters?: V1Parameter[];
+}
+
 export function saveConfig() {
   const config: SavedConfig = {
-version: 5,
+    version: 5,
     pool: dicePool.value,
     rerollConditions: rerollConditions.value,
     pipeline: pipeline.value,
@@ -16,6 +77,7 @@ version: 5,
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   } catch {
+    return;
   }
 }
 
@@ -23,7 +85,7 @@ export function loadConfig(): boolean {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return false;
-    const config = JSON.parse(raw);
+    const config = JSON.parse(raw) as V1Config;
     const migrated = migrateConfig(config);
     dicePool.value = migrated.pool;
     rerollConditions.value = migrated.rerollConditions;
@@ -40,60 +102,74 @@ export function clearConfig() {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
+    return;
   }
 }
 
-function migrateOutcomeConditions(outcomes: any[]): any[] {
-  return outcomes.map((o: any) => ({
+function migrateOutcomeConditions(outcomes: V1Outcome[]): V1Outcome[] {
+  return outcomes.map((o) => ({
     ...o,
-    conditions: (o.conditions || []).map((c: any) => {
+    conditions: (o.conditions || []).map((c: unknown) => {
       if (c === 'none?') {
         return { op: 'none', subCondition: '>=', value: 0 };
       }
       if (c === 'any?') {
         return { op: 'any', subCondition: '>=', value: 0 };
       }
-      if (typeof c === 'object' && c.op === 'all?') {
-        return { op: 'all', subCondition: c.subCondition, value: c.value };
+      if (typeof c === 'object' && c !== null && 'op' in c && (c as { op: unknown }).op === 'all?') {
+        const ac = c as unknown as { subCondition: unknown; value: unknown };
+        return { op: 'all', subCondition: ac.subCondition, value: ac.value };
       }
       return c;
-    }),
+    }) as unknown as OutcomeCondition[],
   }));
 }
 
-function migrateConfig(config: any): SavedConfig {
+function migrateConfig(config: V1Config): SavedConfig {
   if (config.version === 5) {
-    return config as SavedConfig;
+    return config as unknown as SavedConfig;
   }
 
   if (config.version === 4) {
-    const outcomes: Outcome[] = migrateOutcomeConditions(config.outcomes || []);
-    config.outcomes = outcomes;
-    config.version = 5;
-    return config as SavedConfig;
+    const migratedOutcomes = migrateOutcomeConditions(config.outcomes || []);
+    return {
+      version: 5,
+      pool: (config as V1Config).pool as unknown as DicePool,
+      rerollConditions: config.rerollConditions || [],
+      pipeline: config.pipeline || [],
+      outcomes: migratedOutcomes as unknown as Outcome[],
+      parameters: config.parameters as unknown as Parameter[] ?? [],
+    };
   }
 
   if (config.version === 3) {
-    const pipeline: NamedValue[] = (config.pipeline || []).map((nv: any) => {
+    const v3 = config as unknown as V3Config;
+    const migratedPipeline: NamedValue[] = (v3.pipeline || []).map((nv) => {
       const op = nv.op;
       if (typeof op === 'object' && op !== null && 'fn' in op) {
-        if (op.fn === 'keep_highest') {
+        const fn = (op as { fn: string }).fn;
+        if (fn === 'keep_highest') {
           return { ...nv, op: 'max' as const };
         }
-        if (op.fn === 'keep_lowest') {
+        if (fn === 'keep_lowest') {
           return { ...nv, op: 'min' as const };
         }
       }
       return nv;
     });
-    config.pipeline = pipeline;
-    config.version = 4;
-    return config as SavedConfig;
+    return {
+      version: 5,
+      pool: (v3.pool as unknown as DicePool) ?? { terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '' }] },
+      rerollConditions: v3.rerollConditions || [],
+      pipeline: migratedPipeline,
+      outcomes: (v3.outcomes as unknown as Outcome[]) || [],
+      parameters: v3.parameters as unknown as Parameter[] ?? [],
+    };
   }
 
   const hasOldPool = !!config.pool;
-  const pool: DicePool = hasOldPool ? {
-    terms: (config.pool.terms || []).map((t: any) => ({
+  const pool: DicePool = hasOldPool && config.pool ? {
+    terms: (config.pool.terms || []).map((t) => ({
       id: t.id || crypto.randomUUID(),
       count: t.count ?? 1,
       sides: t.sides ?? 6,
@@ -107,7 +183,7 @@ function migrateConfig(config: any): SavedConfig {
 
   let keptStepName: string | null = null;
 
-  if (hasOldPool) {
+  if (hasOldPool && config.pool) {
     const oldKeep = config.pool.keep;
     if (oldKeep) {
       const isHighest = oldKeep.kind === 'highest';
@@ -127,7 +203,7 @@ function migrateConfig(config: any): SavedConfig {
       }
     }
 
-    const totalModifier = (config.pool.terms || []).reduce((s: number, t: any) => s + (t.modifier ?? 0), 0);
+    const totalModifier = (config.pool.terms || []).reduce((s, t) => s + (t.modifier ?? 0), 0);
     if (totalModifier !== 0) {
       const lastVectorSource = keptStepName ?? 'rolled';
       const sumName = keptStepName ? 'kept_sum' : 'total';
@@ -153,36 +229,36 @@ function migrateConfig(config: any): SavedConfig {
 
   let outcomes: Outcome[];
   if (config.outcomes && config.outcomes.length > 0 && config.outcomes[0].kind) {
-    outcomes = config.outcomes.map((o: any, i: number) => {
+    outcomes = config.outcomes.map((o, i) => {
       if (o.kind === 'threshold') {
         return {
           id: o.id || crypto.randomUUID(),
           name: o.label || `Outcome ${i + 1}`,
           source: 'rolled',
-          conditions: [{ op: o.comparison === '==' ? '=' : o.comparison, value: o.value }],
-          connector: 'and',
+          conditions: [{ op: o.comparison === '==' ? '=' : o.comparison, value: o.value }] as unknown as OutcomeCondition[],
+          connector: 'and' as const,
           comment: '',
           isDefault: false,
-        } as Outcome;
+        };
       }
       if (o.kind === 'pool_success') {
         return {
           id: o.id || crypto.randomUUID(),
           name: o.label || `Outcome ${i + 1}`,
           source: 'rolled',
-          conditions: [{ op: '>=' as const, value: o.threshold || 1 }],
+          conditions: [{ op: '>=' as const, value: o.threshold || 1 }] as unknown as OutcomeCondition[],
           connector: 'and' as const,
           comment: '',
           isDefault: false,
-        } as Outcome;
+        };
       }
-      return o;
+      return o as unknown as Outcome;
     });
   } else {
-    outcomes = (config.outcomes || []).map((o: any) => o);
+    outcomes = (config.outcomes || []) as unknown as Outcome[];
   }
 
-  if (hasOldPool && config.pool.keep && outcomes.length > 0 && keptStepName) {
+  if (hasOldPool && config.pool?.keep && outcomes.length > 0 && keptStepName) {
     for (const o of outcomes) {
       if (o.source === 'rolled') {
         o.source = keptStepName;
@@ -190,8 +266,8 @@ function migrateConfig(config: any): SavedConfig {
     }
   }
 
-  const parameters: Parameter[] = (config.parameters || []).map((p: any) => {
-    let target = p.target || 'outcome.value';
+  const parameters: Parameter[] = (config.parameters || []).map((p) => {
+    let target: ParameterTarget = p.target as ParameterTarget || 'outcome.value';
     if (p.applyTo === 'modifier') target = 'pipeline.literal';
     if (p.applyTo === 'count') target = 'pool.count';
     if (p.target === 'pool.modifier') target = 'pipeline.literal';
@@ -200,7 +276,7 @@ function migrateConfig(config: any): SavedConfig {
       id: p.id || crypto.randomUUID(),
       label: p.label || 'X',
       values: p.values || [1, 2, 3],
-      target: target as any,
+      target,
       targetTermId: p.targetTermId || (p.targetTermIndex !== undefined ? pool.terms[p.targetTermIndex]?.id : undefined),
       targetOutcomeId: p.targetOutcomeId || (p.targetOutcomeIndex !== undefined ? outcomes[p.targetOutcomeIndex]?.id : undefined),
       targetPipelineId: undefined,

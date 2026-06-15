@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-06-15
+goal: Project source passes npm run lint with zero errors and zero warnings;
+  no ESLint rule is suppressed; type safety is preserved by replacing `any` with
+  precise types.
