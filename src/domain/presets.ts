@@ -21,8 +21,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Hit',
-        source: 'total',
-        conditions: [{ op: '>=', value: 15 }],
+        conditions: [{ source: 'total', op: '>=', value: 15 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -58,8 +57,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Hit',
-        source: 'best',
-        conditions: [{ op: '>=', value: 15 }],
+        conditions: [{ source: 'best', op: '>=', value: 15 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -95,8 +93,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Miss',
-        source: 'total',
-        conditions: [{ op: '<=', value: 6 }],
+        conditions: [{ source: 'total', op: '<=', value: 6 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -104,8 +101,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o2',
         name: 'Partial',
-        source: 'total',
-        conditions: [{ op: '>=', value: 7 }, { op: '<=', value: 9 }],
+        conditions: [{ source: 'total', op: '>=', value: 7 }, { source: 'total', op: '<=', value: 9 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -113,8 +109,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o3',
         name: 'Full Success',
-        source: 'total',
-        conditions: [{ op: '>=', value: 10 }],
+        conditions: [{ source: 'total', op: '>=', value: 10 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -133,8 +128,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: '1+ hits',
-        source: 'rolled',
-        conditions: [{ op: 'any', subCondition: '>=', value: 5 }],
+        conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: 5 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -142,8 +136,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o2',
         name: 'No hits',
-        source: 'rolled',
-        conditions: [{ op: 'none', subCondition: '>=', value: 5 }],
+        conditions: [{ source: 'rolled', op: 'none', subCondition: '>=', value: 5 }],
         connector: 'and',
         comment: '',
         isDefault: true,
@@ -243,8 +236,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Success',
-        source: 'total_successes',
-        conditions: [{ op: '>=', value: 1 }],
+        conditions: [{ source: 'total_successes', op: '>=', value: 1 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -252,8 +244,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o2',
         name: 'Failure',
-        source: 'total_successes',
-        conditions: [{ op: '=', value: 0 }],
+        conditions: [{ source: 'total_successes', op: '=', value: 0 }],
         connector: 'and',
         comment: '',
         isDefault: true,
@@ -323,8 +314,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Hope',
-        source: 'delta',
-        conditions: [{ op: '>', value: 0 }],
+        conditions: [{ source: 'delta', op: '>', value: 0 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -332,8 +322,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o2',
         name: 'Fear',
-        source: 'delta',
-        conditions: [{ op: '<', value: 0 }],
+        conditions: [{ source: 'delta', op: '<', value: 0 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -341,8 +330,106 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o3',
         name: 'Critical Success',
-        source: 'delta',
-        conditions: [{ op: '=', value: 0 }],
+        conditions: [{ source: 'delta', op: '=', value: 0 }],
+        connector: 'and',
+        comment: '',
+        isDefault: true,
+      },
+    ],
+  },
+  {
+    id: 'daggerheart-compound',
+    name: 'Daggerheart — Compound Outcomes (2d12)',
+    pool: {
+      terms: [
+        { id: 'd12-hope', count: 1, sides: 12, tag: 'hope' },
+        { id: 'd12-fear', count: 1, sides: 12, tag: 'fear' },
+      ],
+    },
+    rerollConditions: [],
+    pipeline: [
+      {
+        id: 'p1',
+        name: 'hope_face',
+        source: 'rolled',
+        op: {
+          fn: 'filter',
+          conditions: {
+            clauses: [{ field: 'tag', operator: '=', value: 'hope' }],
+            connector: 'and',
+          },
+        },
+        comment: '',
+      },
+      {
+        id: 'p2',
+        name: 'fear_face',
+        source: 'rolled',
+        op: {
+          fn: 'filter',
+          conditions: {
+            clauses: [{ field: 'tag', operator: '=', value: 'fear' }],
+            connector: 'and',
+          },
+        },
+        comment: '',
+      },
+      {
+        id: 'p3',
+        name: 'total',
+        source: 'rolled',
+        op: 'sum',
+        comment: '',
+      },
+      {
+        id: 'p4',
+        name: 'hope_value',
+        source: 'hope_face',
+        op: 'max',
+        comment: '',
+      },
+      {
+        id: 'p5',
+        name: 'fear_value',
+        source: 'fear_face',
+        op: 'max',
+        comment: '',
+      },
+      {
+        id: 'p6',
+        name: 'delta',
+        source: 'hope_value',
+        op: { fn: 'subtract', operand: 'named', source2: 'fear_value' },
+        comment: '',
+      },
+    ],
+    outcomes: [
+      {
+        id: 'o1',
+        name: 'Critical Hit',
+        conditions: [
+          { source: 'total', op: '>=', value: 15 },
+          { source: 'delta', op: '>=', value: 0 },
+        ],
+        connector: 'and',
+        comment: '',
+        isDefault: false,
+      },
+      {
+        id: 'o2',
+        name: 'Critical Miss',
+        conditions: [
+          { source: 'total', op: '<=', value: 5 },
+          { source: 'delta', op: '<', value: 0 },
+        ],
+        connector: 'and',
+        comment: '',
+        isDefault: false,
+      },
+      {
+        id: 'o3',
+        name: 'Hope',
+        conditions: [{ source: 'delta', op: '>', value: 0 }],
         connector: 'and',
         comment: '',
         isDefault: true,
@@ -369,8 +456,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Success',
-        source: 'total',
-        conditions: [{ op: '>=', value: 13 }],
+        conditions: [{ source: 'total', op: '>=', value: 13 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -419,8 +505,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Critical',
-        source: 'six_count',
-        conditions: [{ op: '>=', value: 2 }],
+        conditions: [{ source: 'six_count', op: '>=', value: 2 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -428,8 +513,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o2',
         name: 'Success',
-        source: 'best',
-        conditions: [{ op: '>=', value: 4 }],
+        conditions: [{ source: 'best', op: '>=', value: 4 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -437,8 +521,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o3',
         name: 'Partial',
-        source: 'best',
-        conditions: [{ op: '>=', value: 1 }, { op: '<=', value: 3 }],
+        conditions: [{ source: 'best', op: '>=', value: 1 }, { source: 'best', op: '<=', value: 3 }],
         connector: 'and',
         comment: '',
         isDefault: true,
@@ -525,8 +608,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Raise',
-        source: 'effective',
-        conditions: [{ op: '>=', value: 8 }],
+        conditions: [{ source: 'effective', op: '>=', value: 8 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -534,8 +616,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o2',
         name: 'Success',
-        source: 'effective',
-        conditions: [{ op: '>=', value: 4 }, { op: '<=', value: 7 }],
+        conditions: [{ source: 'effective', op: '>=', value: 4 }, { source: 'effective', op: '<=', value: 7 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -543,8 +624,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o3',
         name: 'Failure',
-        source: 'effective',
-        conditions: [{ op: '<', value: 4 }],
+        conditions: [{ source: 'effective', op: '<', value: 4 }],
         connector: 'and',
         comment: '',
         isDefault: true,
@@ -580,8 +660,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Success',
-        source: 'rolled',
-        conditions: [{ op: 'any', subCondition: '>=', value: 8 }],
+        conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: 8 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -589,8 +668,7 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o2',
         name: 'Failure',
-        source: 'rolled',
-        conditions: [{ op: 'none', subCondition: '>=', value: 8 }],
+        conditions: [{ source: 'rolled', op: 'none', subCondition: '>=', value: 8 }],
         connector: 'and',
         comment: '',
         isDefault: true,

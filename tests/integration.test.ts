@@ -87,7 +87,7 @@ describe('dice mechanics: outcomes with pipeline', () => {
       { id: 'p2', name: 'hit_count', source: 'hits', op: 'count' as const, comment: '' },
     ];
     const outcomes: Outcome[] = [
-      { id: 'o1', name: '1+ hits', source: 'hit_count', conditions: [{ op: '>=' as const, value: 1 }], connector: 'and' as const, comment: '', isDefault: false },
+      { id: 'o1', name: '1+ hits', conditions: [{ source: 'hit_count', op: '>=' as const, value: 1 }], connector: 'and' as const, comment: '', isDefault: false },
     ];
 
     let successCount = 0;
@@ -108,7 +108,7 @@ describe('dice mechanics: outcomes with pipeline', () => {
       terms: [{ id: '1', count: 2, sides: 6, tag: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'Hit', source: 'rolled', conditions: [{ op: 'any', subCondition: '>=' as const, value: 1 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o1', name: 'Hit', conditions: [{ source: 'rolled', op: 'any', subCondition: '>=' as const, value: 1 }], connector: 'and', comment: '', isDefault: false },
     ];
 
     const env = new Map<string, PipelineValue>();
@@ -121,6 +121,32 @@ describe('dice mechanics: outcomes with pipeline', () => {
       if (result === 'Hit') hitCount++;
     }
     expect(hitCount / N).toBeGreaterThan(0.99);
+  });
+});
+
+describe('dice mechanics: compound outcomes (per-condition source)', () => {
+  it('AND across two different pipeline values', () => {
+    const pool: DicePool = {
+      terms: [
+        { id: 'd12-hope', count: 1, sides: 12, tag: 'hope' },
+        { id: 'd12-fear', count: 1, sides: 12, tag: 'fear' },
+      ],
+    };
+    const pipeline: NamedValue[] = [
+      { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
+      { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', operand: 'literal', value: 0 }, comment: '' },
+    ];
+    const outcomes: Outcome[] = [
+      { id: 'o1', name: 'Critical Hit', conditions: [{ source: 'total', op: '>=', value: 15 }, { source: 'delta', op: '>=', value: 0 }], connector: 'and', comment: '', isDefault: false },
+    ];
+    let matched = 0;
+    for (let i = 0; i < 20000; i++) {
+      const dice = rollPool(pool);
+      const env = evaluatePipeline(dice, pipeline);
+      env.set('delta', 3);
+      if (evaluateOutcomes(outcomes, env)) matched++;
+    }
+    expect(matched).toBeGreaterThan(0);
   });
 });
 

@@ -1,9 +1,10 @@
 import { useState } from 'preact/hooks';
-import { outcomes, pipeline, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind } from '@/state/app-state';
-import type { Outcome, OutcomeCondition, ConditionOperator, DiceConditionType, NamedValue, Parameter } from '@/types';
+import { outcomes, pipeline, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind, showComments } from '@/state/app-state';
+import type { Outcome, OutcomeCondition, ConditionOperator, DiceConditionType, NamedValue, Parameter, ScalarCondition, DiceCondition } from '@/types';
 import { DICE_CONDITION_TYPES } from '@/types';
 import { SweepIndicator } from '@/components/SweepIndicator';
 import { SweepPopover } from '@/components/SweepPopover';
+import { inferType } from '@/utils/validation';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
 
@@ -31,31 +32,61 @@ function getOutputType(nv: NamedValue): 'vector' | 'scalar' {
   return 'vector';
 }
 
-function isScalarSource(source: string): boolean {
-  if (source === 'rolled') return false;
+function resolveSourceType(source: string): 'vector' | 'scalar' | null {
+  if (source === 'rolled') return 'vector';
   const nv = pipeline.value.find((p) => p.name === source);
-  if (!nv) return false;
-  return getOutputType(nv) === 'scalar';
+  if (!nv) return null;
+  return inferType(nv, pipeline.value);
+}
+
+function isScalarCondition(cond: OutcomeCondition): cond is ScalarCondition {
+  return typeof cond === 'object' && 'op' in cond && typeof cond.op === 'string' && !DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
+}
+
+function isDiceCondition(cond: OutcomeCondition): cond is DiceCondition {
+  return typeof cond === 'object' && 'op' in cond && DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
+}
+
+function defaultScalarSource(): string {
+  for (const nv of pipeline.value) {
+    if (nv.name && getOutputType(nv) === 'scalar') return nv.name;
+  }
+  return 'rolled';
+}
+
+function makeScalarCondition(source: string): ScalarCondition {
+  return { source, op: '>=', value: 0 };
+}
+
+function makeDiceCondition(source: string): DiceCondition {
+  return { source, op: 'any', subCondition: '>=', value: 0 };
 }
 
 function emptyOutcome(): Outcome {
+  const source = defaultScalarSource();
+  const t = resolveSourceType(source);
   return {
     id: crypto.randomUUID(),
     name: 'New Outcome',
-    source: 'rolled',
-    conditions: [{ op: 'any', subCondition: '>=', value: 10 }],
+    conditions: [t === 'scalar' ? makeScalarCondition(source) : makeDiceCondition(source)],
     connector: 'and',
     comment: '',
     isDefault: false,
   };
 }
 
-function isScalarCondition(cond: OutcomeCondition): cond is { op: ConditionOperator; value: number } {
-  return typeof cond === 'object' && 'op' in cond && typeof cond.op === 'string' && !DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
-}
-
-function isDiceCondition(cond: OutcomeCondition): cond is { op: DiceConditionType; subCondition: ConditionOperator; value: number } {
-  return typeof cond === 'object' && 'op' in cond && DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
+function convertCondition(cond: OutcomeCondition, newSource: string, newType: 'vector' | 'scalar'): OutcomeCondition {
+  if (newType === 'scalar') {
+    const sc = isScalarCondition(cond) ? cond : null;
+    return { source: newSource, op: sc?.op ?? '>=', value: sc?.value ?? cond.value };
+  }
+  const dc = isDiceCondition(cond) ? cond : null;
+  return {
+    source: newSource,
+    op: dc?.op ?? 'any',
+    subCondition: dc?.subCondition ?? '>=',
+    value: dc?.value ?? cond.value,
+  };
 }
 
 export function OutcomeEditor() {
@@ -104,12 +135,20 @@ export function OutcomeEditor() {
 
   return (
     <div>
-      <h2 class="text-lg font-semibold mb-4">Outcomes</h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Outcomes</h2>
+        <label class="flex items-center gap-1 text-xs text-gray-600">
+          <input
+            type="checkbox"
+            checked={showComments.value}
+            onChange={(e) => { showComments.value = (e.target as HTMLInputElement).checked; }}
+          />
+          Show comments
+        </label>
+      </div>
 
       {list.map((outcome, i) => {
-        const scalar = isScalarSource(outcome.source);
         const sourceOptions = getSourceOptions();
-        const firstScalar = outcome.conditions.length > 0 && isScalarCondition(outcome.conditions[0]);
         const sweepParam = sweeps.get(`outcome.value:${outcome.id}`);
 
         return (
@@ -126,15 +165,6 @@ export function OutcomeEditor() {
                 class="flex-1 px-2 py-1 border rounded text-sm"
                 onInput={(e) => updateOutcome(i, { name: (e.target as HTMLInputElement).value })}
               />
-              <select
-                  value={outcome.source}
-                  class="px-2 py-1 border rounded text-sm"
-                  onChange={(e) => updateOutcome(i, { source: (e.target as HTMLSelectElement).value })}
-                >
-                  {sourceOptions.map((s) => (
-                    <option key={s.id} value={s.id}>{s.label} ({s.type === 'scalar' ? 'num' : 'vec'})</option>
-                  ))}
-                </select>
               <label class="flex items-center gap-1 text-xs">
                 <input
                   type="checkbox"
@@ -150,63 +180,93 @@ export function OutcomeEditor() {
             </div>
 
             <div class="mb-2">
-              {outcome.conditions.map((cond, ci) => (
-                <div key={ci} class="flex items-center gap-1 mb-1 flex-wrap">
-                  {scalar ? (
-                    <OutcomeScalarCondition
-                      cond={cond}
-                      onChange={(newCond) => {
-                        const conditions = [...outcome.conditions];
-                        conditions[ci] = newCond;
-                        updateOutcome(i, { conditions });
-                      }}
-                    />
-                  ) : (
-                    <OutcomeVectorCondition
-                      cond={cond}
-                      onChange={(newCond) => {
-                        const conditions = [...outcome.conditions];
-                        conditions[ci] = newCond;
-                        updateOutcome(i, { conditions });
-                      }}
-                    />
-                  )}
-                  {ci === 0 && firstScalar && (
-                    <>
-                      {sweepParam ? (
-                        <SweepIndicator
-                          parameterId={sweepParam.id}
-                          label={sweepParam.label}
-                          values={sweepParam.values}
-                          onJump={() => jumpToOutcome(outcome.id)}
-                        />
-                      ) : (
-                        paramsCount < 3 && (
-                          <button
-                            type="button"
-                            class="text-xs text-indigo-600 hover:text-indigo-800 px-1"
-                            onClick={() => setPopoverOutcomeId(outcome.id)}
-                            aria-label="Add sweep to first condition"
-                          >
-                            + Sweep
-                          </button>
-                        )
-                      )}
-                    </>
-                  )}
-                  {outcome.conditions.length > 1 && (
-                    <button
-                      class="text-red-400 hover:text-red-600 text-xs"
-                      onClick={() => {
-                        const conditions = outcome.conditions.filter((_, j) => j !== ci);
-                        updateOutcome(i, { conditions });
+              {outcome.conditions.map((cond, ci) => {
+                const condType = isScalarCondition(cond) ? 'scalar' : 'dice';
+                return (
+                  <div key={ci} class="flex items-center gap-1 mb-1 flex-wrap">
+                    <select
+                      value={cond.source}
+                      class="px-2 py-0.5 border rounded text-xs"
+                      onChange={(e) => {
+                        const newSource = (e.target as HTMLSelectElement).value;
+                        const newType = resolveSourceType(newSource);
+                        if (newType === null) {
+                          const conditions = [...outcome.conditions];
+                          conditions[ci] = { ...cond, source: newSource };
+                          updateOutcome(i, { conditions });
+                          return;
+                        }
+                        if ((newType === 'scalar') !== (condType === 'scalar')) {
+                          const conditions = [...outcome.conditions];
+                          conditions[ci] = convertCondition(cond, newSource, newType);
+                          updateOutcome(i, { conditions });
+                        } else {
+                          const conditions = [...outcome.conditions];
+                          conditions[ci] = { ...cond, source: newSource };
+                          updateOutcome(i, { conditions });
+                        }
                       }}
                     >
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
+                      {sourceOptions.map((s) => (
+                        <option key={s.id} value={s.id}>{s.label} ({s.type === 'scalar' ? 'num' : 'vec'})</option>
+                      ))}
+                    </select>
+                    {condType === 'scalar' ? (
+                      <OutcomeScalarCondition
+                        cond={cond}
+                        onChange={(newCond) => {
+                          const conditions = [...outcome.conditions];
+                          conditions[ci] = newCond;
+                          updateOutcome(i, { conditions });
+                        }}
+                      />
+                    ) : (
+                      <OutcomeVectorCondition
+                        cond={cond}
+                        onChange={(newCond) => {
+                          const conditions = [...outcome.conditions];
+                          conditions[ci] = newCond;
+                          updateOutcome(i, { conditions });
+                        }}
+                      />
+                    )}
+                    {ci === 0 && condType === 'scalar' && (
+                      <>
+                        {sweepParam ? (
+                          <SweepIndicator
+                            parameterId={sweepParam.id}
+                            label={sweepParam.label}
+                            values={sweepParam.values}
+                            onJump={() => jumpToOutcome(outcome.id)}
+                          />
+                        ) : (
+                          paramsCount < 3 && (
+                            <button
+                              type="button"
+                              class="text-xs text-indigo-600 hover:text-indigo-800 px-1"
+                              onClick={() => setPopoverOutcomeId(outcome.id)}
+                              aria-label="Add sweep to first condition"
+                            >
+                              + Sweep
+                            </button>
+                          )
+                        )}
+                      </>
+                    )}
+                    {outcome.conditions.length > 1 && (
+                      <button
+                        class="text-red-400 hover:text-red-600 text-xs"
+                        onClick={() => {
+                          const conditions = outcome.conditions.filter((_, j) => j !== ci);
+                          updateOutcome(i, { conditions });
+                        }}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
 
               {outcome.conditions.length > 1 && (
                 <select
@@ -223,10 +283,10 @@ export function OutcomeEditor() {
                 <button
                   class="text-xs text-indigo-600 hover:text-indigo-800 ml-2"
                   onClick={() => {
-                    const newCond = scalar
-                      ? { op: '>=' as ConditionOperator, value: 0 }
-                      : { op: 'any' as DiceConditionType, subCondition: '>=' as ConditionOperator, value: 0 };
-                    const conditions = [...outcome.conditions, newCond as OutcomeCondition];
+                    const source = defaultScalarSource();
+                    const t = resolveSourceType(source);
+                    const newCond: OutcomeCondition = t === 'scalar' ? makeScalarCondition(source) : makeDiceCondition(source);
+                    const conditions = [...outcome.conditions, newCond];
                     updateOutcome(i, { conditions });
                   }}
                 >
@@ -235,13 +295,15 @@ export function OutcomeEditor() {
               )}
             </div>
 
-            <input
-              type="text"
-              value={outcome.comment}
-              placeholder="Comment (optional)"
-              class="w-full px-2 py-1 border rounded text-sm"
-              onInput={(e) => updateOutcome(i, { comment: (e.target as HTMLInputElement).value })}
-            />
+            {showComments.value && (
+              <input
+                type="text"
+                value={outcome.comment}
+                placeholder="Comment (optional)"
+                class="w-full px-2 py-1 border rounded text-sm"
+                onInput={(e) => updateOutcome(i, { comment: (e.target as HTMLInputElement).value })}
+              />
+            )}
           </div>
         );
       })}
@@ -272,7 +334,7 @@ function OutcomeScalarCondition({ cond, onChange }: { cond: OutcomeCondition; on
     return (
       <button
         class="px-2 py-0.5 border rounded text-xs bg-gray-100"
-        onClick={() => onChange({ op: '>=', value: 0 })}
+        onClick={() => onChange({ source: cond.source, op: '>=', value: 0 })}
       >
         Reset condition
       </button>
@@ -283,7 +345,7 @@ function OutcomeScalarCondition({ cond, onChange }: { cond: OutcomeCondition; on
       <select
         value={scalar.op}
         class="px-1 py-0.5 border rounded text-xs"
-        onChange={(e) => onChange({ op: (e.target as HTMLSelectElement).value as ConditionOperator, value: scalar.value })}
+        onChange={(e) => onChange({ source: scalar.source, op: (e.target as HTMLSelectElement).value as ConditionOperator, value: scalar.value })}
       >
         {CONDITION_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
       </select>
@@ -291,7 +353,7 @@ function OutcomeScalarCondition({ cond, onChange }: { cond: OutcomeCondition; on
         type="number"
         value={scalar.value}
         class="w-16 px-1 py-0.5 border rounded text-xs text-center"
-        onInput={(e) => onChange({ op: scalar.op, value: Number((e.target as HTMLInputElement).value) || 0 })}
+        onInput={(e) => onChange({ source: scalar.source, op: scalar.op, value: Number((e.target as HTMLInputElement).value) || 0 })}
       />
     </div>
   );
@@ -303,7 +365,7 @@ function OutcomeVectorCondition({ cond, onChange }: { cond: OutcomeCondition; on
     return (
       <button
         class="px-2 py-0.5 border rounded text-xs bg-gray-100"
-        onClick={() => onChange({ op: 'any', subCondition: '>=', value: 0 })}
+        onClick={() => onChange({ source: cond.source, op: 'any', subCondition: '>=', value: 0 })}
       >
         Reset condition
       </button>
@@ -314,14 +376,14 @@ function OutcomeVectorCondition({ cond, onChange }: { cond: OutcomeCondition; on
       <select
         value={dice.op}
         class="px-1 py-0.5 border rounded text-xs"
-        onChange={(e) => onChange({ op: (e.target as HTMLSelectElement).value as DiceConditionType, subCondition: dice.subCondition, value: dice.value })}
+        onChange={(e) => onChange({ source: dice.source, op: (e.target as HTMLSelectElement).value as DiceConditionType, subCondition: dice.subCondition, value: dice.value })}
       >
         {DICE_CONDITION_TYPES.map((t) => (<option key={t} value={t}>{t} dice</option>))}
       </select>
       <select
         value={dice.subCondition}
         class="px-1 py-0.5 border rounded text-xs"
-        onChange={(e) => onChange({ op: dice.op, subCondition: (e.target as HTMLSelectElement).value as ConditionOperator, value: dice.value })}
+        onChange={(e) => onChange({ source: dice.source, op: dice.op, subCondition: (e.target as HTMLSelectElement).value as ConditionOperator, value: dice.value })}
       >
         {CONDITION_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
       </select>
@@ -329,7 +391,7 @@ function OutcomeVectorCondition({ cond, onChange }: { cond: OutcomeCondition; on
         type="number"
         value={dice.value}
         class="w-14 px-1 py-0.5 border rounded text-xs text-center"
-        onInput={(e) => onChange({ op: dice.op, subCondition: dice.subCondition, value: Number((e.target as HTMLInputElement).value) || 0 })}
+        onInput={(e) => onChange({ source: dice.source, op: dice.op, subCondition: dice.subCondition, value: Number((e.target as HTMLInputElement).value) || 0 })}
       />
     </div>
   );

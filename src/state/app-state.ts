@@ -2,6 +2,7 @@ import { signal, computed, effect } from '@preact/signals';
 import type { DicePool, Outcome, Parameter, RerollCondition, NamedValue } from '@/types';
 import { PRESETS } from '@/domain/presets';
 import { formatSweepRange } from '@/utils/format';
+import { loadUiPrefs, saveUiPrefs } from '@/state/persistence';
 
 function defaultPool(): DicePool {
   return {
@@ -73,6 +74,14 @@ export const confirmedHighCost = signal<boolean>(false);
 export const highlightTargetId = signal<string | null>(null);
 export const highlightTargetKind = signal<'term' | 'outcome' | 'pipeline' | null>(null);
 
+export const showComments = signal<boolean>(loadUiPrefs().showComments);
+
+export const existingTags = computed<string[]>(() => {
+  const set = new Set<string>();
+  for (const t of dicePool.value.terms) if (t.tag) set.add(t.tag);
+  return Array.from(set).sort();
+});
+
 let lastParamFingerprint = '';
 effect(() => {
   const fingerprint = JSON.stringify(parameters.value);
@@ -80,6 +89,10 @@ effect(() => {
     if (confirmedHighCost.value) confirmedHighCost.value = false;
   }
   lastParamFingerprint = fingerprint;
+});
+
+effect(() => {
+  saveUiPrefs({ showComments: showComments.value });
 });
 
 export const dicePoolNotation = computed(() => {

@@ -22,6 +22,12 @@ export const highCostTooltip = signal<boolean>(false);
 
 let worker: Worker | null = null;
 
+export function cancelSimulation() {
+  worker?.terminate();
+  worker = null;
+  isSimulating.value = false;
+}
+
 const validationErrors = computed(() =>
   validateConfig(dicePool.value, rerollConditions.value, pipeline.value, outcomes.value, parameters.value)
 );
@@ -84,12 +90,6 @@ export function App() {
     };
 
     worker.postMessage({ type: 'run', job });
-  }
-
-  function cancelSimulation() {
-    worker?.terminate();
-    worker = null;
-    isSimulating.value = false;
   }
 
   const blockingErrors = validationErrors.value.filter((e) => e.blocking);

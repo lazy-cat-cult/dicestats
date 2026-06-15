@@ -15,8 +15,7 @@ describe('evaluateOutcome', () => {
     const outcome: Outcome = {
       id: '1',
       name: 'Hit',
-      source: 'total',
-      conditions: [{ op: '>=', value: 15 }],
+      conditions: [{ source: 'total', op: '>=', value: 15 }],
       connector: 'and',
       comment: '',
       isDefault: false,
@@ -32,8 +31,7 @@ describe('evaluateOutcome', () => {
     const outcome: Outcome = {
       id: '1',
       name: 'Hit',
-      source: 'rolled',
-      conditions: [{ op: '>=', value: 15 }],
+      conditions: [{ source: 'rolled', op: '>=', value: 15 }],
       connector: 'and',
       comment: '',
       isDefault: false,
@@ -47,8 +45,7 @@ describe('evaluateOutcome', () => {
     const outcome: Outcome = {
       id: '1',
       name: 'Any six',
-      source: 'rolled',
-      conditions: [{ op: 'any', subCondition: '=', value: 6 }],
+      conditions: [{ source: 'rolled', op: 'any', subCondition: '=', value: 6 }],
       connector: 'and',
       comment: '',
       isDefault: false,
@@ -68,8 +65,7 @@ describe('evaluateOutcome', () => {
     const outcome: Outcome = {
       id: '1',
       name: 'No hits',
-      source: 'rolled',
-      conditions: [{ op: 'none', subCondition: '>=', value: 6 }],
+      conditions: [{ source: 'rolled', op: 'none', subCondition: '>=', value: 6 }],
       connector: 'and',
       comment: '',
       isDefault: false,
@@ -89,8 +85,7 @@ describe('evaluateOutcome', () => {
     const outcome: Outcome = {
       id: '1',
       name: 'All >= 6',
-      source: 'rolled',
-      conditions: [{ op: 'all', subCondition: '>=', value: 6 }],
+      conditions: [{ source: 'rolled', op: 'all', subCondition: '>=', value: 6 }],
       connector: 'and',
       comment: '',
       isDefault: false,
@@ -110,8 +105,7 @@ describe('evaluateOutcome', () => {
     const outcome: Outcome = {
       id: '1',
       name: 'Range',
-      source: 'total',
-      conditions: [{ op: '>=', value: 7 }, { op: '<=', value: 9 }],
+      conditions: [{ source: 'total', op: '>=', value: 7 }, { source: 'total', op: '<=', value: 9 }],
       connector: 'and',
       comment: '',
       isDefault: false,
@@ -128,8 +122,8 @@ describe('evaluateOutcome', () => {
       { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
     ];
     const outcomes: Outcome[] = [
-      { id: '1', name: 'Hit', source: 'total', conditions: [{ op: '>=', value: 20 }], connector: 'and', comment: '', isDefault: false },
-      { id: '2', name: 'Miss', source: 'total', conditions: [], connector: 'and', comment: '', isDefault: true },
+      { id: '1', name: 'Hit', conditions: [{ source: 'total', op: '>=', value: 20 }], connector: 'and', comment: '', isDefault: false },
+      { id: '2', name: 'Miss', conditions: [], connector: 'and', comment: '', isDefault: true },
     ];
     const env = makeEnv([{ face: 10, tag: '' }], pipeline);
     expect(evaluateOutcomes(outcomes, env)).toBe('Miss');
@@ -140,9 +134,9 @@ describe('evaluateOutcome', () => {
       { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
     ];
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'Miss', source: 'total', conditions: [{ op: '<=', value: 6 }], connector: 'and', comment: '', isDefault: false },
-      { id: 'o2', name: 'Partial', source: 'total', conditions: [{ op: '>=', value: 7 }, { op: '<=', value: 9 }], connector: 'and', comment: '', isDefault: false },
-      { id: 'o3', name: 'Full Success', source: 'total', conditions: [{ op: '>=', value: 10 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o1', name: 'Miss', conditions: [{ source: 'total', op: '<=', value: 6 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o2', name: 'Partial', conditions: [{ source: 'total', op: '>=', value: 7 }, { source: 'total', op: '<=', value: 9 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o3', name: 'Full Success', conditions: [{ source: 'total', op: '>=', value: 10 }], connector: 'and', comment: '', isDefault: false },
     ];
 
     const env1 = makeEnv([{ face: 3, tag: '' }, { face: 2, tag: '' }], pipeline);
@@ -160,10 +154,35 @@ describe('evaluateOutcome', () => {
       { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
     ];
     const outcomes: Outcome[] = [
-      { id: '1', name: 'Crit', source: 'total', conditions: [{ op: '>=', value: 20 }], connector: 'and', comment: '', isDefault: false },
-      { id: '2', name: 'Hit', source: 'total', conditions: [{ op: '>=', value: 10 }], connector: 'and', comment: '', isDefault: false },
+      { id: '1', name: 'Crit', conditions: [{ source: 'total', op: '>=', value: 20 }], connector: 'and', comment: '', isDefault: false },
+      { id: '2', name: 'Hit', conditions: [{ source: 'total', op: '>=', value: 10 }], connector: 'and', comment: '', isDefault: false },
     ];
     const env = makeEnv([{ face: 20, tag: '' }], pipeline);
     expect(evaluateOutcomes(outcomes, env)).toBe('Crit');
+  });
+
+  it('AND connector across two different sources', () => {
+    const pipeline: NamedValue[] = [
+      { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
+      { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', operand: 'literal', value: 5 }, comment: '' },
+    ];
+    const outcome: Outcome = {
+      id: '1',
+      name: 'Critical Hit',
+      conditions: [
+        { source: 'total', op: '>=', value: 15 },
+        { source: 'delta', op: '>=', value: 0 },
+      ],
+      connector: 'and',
+      comment: '',
+      isDefault: false,
+    };
+    const envMatch = makeEnv([{ face: 17, tag: '' }], pipeline);
+    envMatch.set('delta', 5);
+    expect(evaluateOutcome(outcome, envMatch)).toBe(true);
+
+    const envNoMatch = makeEnv([{ face: 17, tag: '' }], pipeline);
+    envNoMatch.set('delta', -3);
+    expect(evaluateOutcome(outcome, envNoMatch)).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter, OutcomeCondition, ConditionOperator, DiceConditionType, ScalarLiteralOp } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter, OutcomeCondition, DiceConditionType, ScalarLiteralOp, ScalarCondition } from '@/types';
 import { DICE_CONDITION_TYPES } from '@/types';
 
 export interface ValidationError {
@@ -7,7 +7,7 @@ export interface ValidationError {
   blocking: boolean;
 }
 
-export function isScalarCondition(cond: OutcomeCondition): cond is { op: ConditionOperator; value: number } {
+export function isScalarCondition(cond: OutcomeCondition): cond is ScalarCondition {
   if (typeof cond !== 'object' || cond === null) return false;
   if (!('op' in cond)) return false;
   return !DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
@@ -153,30 +153,26 @@ export function validateConfig(
       errors.push({ id: nextId(), message: `Outcome "${outcome.name}" has more than 5 conditions`, blocking: true });
     }
 
-    if (outcome.source !== 'rolled') {
-      const pipeNv = pipeline.find((p) => p.name === outcome.source);
-      if (!pipeNv) {
-        errors.push({ id: nextId(), message: `Outcome "${outcome.name}" references undefined source "${outcome.source}"`, blocking: true });
-      }
-    }
-
-    const isScalar = outcome.source === 'rolled' ? false : (() => {
-      const nv = pipeline.find((p) => p.name === outcome.source);
-      return nv ? inferType(nv, pipeline) === 'scalar' : false;
-    })();
-
     for (const cond of outcome.conditions) {
-      if (typeof cond === 'object' && 'op' in cond) {
-        const op = cond.op;
-        if (DICE_CONDITION_TYPES.includes(op as DiceConditionType)) {
-          if (isScalar) {
-            errors.push({ id: nextId(), message: `Dice condition "${op}" cannot be used on scalar source`, blocking: true });
+      const isDice = DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
+      if (cond.source !== 'rolled') {
+        const pipeNv = pipeline.find((p) => p.name === cond.source);
+        if (!pipeNv) {
+          errors.push({ id: nextId(), message: `Outcome "${outcome.name}" condition references undefined source "${cond.source}"`, blocking: true });
+          continue;
+        }
+        const sourceType = inferType(pipeNv, pipeline);
+        if (isDice) {
+          if (sourceType === 'scalar') {
+            errors.push({ id: nextId(), message: `Outcome "${outcome.name}" dice condition cannot be used on scalar source "${cond.source}"`, blocking: true });
           }
         } else {
-          if (!isScalar) {
-            errors.push({ id: nextId(), message: `Scalar comparison on vector source requires aggregation first`, blocking: true });
+          if (sourceType !== 'scalar') {
+            errors.push({ id: nextId(), message: `Outcome "${outcome.name}" scalar condition cannot be used on vector source "${cond.source}"`, blocking: true });
           }
         }
+      } else if (!isDice) {
+        errors.push({ id: nextId(), message: `Outcome "${outcome.name}" scalar comparison on vector source requires aggregation first`, blocking: true });
       }
     }
   }
@@ -225,7 +221,7 @@ export function validateConfig(
   return errors;
 }
 
-function inferType(nv: NamedValue, pipeline: NamedValue[]): 'vector' | 'scalar' | null {
+export function inferType(nv: NamedValue, pipeline: NamedValue[]): 'vector' | 'scalar' | null {
   if (nv.source === 'rolled') {
     return inferTypeFromOp(nv);
   }

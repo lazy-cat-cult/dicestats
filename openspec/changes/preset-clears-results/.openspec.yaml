@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-06-15
+goal: Applying a preset clears the previous simulation results, cancels any
+  running simulation, and resets the wizard to step 0.

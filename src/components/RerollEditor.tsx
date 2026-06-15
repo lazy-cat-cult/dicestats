@@ -1,4 +1,4 @@
-import { rerollConditions } from '@/state/app-state';
+import { rerollConditions, existingTags, getTagColor } from '@/state/app-state';
 import type { RerollCondition, ConditionClause, ConditionChain, ConditionOperator, FaceValueSpecial } from '@/types';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
@@ -228,12 +228,17 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                   <option key={op} value={op}>{op}</option>
                 ))}
               </select>
-              <input
-                type="text"
+              <select
                 value={clause.value as string}
-                class="w-20 px-1 py-0.5 border rounded text-xs"
-                onInput={(e) => updateClause(ci, { value: (e.target as HTMLInputElement).value })}
-              />
+                class="px-1 py-0.5 border rounded text-xs"
+                style={typeof clause.value === 'string' && clause.value ? { borderColor: getTagColor(clause.value) } : {}}
+                onChange={(e) => updateClause(ci, { value: (e.target as HTMLSelectElement).value })}
+              >
+                {existingTags.value.length === 0 && <option value="">Select tag…</option>}
+                {existingTags.value.map((tag) => (
+                  <option key={tag} value={tag}>{tag}</option>
+                ))}
+              </select>
             </>
           )}
 

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { hashIdToColor, activeSweepsByTarget, totalIterations, dicePoolNotation } from '@/state/app-state';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { hashIdToColor, activeSweepsByTarget, totalIterations, dicePoolNotation, existingTags, showComments } from '@/state/app-state';
 import { parameters, dicePool, resetToDefaults } from '@/state/app-state';
 import type { Parameter } from '@/types';
 
@@ -100,5 +100,35 @@ describe('dicePoolNotation with sweeps', () => {
       { id: 'p', label: 'Sides', values: [4, 6, 8], target: 'pool.sides', targetTermId: term.id },
     ];
     expect(dicePoolNotation.value).toBe('1d{4, 6, 8}');
+  });
+});
+
+describe('existingTags', () => {
+  it('returns the unique sorted non-empty tags from the pool', () => {
+    resetToDefaults();
+    dicePool.value = { terms: [
+      { id: 't1', count: 1, sides: 6, tag: 'normal' },
+      { id: 't2', count: 1, sides: 10, tag: 'hunger' },
+      { id: 't3', count: 1, sides: 6, tag: 'normal' },
+      { id: 't4', count: 1, sides: 6, tag: '' },
+    ] };
+    expect(existingTags.value).toEqual(['hunger', 'normal']);
+  });
+});
+
+describe('showComments persistence', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('persists changes to localStorage under dice-calc-ui', async () => {
+    showComments.value = true;
+    await new Promise((r) => setTimeout(r, 0));
+    const raw = localStorage.getItem('dice-calc-ui');
+    expect(raw).not.toBeNull();
+    expect(JSON.parse(raw as string).showComments).toBe(true);
   });
 });

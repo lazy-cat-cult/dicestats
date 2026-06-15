@@ -32,7 +32,7 @@ describe('PRESETS', () => {
     expect(sr!.outcomes.length).toBeGreaterThanOrEqual(2);
     const hitOutcome = sr!.outcomes.find((o) => o.name === '1+ hits');
     expect(hitOutcome).toBeDefined();
-    expect(hitOutcome!.conditions[0]).toEqual({ op: 'any', subCondition: '>=', value: 5 });
+    expect(hitOutcome!.conditions[0]).toEqual({ source: 'rolled', op: 'any', subCondition: '>=', value: 5 });
   });
 
   it('has Vampire V5 preset', () => {
@@ -100,6 +100,16 @@ describe('PRESETS', () => {
       expect('keep' in preset.pool).toBe(false);
       for (const term of preset.pool.terms) {
         expect('modifier' in term).toBe(false);
+      }
+    }
+  });
+
+  it('every condition has a source field (per-condition source)', () => {
+    for (const preset of PRESETS) {
+      for (const outcome of preset.outcomes) {
+        for (const cond of outcome.conditions) {
+          expect(typeof (cond as { source?: string }).source).toBe('string');
+        }
       }
     }
   });

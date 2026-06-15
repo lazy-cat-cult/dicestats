@@ -17,8 +17,7 @@ function makeOutcome(overrides?: Partial<Outcome>): Outcome {
   return {
     id: 'o1',
     name: 'Hit',
-    source: 'total',
-    conditions: [{ op: '>=', value: 10 }],
+    conditions: [{ source: 'total', op: '>=', value: 10 }],
     connector: 'and',
     comment: '',
     isDefault: false,
@@ -88,7 +87,7 @@ describe('validateConfig', () => {
     });
 
     it('reports error for outcome referencing undefined pipeline source', () => {
-      const outcome = makeOutcome({ source: 'nonexistent' });
+      const outcome = makeOutcome({ conditions: [{ source: 'nonexistent', op: '>=', value: 10 }] });
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validParameters);
       expect(errors.some((e) => e.blocking && e.message.includes('references undefined source'))).toBe(true);
     });
@@ -97,19 +96,19 @@ describe('validateConfig', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
       ];
-      const outcome = makeOutcome({ source: 'total', conditions: [{ op: 'none', subCondition: '>=', value: 1 }] });
+      const outcome = makeOutcome({ conditions: [{ source: 'total', op: 'none', subCondition: '>=', value: 1 }] });
       const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validParameters);
       expect(errors.some((e) => e.blocking && e.message.includes('cannot be used on scalar'))).toBe(true);
     });
 
     it('reports blocking error for scalar condition on vector source', () => {
-      const outcome = makeOutcome({ source: 'rolled', conditions: [{ op: '>=', value: 10 }] });
+      const outcome = makeOutcome({ conditions: [{ source: 'rolled', op: '>=', value: 10 }] });
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validParameters);
-      expect(errors.some((e) => e.blocking && e.message.includes('Scalar comparison on vector'))).toBe(true);
+      expect(errors.some((e) => e.blocking && e.message.toLowerCase().includes('scalar') && e.message.includes('vector'))).toBe(true);
     });
 
     it('reports error for more than 10 outcomes', () => {
-      const outcomes = Array.from({ length: 11 }, (_, i) => makeOutcome({ id: `o${i}`, name: `O${i}`, conditions: [{ op: '>=', value: i }], isDefault: i === 10 }));
+      const outcomes = Array.from({ length: 11 }, (_, i) => makeOutcome({ id: `o${i}`, name: `O${i}`, conditions: [{ source: 'total', op: '>=', value: i }], isDefault: i === 10 }));
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, outcomes, validParameters);
       expect(errors.some((e) => e.blocking && e.message.includes('Maximum 10 outcomes'))).toBe(true);
     });
@@ -117,12 +116,12 @@ describe('validateConfig', () => {
     it('reports error for outcome with more than 5 conditions', () => {
       const outcome = makeOutcome({
         conditions: [
-          { op: '>=', value: 1 },
-          { op: '<=', value: 2 },
-          { op: '=', value: 3 },
-          { op: '!=', value: 4 },
-          { op: '>', value: 5 },
-          { op: '<', value: 6 },
+          { source: 'total', op: '>=', value: 1 },
+          { source: 'total', op: '<=', value: 2 },
+          { source: 'total', op: '=', value: 3 },
+          { source: 'total', op: '!=', value: 4 },
+          { source: 'total', op: '>', value: 5 },
+          { source: 'total', op: '<', value: 6 },
         ],
       });
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validParameters);
@@ -311,7 +310,7 @@ describe('validateConfig', () => {
     it('reports blocking error for outcome sweep targeting a vector first condition', () => {
       const outcome: Outcome = {
         ...validOutcome,
-        conditions: [{ op: 'any', subCondition: '>=', value: 5 }],
+        conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: 5 }],
       };
       const parameters: Parameter[] = [{
         id: 'pm1',
@@ -325,7 +324,7 @@ describe('validateConfig', () => {
     });
 
     it('passes when outcome sweep targets a scalar first condition', () => {
-      const outcome: Outcome = { ...validOutcome, conditions: [{ op: '>=', value: 10 }] };
+      const outcome: Outcome = { ...validOutcome, conditions: [{ source: 'total', op: '>=', value: 10 }] };
       const parameters: Parameter[] = [{
         id: 'pm1',
         label: 'DC',
@@ -368,6 +367,53 @@ describe('validateConfig', () => {
       }];
       const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], parameters);
       expect(errors.some((e) => e.blocking && e.message.includes('not a binary-math-literal row'))).toBe(false);
+    });
+  });
+
+  describe('per-condition source', () => {
+    it('reports error for condition referencing undefined pipeline source', () => {
+      const outcome = makeOutcome({ conditions: [{ source: 'nonexistent', op: '>=', value: 10 }] });
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validParameters);
+      expect(errors.some((e) => e.blocking && e.message.includes('condition references undefined source'))).toBe(true);
+    });
+
+    it('reports blocking error for scalar condition on vector source per condition', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
+        { id: 'p2', name: 'kept', source: 'rolled', op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: 1 }], connector: 'and' } }, comment: '' },
+      ];
+      const outcome = makeOutcome({ conditions: [{ source: 'kept', op: '>=', value: 10 }] });
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validParameters);
+      expect(errors.some((e) => e.blocking && e.message.includes('vector source'))).toBe(true);
+    });
+
+    it('reports blocking error for dice condition on scalar source per condition', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
+      ];
+      const outcome = makeOutcome({ conditions: [{ source: 'total', op: 'any', subCondition: '>=', value: 5 }] });
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validParameters);
+      expect(errors.some((e) => e.blocking && e.message.includes('scalar source'))).toBe(true);
+    });
+
+    it('passes for compound outcome with two valid sources', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
+        { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', operand: 'literal', value: 0 }, comment: '' },
+      ];
+      const outcome: Outcome = {
+        id: 'o1',
+        name: 'Critical Hit',
+        conditions: [
+          { source: 'total', op: '>=', value: 15 },
+          { source: 'delta', op: '>=', value: 0 },
+        ],
+        connector: 'and',
+        comment: '',
+        isDefault: false,
+      };
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validParameters);
+      expect(errors.some((e) => e.blocking)).toBe(false);
     });
   });
 

@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-06-15
+goal: Each OutcomeCondition carries its own source so a single outcome can AND/OR
+  conditions against different named values (e.g. `sum >= 15 AND Delta >= 0`).
