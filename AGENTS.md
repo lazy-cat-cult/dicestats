@@ -4,8 +4,8 @@
 
 Single-page web application for calculating dice roll outcome probabilities in tabletop RPGs using Monte Carlo simulation (1,000,000 iterations). Built with **Vite + Preact + Tailwind CSS + Chart.js**, running simulation in a **Web Worker**.
 
-- **Specification**: `doc/spec.md` — the source of truth for all data models, algorithms, UI, and behavior
-- **Architecture**: `doc/architecture.md` — technical architecture diagram (partially outdated, spec.md takes precedence)
+- **Specification**: OpenSpec specs in `openspec/specs/` — the source of truth for all data models, algorithms, UI, and behavior. Use OpenSpec CLI commands and skills (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`, etc.) to manage changes.
+- **Architecture**: `doc/architecture.md` — technical architecture diagram (partially outdated, OpenSpec specs take precedence)
 
 ## Tech Stack
 
@@ -36,7 +36,7 @@ npm run typecheck    # Type-check only (tsc --noEmit)
 ```
 dev/dice/
 ├── doc/
-│   ├── spec.md             # SOURCE OF TRUTH — read this first
+│   ├── spec.md             # Historical spec (superseded by OpenSpec specs)
 │   ├── spec_draft.md       # Original draft (historical)
 │   └── architecture.md     # Architecture (partially outdated)
 ├── src/
@@ -108,8 +108,8 @@ This is simpler for the common case ("roll 2d20, take the best"). The `keep_high
 
 ## Important Rules
 
-1. **Always read `doc/spec.md`** before making changes to data models, algorithms, or UI behavior. The spec is the source of truth.
-2. **Never modify domain types** (`src/types/index.ts`) without updating `doc/spec.md` first or confirming consistency with it.
+1. **Use OpenSpec for spec-driven development.** Before making changes to data models, algorithms, or UI behavior, consult the specs in `openspec/specs/`. Use OpenSpec CLI (`openspec validate`, `openspec list --specs`) and skills (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`) to propose and manage changes. The OpenSpec specs are the source of truth.
+2. **Never modify domain types** (`src/types/index.ts`) without updating the relevant OpenSpec spec first or confirming consistency with it. Use `/opsx:propose` to create a change for type modifications.
 3. **Worker isolation**: Domain modules imported by the worker must not use Preact, DOM, or Node APIs. `matching.ts`, `resolve.ts`, and `classify.ts` are safe to import — they are pure functions with no side dependencies.
 4. **Run `npm run typecheck`** after code changes to verify TypeScript compilation.
 5. **Run `npm run test`** after changes to domain logic to verify existing tests pass.
