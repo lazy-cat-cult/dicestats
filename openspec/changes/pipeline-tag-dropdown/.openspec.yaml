@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-06-15
+goal: Replace the free-text input for tag-clauses in pipeline and reroll
+  conditions with a dropdown sourced from the existing dice pool tags.

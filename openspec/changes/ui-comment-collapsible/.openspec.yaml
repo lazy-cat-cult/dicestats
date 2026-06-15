@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-06-15
+goal: Add a 'Show comments' toggle in PipelineEditor and OutcomeEditor so the
+  optional comment input is hidden by default and can be expanded.

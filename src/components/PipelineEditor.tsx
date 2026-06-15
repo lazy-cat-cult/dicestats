@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { pipeline, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind } from '@/state/app-state';
+import { pipeline, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind, showComments, existingTags, getTagColor } from '@/state/app-state';
 import type { NamedValue, ScalarFunction, VectorFunction, ConditionChain, ConditionClause, ConditionOperator, ScalarBinaryOp, FaceValueSpecial, Parameter, ScalarLiteralOp, ScalarNamedOp } from '@/types';
 import { SweepIndicator } from '@/components/SweepIndicator';
 import { SweepPopover } from '@/components/SweepPopover';
@@ -105,7 +105,17 @@ export function PipelineEditor() {
 
   return (
     <div>
-      <h2 class="text-lg font-semibold mb-4">Resolution Pipeline</h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Resolution Pipeline</h2>
+        <label class="flex items-center gap-1 text-xs text-gray-600">
+          <input
+            type="checkbox"
+            checked={showComments.value}
+            onChange={(e) => { showComments.value = (e.target as HTMLInputElement).checked; }}
+          />
+          Show comments
+        </label>
+      </div>
 
       {pipe.length === 0 && (
         <p class="text-sm text-gray-500 mb-4">No pipeline steps. Outcomes will reference rolled values directly.</p>
@@ -128,17 +138,17 @@ export function PipelineEditor() {
         const outputType = getOutputType(nv);
 
         return (
-          <div key={nv.id} id={`pipeline-row-${nv.id}`} class={`border rounded p-3 mb-3 ${nameInvalid || nameDuplicate || sourceInvalid ? 'border-red-300 bg-red-50' : outputType === 'scalar' ? 'border-green-300 bg-green-50' : 'bg-gray-50'}`}>
+          <div key={nv.id} id={`pipeline-row-${nv.id}`} class={`border rounded p-3 mb-3 ${nameInvalid || nameDuplicate || sourceInvalid ? 'border-red-300 bg-red-50' : 'bg-gray-50'}`}>
             <div class="flex items-center gap-2 mb-2 flex-wrap">
               <input
                 type="text"
                 value={nv.name}
                 placeholder="name"
                 maxLength={30}
-                class={`w-28 px-2 py-1 border rounded text-sm font-mono ${nameInvalid || nameDuplicate ? 'border-red-400' : outputType === 'scalar' ? 'text-green-700 border-green-400' : ''}`}
+                class={`w-28 px-2 py-1 border rounded text-sm font-mono ${nameInvalid || nameDuplicate ? 'border-red-400' : ''}`}
                 onInput={(e) => updateRow(i, { name: (e.target as HTMLInputElement).value })}
               />
-              <span class={`text-xs px-1.5 py-0.5 rounded ${outputType === 'scalar' ? 'bg-green-200 text-green-800' : 'bg-blue-200 text-blue-800'}`}>{outputType === 'scalar' ? 'num' : 'vec'}</span>
+              <span class="text-xs px-1.5 py-0.5 rounded bg-slate-200 text-slate-800">{outputType === 'scalar' ? 'num' : 'vec'}</span>
               <span class="text-gray-500 text-sm">=</span>
               <select
                 value={nv.source}
@@ -296,13 +306,15 @@ export function PipelineEditor() {
               );
             })()}
 
-            <input
-              type="text"
-              value={nv.comment}
-              placeholder="Comment (optional)"
-              class="w-full mt-1 px-2 py-1 border rounded text-sm"
-              onInput={(e) => updateRow(i, { comment: (e.target as HTMLInputElement).value })}
-            />
+            {showComments.value && (
+              <input
+                type="text"
+                value={nv.comment}
+                placeholder="Comment (optional)"
+                class="w-full mt-1 px-2 py-1 border rounded text-sm"
+                onInput={(e) => updateRow(i, { comment: (e.target as HTMLInputElement).value })}
+              />
+            )}
 
             {(nameInvalid && <p class="text-red-500 text-xs mt-1">Name must match /^[a-zA-Z_][a-zA-Z0-9_]*$/</p>)}
             {(nameDuplicate && <p class="text-red-500 text-xs mt-1">Duplicate name</p>)}
@@ -445,12 +457,17 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
               >
                 {TAG_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
               </select>
-              <input
-                type="text"
+              <select
                 value={clause.value as string}
-                class="w-20 px-1 py-0.5 border rounded text-xs"
-                onInput={(e) => updateClause(ci, { value: (e.target as HTMLInputElement).value })}
-              />
+                class="px-1 py-0.5 border rounded text-xs"
+                style={typeof clause.value === 'string' && clause.value ? { borderColor: getTagColor(clause.value) } : {}}
+                onChange={(e) => updateClause(ci, { value: (e.target as HTMLSelectElement).value })}
+              >
+                {existingTags.value.length === 0 && <option value="">Select tag…</option>}
+                {existingTags.value.map((tag) => (
+                  <option key={tag} value={tag}>{tag}</option>
+                ))}
+              </select>
             </>
           )}
           {chain.clauses.length > 1 && (

@@ -2,6 +2,30 @@ import type { SavedConfig, DicePool, Outcome, Parameter, RerollCondition, NamedV
 import { dicePool, outcomes, parameters, rerollConditions, pipeline } from './app-state';
 
 const STORAGE_KEY = 'dice-calc-config';
+const UI_PREFS_KEY = 'dice-calc-ui';
+
+interface UiPrefs {
+  showComments: boolean;
+}
+
+export function loadUiPrefs(): UiPrefs {
+  try {
+    const raw = localStorage.getItem(UI_PREFS_KEY);
+    if (!raw) return { showComments: false };
+    const parsed = JSON.parse(raw) as Partial<UiPrefs>;
+    return { showComments: parsed.showComments === true };
+  } catch {
+    return { showComments: false };
+  }
+}
+
+export function saveUiPrefs(prefs: UiPrefs): void {
+  try {
+    localStorage.setItem(UI_PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    return;
+  }
+}
 
 interface V1Outcome {
   id?: string;
@@ -67,7 +91,7 @@ interface V3Config {
 
 export function saveConfig() {
   const config: SavedConfig = {
-    version: 5,
+    version: 6,
     pool: dicePool.value,
     rerollConditions: rerollConditions.value,
     pipeline: pipeline.value,
@@ -126,8 +150,45 @@ function migrateOutcomeConditions(outcomes: V1Outcome[]): V1Outcome[] {
 }
 
 function migrateConfig(config: V1Config): SavedConfig {
-  if (config.version === 5) {
+  if (config.version === 6) {
     return config as unknown as SavedConfig;
+  }
+
+  if (config.version === 5) {
+    interface V5Outcome {
+      id?: string;
+      name: string;
+      source?: string;
+      conditions?: OutcomeCondition[];
+      connector?: 'and' | 'or';
+      comment?: string;
+      isDefault?: boolean;
+    }
+    const v5 = config as unknown as { pool?: DicePool; rerollConditions?: RerollCondition[]; pipeline?: NamedValue[]; outcomes?: V5Outcome[]; parameters?: Parameter[] };
+    const migratedOutcomes: Outcome[] = (v5.outcomes || []).map((o) => {
+      const src = o.source ?? 'rolled';
+      const conditions: OutcomeCondition[] = (o.conditions || []).map((c) => {
+        if (c && typeof c === 'object' && 'source' in (c as object)) return c as OutcomeCondition;
+        return { ...(c as object), source: src } as OutcomeCondition;
+      });
+      const result: Outcome = {
+        id: o.id || crypto.randomUUID(),
+        name: o.name,
+        conditions,
+        connector: o.connector ?? 'and',
+        comment: o.comment ?? '',
+        isDefault: o.isDefault ?? false,
+      };
+      return result;
+    });
+    return {
+      version: 6,
+      pool: (v5.pool as DicePool) ?? { terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '' }] },
+      rerollConditions: v5.rerollConditions || [],
+      pipeline: v5.pipeline || [],
+      outcomes: migratedOutcomes,
+      parameters: v5.parameters ?? [],
+    };
   }
 
   if (config.version === 4) {
@@ -227,9 +288,9 @@ function migrateConfig(config: V1Config): SavedConfig {
     }
   }
 
-  let outcomes: Outcome[];
+  let v4Outcomes: Array<{ id?: string; name: string; source: string; conditions: OutcomeCondition[]; connector: 'and' | 'or'; comment: string; isDefault: boolean }>;
   if (config.outcomes && config.outcomes.length > 0 && config.outcomes[0].kind) {
-    outcomes = config.outcomes.map((o, i) => {
+    v4Outcomes = config.outcomes.map((o, i) => {
       if (o.kind === 'threshold') {
         return {
           id: o.id || crypto.randomUUID(),
@@ -252,14 +313,14 @@ function migrateConfig(config: V1Config): SavedConfig {
           isDefault: false,
         };
       }
-      return o as unknown as Outcome;
+      return o as unknown as { id?: string; name: string; source: string; conditions: OutcomeCondition[]; connector: 'and' | 'or'; comment: string; isDefault: boolean };
     });
   } else {
-    outcomes = (config.outcomes || []) as unknown as Outcome[];
+    v4Outcomes = (config.outcomes || []) as unknown as typeof v4Outcomes;
   }
 
-  if (hasOldPool && config.pool?.keep && outcomes.length > 0 && keptStepName) {
-    for (const o of outcomes) {
+  if (hasOldPool && config.pool?.keep && v4Outcomes.length > 0 && keptStepName) {
+    for (const o of v4Outcomes) {
       if (o.source === 'rolled') {
         o.source = keptStepName;
       }
@@ -278,10 +339,11 @@ function migrateConfig(config: V1Config): SavedConfig {
       values: p.values || [1, 2, 3],
       target,
       targetTermId: p.targetTermId || (p.targetTermIndex !== undefined ? pool.terms[p.targetTermIndex]?.id : undefined),
-      targetOutcomeId: p.targetOutcomeId || (p.targetOutcomeIndex !== undefined ? outcomes[p.targetOutcomeIndex]?.id : undefined),
+      targetOutcomeId: p.targetOutcomeId || (p.targetOutcomeIndex !== undefined ? v4Outcomes[p.targetOutcomeIndex]?.id : undefined),
       targetPipelineId: undefined,
     };
   });
 
-  return { version: 4, pool, rerollConditions, pipeline, outcomes, parameters };
+  const v4Config = { version: 4, pool, rerollConditions, pipeline, outcomes: v4Outcomes, parameters };
+  return migrateConfig(v4Config as V1Config);
 }

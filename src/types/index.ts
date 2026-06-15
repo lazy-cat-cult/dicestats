@@ -68,14 +68,24 @@ export type DiceConditionType = 'any' | 'all' | 'none';
 
 export const DICE_CONDITION_TYPES: DiceConditionType[] = ['any', 'all', 'none'];
 
-export type OutcomeCondition =
-  | { op: ConditionOperator; value: number }
-  | { op: DiceConditionType; subCondition: ConditionOperator; value: number };
+export type ScalarCondition = {
+  source: string;
+  op: ConditionOperator;
+  value: number;
+};
+
+export type DiceCondition = {
+  source: string;
+  op: DiceConditionType;
+  subCondition: ConditionOperator;
+  value: number;
+};
+
+export type OutcomeCondition = ScalarCondition | DiceCondition;
 
 export interface Outcome {
   id: string;
   name: string;
-  source: string;
   conditions: OutcomeCondition[];
   connector: 'and' | 'or';
   comment: string;
