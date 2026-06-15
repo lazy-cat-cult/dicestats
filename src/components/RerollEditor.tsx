@@ -1,5 +1,5 @@
 import { rerollConditions } from '@/state/app-state';
-import type { RerollCondition, ConditionClause, ConditionChain, ConditionOperator } from '@/types';
+import type { RerollCondition, ConditionClause, ConditionChain, ConditionOperator, FaceValueSpecial } from '@/types';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
 const TAG_OPERATORS: ('=' | '!=')[] = ['=', '!='];
@@ -134,6 +134,11 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
     onChange({ ...chain, clauses: newClauses });
   }
 
+  const FACE_VALUE_OPTIONS: { value: number | FaceValueSpecial; label: string }[] = [
+    { value: 'max_value', label: 'max' },
+    { value: 'min_value', label: 'min' },
+  ];
+
   return (
     <div>
       {chain.clauses.map((clause, ci) => (
@@ -168,12 +173,49 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                   <option key={op} value={op}>{op}</option>
                 ))}
               </select>
-              <input
-                type="number"
-                value={clause.value as number}
-                class="w-14 px-1 py-0.5 border rounded text-xs text-center"
-                onInput={(e) => updateClause(ci, { value: Number((e.target as HTMLInputElement).value) || 0 })}
-              />
+              {typeof clause.value === 'string' ? (
+                <select
+                  value={clause.value}
+                  class="px-1 py-0.5 border rounded text-xs bg-yellow-50"
+                  onChange={(e) => {
+                    const val = (e.target as HTMLSelectElement).value;
+                    if (val === '__number__') {
+                      updateClause(ci, { value: 1 });
+                    } else {
+                      updateClause(ci, { value: val as FaceValueSpecial });
+                    }
+                  }}
+                >
+                  {FACE_VALUE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                  <option value="__number__">number…</option>
+                </select>
+              ) : (
+                <span class="flex items-center gap-0.5">
+                  <input
+                    type="number"
+                    value={clause.value as number}
+                    class="w-14 px-1 py-0.5 border rounded text-xs text-center"
+                    onInput={(e) => updateClause(ci, { value: Number((e.target as HTMLInputElement).value) || 0 })}
+                  />
+                  <select
+                    value="__number__"
+                    class="px-0.5 py-0.5 border rounded text-xs text-gray-400"
+                    onChange={(e) => {
+                      const val = (e.target as HTMLSelectElement).value;
+                      if (val === 'max_value' || val === 'min_value') {
+                        updateClause(ci, { value: val as FaceValueSpecial });
+                      }
+                    }}
+                  >
+                    <option value="__number__">number</option>
+                    {FACE_VALUE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </span>
+              )}
             </>
           ) : (
             <>

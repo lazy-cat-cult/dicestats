@@ -6,7 +6,7 @@ const STORAGE_KEY = 'dice-calc-config';
 
 export function saveConfig() {
   const config: SavedConfig = {
-    version: 3,
+version: 4,
     pool: dicePool.value,
     rerollConditions: rerollConditions.value,
     pipeline: pipeline.value,
@@ -44,6 +44,10 @@ export function clearConfig() {
 }
 
 function migrateConfig(config: any): SavedConfig {
+  if (config.version === 4) {
+    return config as SavedConfig;
+  }
+
   if (config.version === 3) {
     const pipeline: NamedValue[] = (config.pipeline || []).map((nv: any) => {
       const op = nv.op;
@@ -58,6 +62,7 @@ function migrateConfig(config: any): SavedConfig {
       return nv;
     });
     config.pipeline = pipeline;
+    config.version = 4;
     return config as SavedConfig;
   }
 
@@ -177,5 +182,5 @@ function migrateConfig(config: any): SavedConfig {
     };
   });
 
-  return { version: 3, pool, rerollConditions, pipeline, outcomes, parameters };
+  return { version: 4, pool, rerollConditions, pipeline, outcomes, parameters };
 }

@@ -272,6 +272,73 @@ export const PRESETS: PresetConfig[] = [
       },
     ],
   },
+  {
+    id: 'wod-explode',
+    name: 'World of Darkness — Xd10 explode',
+    pool: {
+      terms: [{ id: 'd10-1', count: 5, sides: 10, tag: '' }],
+    },
+    rerollConditions: [
+      {
+        id: 'rc-wod',
+        action: 'explode',
+        conditions: { clauses: [{ field: 'face', operator: '=', value: 'max_value' as const }], connector: 'and' },
+        repeat: 3,
+        comment: '',
+      },
+    ],
+    pipeline: [
+      {
+        id: 'p1',
+        name: 'successes',
+        source: 'rolled',
+        op: {
+          fn: 'filter',
+          conditions: {
+            clauses: [{ field: 'face', operator: '>=', value: 8 }],
+            connector: 'and',
+          },
+        },
+        comment: '',
+      },
+      {
+        id: 'p2',
+        name: 'success_count',
+        source: 'successes',
+        op: 'count',
+        comment: '',
+      },
+    ],
+    outcomes: [
+      {
+        id: 'o1',
+        name: 'Success',
+        source: 'success_count',
+        conditions: [{ op: '>=', value: 1 }],
+        connector: 'and',
+        comment: '',
+        isDefault: false,
+      },
+      {
+        id: 'o2',
+        name: 'Failure',
+        source: 'success_count',
+        conditions: [{ op: '=', value: 0 }],
+        connector: 'and',
+        comment: '',
+        isDefault: true,
+      },
+    ],
+    parameters: [
+      {
+        id: 'cnt',
+        label: 'Dice count',
+        values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        target: 'pool.count',
+        targetTermId: 'd10-1',
+      },
+    ],
+  },
 ];
 
 export function getPreset(id: string): PresetConfig | undefined {

@@ -63,12 +63,17 @@ The pipeline SHALL support two vector functions:
 - `filter` SHALL keep elements matching conditions and produce a vector
 - `remove` SHALL remove elements matching conditions and produce a vector
 
-Both SHALL use a `ConditionChain` (same type as in reroll conditions) with 1–10 clauses connected by `and`/`or`.
+Both SHALL use a `ConditionChain` (same type as in reroll conditions) with 1–10 clauses connected by `and`/`or`. The `ConditionClause` for `face` field supports both numeric values and `FaceValueSpecial` values (`'max_value'` | `'min_value'`), which resolve at match time based on the die's `sides`.
 
 #### Scenario: Filter operation
 - GIVEN `hits = filter rolled where face >= 5`
 - WHEN rolled values are [{ face: 3, tag: "" }, { face: 6, tag: "" }, { face: 2, tag: "" }]
 - THEN `hits` contains [{ face: 6, tag: "" }]
+
+#### Scenario: Filter with max_value
+- GIVEN `crits = filter rolled where face = max_value` on a d6 pool
+- WHEN rolled values are [{ face: 4, tag: "" }, { face: 6, tag: "" }]
+- THEN `crits` contains [{ face: 6, tag: "" }] (max_value resolves to 6)
 
 #### Scenario: Remove operation
 - GIVEN `no_ones = remove rolled where face = 1`

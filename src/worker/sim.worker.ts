@@ -26,7 +26,7 @@ function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[],
     for (const die of result) {
       const sides = findSides(die.tag, termsSides);
 
-      if (!matchConditions(die, rc.conditions)) {
+      if (!matchConditions(die, rc.conditions, termsSides)) {
         newDice.push(die);
         continue;
       }
@@ -35,7 +35,7 @@ function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[],
         let current = die;
         for (let attempt = 0; attempt < rc.repeat; attempt++) {
           current = { face: rollDie(sides), tag: die.tag };
-          if (!matchConditions(current, rc.conditions)) break;
+          if (!matchConditions(current, rc.conditions, termsSides)) break;
         }
         newDice.push(current);
       }
@@ -47,7 +47,7 @@ function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[],
         let lastExploded = die;
         while (cascadeDepth < rc.repeat && safety-- > 0) {
           const extra = { face: rollDie(sides), tag: die.tag };
-          if (matchConditions(lastExploded, rc.conditions)) {
+          if (matchConditions(lastExploded, rc.conditions, termsSides)) {
             newDice.push(extra);
             lastExploded = extra;
             cascadeDepth++;
@@ -74,7 +74,7 @@ function simulateOnce(
   let dice = rollPool(pool);
   dice = applyRerollConditions(dice, rerollConditions, termsSides);
 
-  const env = evaluatePipeline(dice, pipeline);
+  const env = evaluatePipeline(dice, pipeline, termsSides);
   env.set('rolled', dice);
 
   const outcomeName = evaluateOutcomes(outcomes, env);

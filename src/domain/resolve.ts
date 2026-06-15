@@ -1,12 +1,12 @@
 import type { NamedValue, TaggedDie, PipelineValue, VectorFunction, ScalarFunction, ScalarBinaryOp } from '@/types';
 import { matchConditions } from '@/domain/matching';
 
-function applyVectorOp(source: TaggedDie[], op: VectorFunction): TaggedDie[] {
+function applyVectorOp(source: TaggedDie[], op: VectorFunction, termsSides: { sides: number; tag: string }[]): TaggedDie[] {
   if (op.fn === 'filter') {
-    return source.filter((die) => matchConditions(die, op.conditions));
+    return source.filter((die) => matchConditions(die, op.conditions, termsSides));
   }
   if (op.fn === 'remove') {
-    return source.filter((die) => !matchConditions(die, op.conditions));
+    return source.filter((die) => !matchConditions(die, op.conditions, termsSides));
   }
   return source;
 }
@@ -22,7 +22,8 @@ function applyScalarBinary(left: number, op: ScalarBinaryOp, right: number): num
 
 export function evaluatePipeline(
   rolled: TaggedDie[],
-  pipeline: NamedValue[]
+  pipeline: NamedValue[],
+  termsSides: { sides: number; tag: string }[] = []
 ): Map<string, PipelineValue> {
   const env = new Map<string, PipelineValue>();
   env.set('rolled', rolled);
@@ -34,7 +35,7 @@ export function evaluatePipeline(
     const op = nv.op;
     if (typeof op === 'object' && op !== null && 'fn' in op && (op.fn === 'filter' || op.fn === 'remove')) {
       if (!Array.isArray(sourceVal)) continue;
-      env.set(nv.name, applyVectorOp(sourceVal as TaggedDie[], op as VectorFunction));
+      env.set(nv.name, applyVectorOp(sourceVal as TaggedDie[], op as VectorFunction, termsSides));
     } else if (op === 'count') {
       if (!Array.isArray(sourceVal)) continue;
       env.set(nv.name, (sourceVal as TaggedDie[]).length);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { applyRerollConditions } from '@/domain/reroll';
-import type { RerollCondition, TaggedDie } from '@/types';
+import type { RerollCondition, TaggedDie, FaceValueSpecial } from '@/types';
 
 describe('applyRerollConditions', () => {
   const fallbackSides = [{ sides: 6, tag: '' }];
@@ -76,5 +76,62 @@ describe('applyRerollConditions', () => {
     };
     const result = applyRerollConditions(dice, [rc1, rc2], fallbackSides);
     expect(result.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('explode on max_value triggers for die showing max face', () => {
+    const dice: TaggedDie[] = [{ face: 6, tag: '' }];
+    const rc: RerollCondition = {
+      id: 'rc1',
+      action: 'explode',
+      conditions: { clauses: [{ field: 'face', operator: '=', value: 'max_value' as FaceValueSpecial }], connector: 'and' },
+      repeat: 1,
+      comment: '',
+    };
+    const result = applyRerollConditions(dice, [rc], fallbackSides);
+    expect(result.length).toBe(2);
+    expect(result[0].face).toBe(6);
+  });
+
+  it('explode on max_value does not trigger for die below max', () => {
+    const dice: TaggedDie[] = [{ face: 4, tag: '' }];
+    const rc: RerollCondition = {
+      id: 'rc1',
+      action: 'explode',
+      conditions: { clauses: [{ field: 'face', operator: '=', value: 'max_value' as FaceValueSpecial }], connector: 'and' },
+      repeat: 1,
+      comment: '',
+    };
+    const result = applyRerollConditions(dice, [rc], fallbackSides);
+    expect(result.length).toBe(1);
+    expect(result[0].face).toBe(4);
+  });
+
+  it('explode on max_value respects tagged die sides', () => {
+    const dice: TaggedDie[] = [{ face: 10, tag: 'hunger' }];
+    const rc: RerollCondition = {
+      id: 'rc1',
+      action: 'explode',
+      conditions: { clauses: [{ field: 'face', operator: '=', value: 'max_value' as FaceValueSpecial }], connector: 'and' },
+      repeat: 1,
+      comment: '',
+    };
+    const sidesMap = [{ sides: 20, tag: '' }, { sides: 10, tag: 'hunger' }];
+    const result = applyRerollConditions(dice, [rc], sidesMap);
+    expect(result.length).toBe(2);
+    expect(result[0].face).toBe(10);
+  });
+
+  it('reroll on min_value (face = 1)', () => {
+    const dice: TaggedDie[] = [{ face: 1, tag: '' }, { face: 5, tag: '' }];
+    const rc: RerollCondition = {
+      id: 'rc1',
+      action: 'reroll',
+      conditions: { clauses: [{ field: 'face', operator: '=', value: 'min_value' as FaceValueSpecial }], connector: 'and' },
+      repeat: 3,
+      comment: '',
+    };
+    const result = applyRerollConditions(dice, [rc], fallbackSides);
+    expect(result.length).toBe(2);
+    expect(result[1].face).toBe(5);
   });
 });
