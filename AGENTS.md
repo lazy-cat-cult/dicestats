@@ -43,24 +43,26 @@ dev/dice/
 │   ├── main.tsx            # Entry point
 │   ├── app.tsx             # Root component + Worker management
 │   ├── style.css            # Tailwind imports
+│   ├── vite-env.d.ts        # Vite type declarations
 │   ├── types/
 │   │   └── index.ts        # Domain types + compare()
 │   ├── domain/
 │   │   ├── roller.ts       # Dice rolling (rollPool, rollDie)
-│   │   ├── reroll.ts       # (TODO) applyRerollConditions()
-│   │   ├── resolve.ts      # (TODO) evaluatePipeline()
-│   │   ├── classify.ts     # Outcome evaluation
+│   │   ├── matching.ts     # Shared: matchClause(), matchConditions(), findSides()
+│   │   ├── reroll.ts       # applyRerollConditions()
+│   │   ├── resolve.ts      # evaluatePipeline()
+│   │   ├── classify.ts     # evaluateOutcome(), evaluateOutcomes()
 │   │   └── presets.ts      # Preset configurations
 │   ├── worker/
-│   │   └── sim.worker.ts    # Web Worker simulation engine
+│   │   └── sim.worker.ts    # Web Worker simulation (imports from matching, resolve, classify)
 │   ├── state/
 │   │   ├── app-state.ts    # Preact Signals (global state)
-│   │   └── persistence.ts  # localStorage save/load
+│   │   └── persistence.ts  # localStorage save/load/migrate (v1→v3 migration)
 │   ├── components/
 │   │   ├── StepWizard.tsx
 │   │   ├── DicePoolEditor.tsx
-│   │   ├── RerollEditor.tsx    # (TODO)
-│   │   ├── PipelineEditor.tsx  # (TODO)
+│   │   ├── RerollEditor.tsx
+│   │   ├── PipelineEditor.tsx
 │   │   ├── OutcomeEditor.tsx
 │   │   ├── ParameterEditor.tsx
 │   │   ├── ResultView.tsx
@@ -68,18 +70,28 @@ dev/dice/
 │   │   └── DistributionChart.tsx
 │   └── utils/
 │       ├── format.ts       # Number formatting
-│       └── validation.ts   # (TODO) validateConfig()
+│       └── validation.ts   # validateConfig(), canRunSimulation()
 ├── tests/
 │   ├── roller.test.ts
-│   ├── reroll.test.ts       # (TODO)
-│   ├── resolve.test.ts      # (TODO)
+│   ├── reroll.test.ts
+│   ├── resolve.test.ts
 │   ├── classify.test.ts
+│   ├── matching.test.ts
 │   ├── presets.test.ts
-│   ├── validation.test.ts   # (TODO)
-│   └── integration.test.ts
+│   ├── integration.test.ts
+│   └── validation.test.ts
 └── public/
     └── favicon.svg
 ```
+
+## Design Decision: max/min vs keep_highest/keep_lowest
+
+The original spec defined `keep_highest` and `keep_lowest` as **vector** operations (keeping N dice). The implementation replaces these with `max` and `min` as **scalar** operations returning a single value.
+
+- **Old**: `kept = keep_highest rolled count=1` (two-step: vector→scalar)
+- **New**: `best = max rolled` (one-step: directly scalar)
+
+This is simpler for the common case ("roll 2d20, take the best"). The `keep_highest`/`keep_lowest` pattern of keeping N dice cannot be exactly replicated; `filter` conditions can approximate it for specific face-value conditions.
 
 ## Code Conventions
 
@@ -89,38 +101,19 @@ dev/dice/
 - **Component style**: Function components with Preact JSX. No class components.
 - **CSS**: Tailwind utility classes only. No custom CSS files except `style.css` for Tailwind imports.
 - **Types**: All domain types live in `src/types/index.ts`. Domain logic files should import from `@/types`.
-- **Worker**: The simulation worker cannot import Preact or DOM APIs. Domain logic must be worker-safe (no `document`, `window`, Preact imports).
+- **Shared matching logic**: `matchClause()`, `matchConditions()`, and `findSides()` are centralized in `src/domain/matching.ts`. Domain modules (`reroll.ts`, `classify.ts`, `resolve.ts`) import from this shared module. The worker also imports from `matching.ts` since it has no Preact dependencies.
+- **Worker**: The simulation worker imports `matchConditions` and `findSides` from `@/domain/matching`, and `evaluatePipeline`/`evaluateOutcomes` from domain modules. It inlines `rollDie`, `rollPool`, and `applyRerollConditions` since these need local implementations for the simulation loop.
 - **Presets**: All UI strings must be in **English** (no Russian). Existing Russian strings are legacy and must be replaced during migration.
-
-## Current Migration Status
-
-The project is migrating from v1 (current implementation) to v2 (as specified in `doc/spec.md`). The key differences:
-
-| Feature | v1 (Current) | v2 (Target) |
-|---|---|---|
-| Dice tags | Not supported | `DiceTerm.tag` for differentiation |
-| Reroll/Explode | Pool-level `ExplodeMode` | Per-condition `RerollCondition[]` |
-| Resolution pipeline | Not supported | `NamedValue[]` with filter/remove/count/math |
-| Outcomes | Two separate types | Unified `Outcome` with `source` + `conditions[]` |
-| Parameters | `applyTo` enum | `target` with ID references |
-| Comparison operator | `==` | `=` (user-facing) |
-
-Migration phases are documented in `doc/spec.md` §17. Work through them incrementally: tags first, then reroll, then pipeline+outcomes together, then validation polish.
-
-## Known Bugs (v1)
-
-- `roller.ts:57`: `allKept` pushes original `termRolls` instead of kept values — keep logic bug
-- `app.tsx:17`: `configLoaded` via closure is not idiomatic Preact
-- `sim.worker.ts:29-38`: `keepHighest`/`keepLowest` lose tag information (currently operating on `number[]`)
-- `classify.ts:82-141`: `evaluateOutcomeSimple` is unused dead code
+- **No comments** in code unless explicitly requested.
 
 ## Important Rules
 
 1. **Always read `doc/spec.md`** before making changes to data models, algorithms, or UI behavior. The spec is the source of truth.
 2. **Never modify domain types** (`src/types/index.ts`) without updating `doc/spec.md` first or confirming consistency with it.
-3. **Worker isolation**: Domain modules imported by the worker must not use Preact, DOM, or Node APIs.
+3. **Worker isolation**: Domain modules imported by the worker must not use Preact, DOM, or Node APIs. `matching.ts`, `resolve.ts`, and `classify.ts` are safe to import — they are pure functions with no side dependencies.
 4. **Run `npm run typecheck`** after code changes to verify TypeScript compilation.
 5. **Run `npm run test`** after changes to domain logic to verify existing tests pass.
 6. **English only** in all UI strings and code comments.
 7. **No comments** in code unless explicitly requested.
 8. **Presets** must be updated when adding new features (reroll conditions, pipeline, outcome format) to maintain full preset coverage.
+9. **`max` and `min` are scalar functions** — they return a single number from a vector, not a subset of dice. Do not confuse them with `keep_highest`/`keep_lowest`.

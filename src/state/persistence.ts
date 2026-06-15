@@ -16,7 +16,6 @@ export function saveConfig() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   } catch {
-    // localStorage full or unavailable
   }
 }
 
@@ -41,7 +40,6 @@ export function clearConfig() {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
-    // ignore
   }
 }
 

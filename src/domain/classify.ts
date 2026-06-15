@@ -1,24 +1,6 @@
-import type { Outcome, OutcomeCondition, TaggedDie, PipelineValue, ConditionChain, ConditionClause } from '@/types';
+import type { Outcome, OutcomeCondition, TaggedDie, PipelineValue, ConditionChain } from '@/types';
 import { compare } from '@/types';
-
-function matchClause(die: TaggedDie, clause: ConditionClause): boolean {
-  if (clause.field === 'face') {
-    return compare(die.face, clause.operator, clause.value);
-  }
-  if (clause.field === 'tag') {
-    if (clause.operator === '=') return die.tag === clause.value;
-    if (clause.operator === '!=') return die.tag !== clause.value;
-  }
-  return false;
-}
-
-function matchConditions(die: TaggedDie, chain: ConditionChain): boolean {
-  if (chain.clauses.length === 0) return false;
-  if (chain.connector === 'and') {
-    return chain.clauses.every((c) => matchClause(die, c));
-  }
-  return chain.clauses.some((c) => matchClause(die, c));
-}
+import { matchConditions } from '@/domain/matching';
 
 function evaluateCondition(sourceValue: PipelineValue, cond: OutcomeCondition): boolean {
   if (cond === 'none?') {

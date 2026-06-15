@@ -1,24 +1,5 @@
-import type { NamedValue, TaggedDie, PipelineValue, ConditionChain, ConditionClause, VectorFunction, ScalarFunction, ScalarBinaryOp } from '@/types';
-import { compare } from '@/types';
-
-function matchClause(die: TaggedDie, clause: ConditionClause): boolean {
-  if (clause.field === 'face') {
-    return compare(die.face, clause.operator, clause.value);
-  }
-  if (clause.field === 'tag') {
-    if (clause.operator === '=') return die.tag === clause.value;
-    if (clause.operator === '!=') return die.tag !== clause.value;
-  }
-  return false;
-}
-
-function matchConditions(die: TaggedDie, chain: ConditionChain): boolean {
-  if (chain.clauses.length === 0) return false;
-  if (chain.connector === 'and') {
-    return chain.clauses.every((c) => matchClause(die, c));
-  }
-  return chain.clauses.some((c) => matchClause(die, c));
-}
+import type { NamedValue, TaggedDie, PipelineValue, VectorFunction, ScalarFunction, ScalarBinaryOp } from '@/types';
+import { matchConditions } from '@/domain/matching';
 
 function applyVectorOp(source: TaggedDie[], op: VectorFunction): TaggedDie[] {
   if (op.fn === 'filter') {

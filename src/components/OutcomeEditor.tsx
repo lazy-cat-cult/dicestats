@@ -1,16 +1,30 @@
 import { outcomes, pipeline, dicePool } from '@/state/app-state';
-import type { Outcome, OutcomeCondition, ConditionOperator } from '@/types';
+import type { Outcome, OutcomeCondition, ConditionOperator, NamedValue } from '@/types';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
 
-function getSourceOptions(): { id: string; label: string }[] {
-  const options = [{ id: 'rolled', label: 'rolled' }];
+function getSourceOptions(): { id: string; label: string; type: 'vector' | 'scalar' }[] {
+  const options: { id: string; label: string; type: 'vector' | 'scalar' }[] = [{ id: 'rolled', label: 'rolled', type: 'vector' }];
   for (const nv of pipeline.value) {
     if (nv.name) {
-      options.push({ id: nv.name, label: nv.name });
+      const t = getOutputType(nv);
+      options.push({ id: nv.name, label: nv.name, type: t });
     }
   }
   return options;
+}
+
+function getOutputType(nv: NamedValue): 'vector' | 'scalar' {
+  const op = nv.op;
+  if (typeof op === 'string') {
+    if (op === 'count' || op === 'sum' || op === 'max' || op === 'min') return 'scalar';
+    return 'vector';
+  }
+  if (typeof op === 'object' && 'fn' in op) {
+    if (op.fn === 'filter' || op.fn === 'remove') return 'vector';
+    return 'scalar';
+  }
+  return 'vector';
 }
 
 function isScalarSource(source: string): boolean {
@@ -73,14 +87,14 @@ export function OutcomeEditor() {
                 onInput={(e) => updateOutcome(i, { name: (e.target as HTMLInputElement).value })}
               />
               <select
-                value={outcome.source}
-                class="px-2 py-1 border rounded text-sm"
-                onChange={(e) => updateOutcome(i, { source: (e.target as HTMLSelectElement).value })}
-              >
-                {sourceOptions.map((s) => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
+                  value={outcome.source}
+                  class="px-2 py-1 border rounded text-sm"
+                  onChange={(e) => updateOutcome(i, { source: (e.target as HTMLSelectElement).value })}
+                >
+                  {sourceOptions.map((s) => (
+                    <option key={s.id} value={s.id}>{s.label} ({s.type === 'scalar' ? 'num' : 'vec'})</option>
+                  ))}
+                </select>
               <label class="flex items-center gap-1 text-xs">
                 <input
                   type="checkbox"
