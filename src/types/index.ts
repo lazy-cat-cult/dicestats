@@ -1,5 +1,11 @@
 export type ConditionOperator = '>' | '>=' | '<' | '<=' | '=' | '!=';
 
+export type FaceValueSpecial = 'max_value' | 'min_value';
+
+export type ConditionClause =
+  | { field: 'face'; operator: ConditionOperator; value: number | FaceValueSpecial }
+  | { field: 'tag'; operator: '=' | '!='; value: string };
+
 export interface DiceTerm {
   id: string;
   count: number;
@@ -12,10 +18,6 @@ export interface DicePool {
 }
 
 export type RerollAction = 'reroll' | 'explode';
-
-export type ConditionClause =
-  | { field: 'face'; operator: ConditionOperator; value: number }
-  | { field: 'tag'; operator: '=' | '!='; value: string };
 
 export interface ConditionChain {
   clauses: ConditionClause[];

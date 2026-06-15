@@ -1,5 +1,5 @@
 import { pipeline, dicePool } from '@/state/app-state';
-import type { NamedValue, ScalarFunction, VectorFunction, ConditionChain, ConditionClause, ConditionOperator, ScalarBinaryOp } from '@/types';
+import type { NamedValue, ScalarFunction, VectorFunction, ConditionChain, ConditionClause, ConditionOperator, ScalarBinaryOp, FaceValueSpecial } from '@/types';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
 const TAG_OPERATORS: ('=' | '!=')[] = ['=', '!='];
@@ -43,20 +43,6 @@ function getAvailableSources(pipeline: NamedValue[], currentIndex: number): { id
   return sources;
 }
 
-function inferSourceType(nv: NamedValue, pipeline: NamedValue[]): 'vector' | 'scalar' {
-  if (nv.source === 'rolled') return 'vector';
-  const src = pipeline.find((p) => p.name === nv.source);
-  if (!src) return 'vector';
-  const srcType = inferSourceType(src, pipeline);
-  const op = nv.op;
-  if (typeof op === 'object' && 'fn' in op) {
-    if (op.fn === 'filter' || op.fn === 'remove') return 'vector';
-    return 'scalar';
-  }
-  if (op === 'count' || op === 'sum' || op === 'max' || op === 'min') return 'scalar';
-  return srcType;
-}
-
 export function PipelineEditor() {
   const pipe = pipeline.value;
 
@@ -73,10 +59,10 @@ export function PipelineEditor() {
     pipeline.value = pipe.map((nv, i) => (i === index ? { ...nv, ...partial } as NamedValue : nv));
   }
 
-  function getScalarNgNames(): string[] {
+  function getScalarNgNames(upToIndex: number): string[] {
     const names: string[] = [];
     const currentPipe = pipeline.value;
-    for (let i = 0; i < currentPipe.length; i++) {
+    for (let i = 0; i < upToIndex && i < currentPipe.length; i++) {
       const nv = currentPipe[i];
       if (nv.name && nv.source) {
         const type = getOutputType(nv);
@@ -103,7 +89,7 @@ export function PipelineEditor() {
         const isCeilFloor = typeof currentOp === 'object' && 'fn' in currentOp && (currentOp.fn === 'ceil' || currentOp.fn === 'floor');
         const sourceType = nv.source === 'rolled' ? 'vector' : (() => {
           const src = pipe.find((p) => p.name === nv.source);
-          return src ? inferSourceType(src, pipe) : 'vector';
+          return src ? getOutputType(src) : 'vector';
         })();
 
         const nameInvalid = nv.name && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(nv.name);
@@ -128,7 +114,22 @@ export function PipelineEditor() {
               <select
                 value={nv.source}
                 class="px-2 py-1 border rounded text-sm"
-                onChange={(e) => updateRow(i, { source: (e.target as HTMLSelectElement).value })}
+                onChange={(e) => {
+                  const newSource = (e.target as HTMLSelectElement).value;
+                  const newSourceType = newSource === 'rolled' ? 'vector' : (() => {
+                    const src = pipe.find((p) => p.name === newSource);
+                    return src ? getOutputType(src) : 'vector';
+                  })();
+                  if (sourceType !== newSourceType) {
+                    if (newSourceType === 'scalar') {
+                      updateRow(i, { source: newSource, op: { fn: 'add', operand: 'literal', value: 0 } as ScalarFunction });
+                    } else {
+                      updateRow(i, { source: newSource, op: { fn: 'filter', conditions: emptyCondition() } as VectorFunction });
+                    }
+                  } else {
+                    updateRow(i, { source: newSource });
+                  }
+                }}
               >
                 {sources.map((s) => (
                   <option key={s.id} value={s.id}>{s.label} ({s.type === 'scalar' ? 'num' : 'vec'})</option>
@@ -159,8 +160,7 @@ export function PipelineEditor() {
                 <select
                   value={
                     typeof currentOp === 'string' ? currentOp :
-                    typeof currentOp === 'object' && 'fn' in currentOp ?
-                      (SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp) ? 'binary' : currentOp.fn) : 'add'
+                    typeof currentOp === 'object' && 'fn' in currentOp ? currentOp.fn : 'add'
                   }
                   class="px-2 py-1 border rounded text-sm"
                   onChange={(e) => {
@@ -202,7 +202,7 @@ export function PipelineEditor() {
                     if (operand === 'literal') {
                       updateRow(i, { op: { fn: currentOp.fn as ScalarBinaryOp, operand: 'literal', value: 0 } as ScalarFunction });
                     } else {
-                      const scalarNames = getScalarNgNames();
+                      const scalarNames = getScalarNgNames(i);
                       const firstScalar = scalarNames[0] || '';
                       updateRow(i, { op: { fn: currentOp.fn as ScalarBinaryOp, operand: 'named', source2: firstScalar } as ScalarFunction });
                     }
@@ -228,7 +228,7 @@ export function PipelineEditor() {
                       updateRow(i, { op: { fn: currentOp.fn as ScalarBinaryOp, operand: 'named', source2: (e.target as HTMLSelectElement).value } as ScalarFunction });
                     }}
                   >
-                    {getScalarNgNames().map((n) => (
+                    {getScalarNgNames(i).map((n) => (
                       <option key={n} value={n}>{n}</option>
                     ))}
                   </select>
@@ -285,6 +285,11 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
     onChange({ ...chain, clauses: newClauses });
   }
 
+  const FACE_VALUE_OPTIONS: { value: number | FaceValueSpecial; label: string }[] = [
+    { value: 'max_value', label: 'max' },
+    { value: 'min_value', label: 'min' },
+  ];
+
   return (
     <div>
       {chain.clauses.map((clause, ci) => (
@@ -316,12 +321,49 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
               >
                 {CONDITION_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
               </select>
-              <input
-                type="number"
-                value={clause.value as number}
-                class="w-14 px-1 py-0.5 border rounded text-xs text-center"
-                onInput={(e) => updateClause(ci, { value: Number((e.target as HTMLInputElement).value) || 0 })}
-              />
+              {typeof clause.value === 'string' ? (
+                <select
+                  value={clause.value}
+                  class="px-1 py-0.5 border rounded text-xs bg-yellow-50"
+                  onChange={(e) => {
+                    const val = (e.target as HTMLSelectElement).value;
+                    if (val === '__number__') {
+                      updateClause(ci, { value: 1 });
+                    } else {
+                      updateClause(ci, { value: val as FaceValueSpecial });
+                    }
+                  }}
+                >
+                  {FACE_VALUE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                  <option value="__number__">number…</option>
+                </select>
+              ) : (
+                <span class="flex items-center gap-0.5">
+                  <input
+                    type="number"
+                    value={clause.value as number}
+                    class="w-14 px-1 py-0.5 border rounded text-xs text-center"
+                    onInput={(e) => updateClause(ci, { value: Number((e.target as HTMLInputElement).value) || 0 })}
+                  />
+                  <select
+                    value="__number__"
+                    class="px-0.5 py-0.5 border rounded text-xs text-gray-400"
+                    onChange={(e) => {
+                      const val = (e.target as HTMLSelectElement).value;
+                      if (val === 'max_value' || val === 'min_value') {
+                        updateClause(ci, { value: val as FaceValueSpecial });
+                      }
+                    }}
+                  >
+                    <option value="__number__">number</option>
+                    {FACE_VALUE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </span>
+              )}
             </>
           ) : (
             <>

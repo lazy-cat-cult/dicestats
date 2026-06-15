@@ -27,15 +27,54 @@ A reroll condition SHALL have an `action` of either `reroll` or `explode`:
 
 ### Requirement: ConditionChain and Clauses
 Each reroll condition SHALL contain a `ConditionChain` with 1–10 clauses and a connector (`and` or `or`). A `ConditionClause` SHALL be one of:
-- `{ field: 'face'; operator: ConditionOperator; value: number }` — matches a die's face value
+- `{ field: 'face'; operator: ConditionOperator; value: number | FaceValueSpecial }` — matches a die's face value
 - `{ field: 'tag'; operator: '=' | '!='; value: string }` — matches a die's tag
 
 `ConditionOperator` for face: `>`, `>=`, `<`, `<=`, `=`, `!=`.
+
+`FaceValueSpecial` defines symbolic face values that resolve at match time based on the die's `sides`:
+- `'max_value'` — resolves to the die's maximum possible face value (equal to `sides`)
+- `'min_value'` — resolves to the die's minimum possible face value (always 1)
+
+When a clause uses `FaceValueSpecial`, the matching function resolves it using the die's tag to look up the correct `sides` from the pool terms (same logic as `findSides`). For an empty tag, the first term's `sides` is used.
 
 #### Scenario: Face clause with operator
 - GIVEN a clause `{ field: 'face'; operator: '>='; value: 5 }`
 - WHEN evaluated against a die showing 6
 - THEN the clause matches
+
+#### Scenario: Face clause with max_value
+- GIVEN a clause `{ field: 'face'; operator: '='; value: 'max_value' }`
+- WHEN evaluated against a d6 die showing 6
+- THEN the clause matches (max_value resolves to 6)
+
+#### Scenario: Face clause with max_value on non-matching value
+- GIVEN a clause `{ field: 'face'; operator: '='; value: 'max_value' }`
+- WHEN evaluated against a d6 die showing 4
+- THEN the clause does NOT match (max_value resolves to 6, 4 ≠ 6)
+
+#### Scenario: Face clause with max_value on tagged die
+- GIVEN a clause `{ field: 'face'; operator: '='; value: 'max_value' }`
+- AND a pool with terms [{ sides: 20, tag: '' }, { sides: 6, tag: 'skill' }]
+- WHEN evaluated against a die showing 6 with tag 'skill'
+- THEN the clause matches (max_value resolves to 6 for that die's sides)
+
+#### Scenario: Face clause with min_value
+- GIVEN a clause `{ field: 'face'; operator: '='; value: 'min_value' }`
+- WHEN evaluated against a die showing 1
+- THEN the clause matches (min_value resolves to 1)
+
+#### Scenario: Face clause with max_value and >= operator
+- GIVEN a clause `{ field: 'face'; operator: '>='; value: 'max_value' }`
+- AND a d20 die
+- WHEN evaluated against a die showing 20
+- THEN the clause matches (max_value resolves to 20, 20 >= 20)
+
+#### Scenario: Explode on max face value
+- GIVEN a reroll condition with action `explode`, condition `face = max_value`, repeat 3
+- AND a d6 die showing 6
+- WHEN the condition is applied
+- THEN the die explodes (max_value resolves to 6, matching the face value)
 
 #### Scenario: Tag clause
 - GIVEN a clause `{ field: 'tag'; operator: '='; value: 'hunger' }`
@@ -58,8 +97,9 @@ The `RerollCondition` type SHALL define the data structure for reroll and explod
 ```typescript
 type RerollAction = 'reroll' | 'explode';
 type ConditionOperator = '>' | '>=' | '<' | '<=' | '=' | '!=';
+type FaceValueSpecial = 'max_value' | 'min_value';
 type ConditionClause =
-  | { field: 'face'; operator: ConditionOperator; value: number }
+  | { field: 'face'; operator: ConditionOperator; value: number | FaceValueSpecial }
   | { field: 'tag'; operator: '=' | '!='; value: string };
 
 type ConditionChain = {

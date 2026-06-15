@@ -1,9 +1,19 @@
-import type { TaggedDie, ConditionClause, ConditionChain } from '@/types';
+import type { TaggedDie, ConditionClause, ConditionChain, FaceValueSpecial } from '@/types';
 import { compare } from '@/types';
 
-export function matchClause(die: TaggedDie, clause: ConditionClause): boolean {
+function resolveFaceValue(value: number | FaceValueSpecial, die: TaggedDie, termsSides: { sides: number; tag: string }[]): number {
+  if (value === 'max_value') {
+    return findSides(die.tag, termsSides);
+  }
+  if (value === 'min_value') {
+    return 1;
+  }
+  return value;
+}
+
+export function matchClause(die: TaggedDie, clause: ConditionClause, termsSides: { sides: number; tag: string }[]): boolean {
   if (clause.field === 'face') {
-    return compare(die.face, clause.operator, clause.value);
+    return compare(die.face, clause.operator, resolveFaceValue(clause.value, die, termsSides));
   }
   if (clause.field === 'tag') {
     if (clause.operator === '=') return die.tag === clause.value;
@@ -12,12 +22,12 @@ export function matchClause(die: TaggedDie, clause: ConditionClause): boolean {
   return false;
 }
 
-export function matchConditions(die: TaggedDie, chain: ConditionChain): boolean {
+export function matchConditions(die: TaggedDie, chain: ConditionChain, termsSides: { sides: number; tag: string }[]): boolean {
   if (chain.clauses.length === 0) return false;
   if (chain.connector === 'and') {
-    return chain.clauses.every((c) => matchClause(die, c));
+    return chain.clauses.every((c) => matchClause(die, c, termsSides));
   }
-  return chain.clauses.some((c) => matchClause(die, c));
+  return chain.clauses.some((c) => matchClause(die, c, termsSides));
 }
 
 export function findSides(tag: string, terms: { sides: number; tag: string }[]): number {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { evaluatePipeline } from '@/domain/resolve';
-import type { NamedValue, TaggedDie } from '@/types';
+import type { NamedValue, TaggedDie, FaceValueSpecial } from '@/types';
 
 describe('evaluatePipeline', () => {
   it('returns rolled as vector source', () => {
@@ -313,5 +313,123 @@ describe('evaluatePipeline', () => {
     const hungerDice = env.get('hunger_dice') as TaggedDie[];
     expect(hungerDice.length).toBe(2);
     expect(hungerDice.every((d) => d.tag === 'hunger')).toBe(true);
+  });
+
+  it('chained scalar operations: sum then add', () => {
+    const rolled: TaggedDie[] = [{ face: 5, tag: '' }, { face: 3, tag: '' }];
+    const pipeline: NamedValue[] = [
+      {
+        id: 'p1',
+        name: 'total',
+        source: 'rolled',
+        op: 'sum',
+        comment: '',
+      },
+      {
+        id: 'p2',
+        name: 'total_mod',
+        source: 'total',
+        op: { fn: 'add', operand: 'literal', value: 3 },
+        comment: '',
+      },
+    ];
+    const env = evaluatePipeline(rolled, pipeline);
+    expect(env.get('total')).toBe(8);
+    expect(env.get('total_mod')).toBe(11);
+  });
+
+  it('chained scalar operations: sum then subtract named', () => {
+    const rolled: TaggedDie[] = [{ face: 5, tag: '' }, { face: 3, tag: '' }];
+    const pipeline: NamedValue[] = [
+      {
+        id: 'p1',
+        name: 'total',
+        source: 'rolled',
+        op: 'sum',
+        comment: '',
+      },
+      {
+        id: 'p2',
+        name: 'bonus',
+        source: 'rolled',
+        op: 'count',
+        comment: '',
+      },
+      {
+        id: 'p3',
+        name: 'net',
+        source: 'total',
+        op: { fn: 'subtract', operand: 'named', source2: 'bonus' },
+        comment: '',
+      },
+    ];
+    const env = evaluatePipeline(rolled, pipeline);
+    expect(env.get('total')).toBe(8);
+    expect(env.get('bonus')).toBe(2);
+    expect(env.get('net')).toBe(6);
+  });
+
+  it('filter with max_value resolves to die sides', () => {
+    const rolled: TaggedDie[] = [
+      { face: 4, tag: '' },
+      { face: 6, tag: '' },
+      { face: 2, tag: '' },
+    ];
+    const pipeline: NamedValue[] = [
+      {
+        id: 'p1',
+        name: 'crits',
+        source: 'rolled',
+        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '=', value: 'max_value' as FaceValueSpecial }], connector: 'and' } },
+        comment: '',
+      },
+    ];
+    const termsSides = [{ sides: 6, tag: '' }];
+    const env = evaluatePipeline(rolled, pipeline, termsSides);
+    const crits = env.get('crits') as TaggedDie[];
+    expect(crits.length).toBe(1);
+    expect(crits[0].face).toBe(6);
+  });
+
+  it('remove with min_value removes ones', () => {
+    const rolled: TaggedDie[] = [
+      { face: 1, tag: '' },
+      { face: 5, tag: '' },
+      { face: 1, tag: '' },
+    ];
+    const pipeline: NamedValue[] = [
+      {
+        id: 'p1',
+        name: 'no_ones',
+        source: 'rolled',
+        op: { fn: 'remove', conditions: { clauses: [{ field: 'face', operator: '=', value: 'min_value' as FaceValueSpecial }], connector: 'and' } },
+        comment: '',
+      },
+    ];
+    const termsSides = [{ sides: 6, tag: '' }];
+    const env = evaluatePipeline(rolled, pipeline, termsSides);
+    const noOnes = env.get('no_ones') as TaggedDie[];
+    expect(noOnes.length).toBe(1);
+    expect(noOnes[0].face).toBe(5);
+  });
+
+  it('filter with max_value on tagged dice', () => {
+    const rolled: TaggedDie[] = [
+      { face: 20, tag: '' },
+      { face: 10, tag: 'hunger' },
+    ];
+    const pipeline: NamedValue[] = [
+      {
+        id: 'p1',
+        name: 'crits',
+        source: 'rolled',
+        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '=', value: 'max_value' as FaceValueSpecial }], connector: 'and' } },
+        comment: '',
+      },
+    ];
+    const termsSides = [{ sides: 20, tag: '' }, { sides: 10, tag: 'hunger' }];
+    const env = evaluatePipeline(rolled, pipeline, termsSides);
+    const crits = env.get('crits') as TaggedDie[];
+    expect(crits.length).toBe(2);
   });
 });
