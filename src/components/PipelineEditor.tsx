@@ -1,5 +1,8 @@
-import { pipeline, dicePool } from '@/state/app-state';
-import type { NamedValue, ScalarFunction, VectorFunction, ConditionChain, ConditionClause, ConditionOperator, ScalarBinaryOp, FaceValueSpecial } from '@/types';
+import { useState } from 'preact/hooks';
+import { pipeline, dicePool, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind } from '@/state/app-state';
+import type { NamedValue, ScalarFunction, VectorFunction, ConditionChain, ConditionClause, ConditionOperator, ScalarBinaryOp, FaceValueSpecial, Parameter } from '@/types';
+import { SweepIndicator } from '@/components/SweepIndicator';
+import { SweepPopover } from '@/components/SweepPopover';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
 const TAG_OPERATORS: ('=' | '!=')[] = ['=', '!='];
@@ -45,6 +48,9 @@ function getAvailableSources(pipeline: NamedValue[], currentIndex: number): { id
 
 export function PipelineEditor() {
   const pipe = pipeline.value;
+  const sweeps = activeSweepsByTarget.value;
+  const paramsCount = parameters.value.length;
+  const [popoverNvId, setPopoverNvId] = useState<string | null>(null);
 
   function addRow() {
     if (pipe.length >= 20) return;
@@ -53,6 +59,31 @@ export function PipelineEditor() {
 
   function removeRow(index: number) {
     pipeline.value = pipe.filter((_, i) => i !== index);
+  }
+
+  function createPipelineSweep(nvId: string, label: string, values: number[]) {
+    const newParam: Parameter = {
+      id: crypto.randomUUID(),
+      label,
+      values,
+      target: 'pipeline.literal',
+      targetPipelineId: nvId,
+    };
+    parameters.value = [...parameters.value, newParam];
+    setPopoverNvId(null);
+  }
+
+  function jumpToPipeline(nvId: string) {
+    highlightTargetId.value = nvId;
+    highlightTargetKind.value = 'pipeline';
+    const el = document.getElementById(`pipeline-row-${nvId}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el?.classList.add('outline', 'outline-2', 'outline-offset-2', 'outline-blue-500', 'animate-pulse');
+    setTimeout(() => {
+      el?.classList.remove('outline', 'outline-2', 'outline-offset-2', 'outline-blue-500', 'animate-pulse');
+      highlightTargetId.value = null;
+      highlightTargetKind.value = null;
+    }, 500);
   }
 
   function updateRow(index: number, partial: Record<string, any>) {
@@ -99,7 +130,7 @@ export function PipelineEditor() {
         const outputType = getOutputType(nv);
 
         return (
-          <div key={nv.id} class={`border rounded p-3 mb-3 ${nameInvalid || nameDuplicate || sourceInvalid ? 'border-red-300 bg-red-50' : outputType === 'scalar' ? 'border-green-300 bg-green-50' : 'bg-gray-50'}`}>
+          <div key={nv.id} id={`pipeline-row-${nv.id}`} class={`border rounded p-3 mb-3 ${nameInvalid || nameDuplicate || sourceInvalid ? 'border-red-300 bg-red-50' : outputType === 'scalar' ? 'border-green-300 bg-green-50' : 'bg-gray-50'}`}>
             <div class="flex items-center gap-2 mb-2 flex-wrap">
               <input
                 type="text"
@@ -212,14 +243,42 @@ export function PipelineEditor() {
                   <option value="named">named value</option>
                 </select>
                 {(currentOp as any).operand === 'literal' ? (
-                  <input
-                    type="number"
-                    value={(currentOp as any).value ?? 0}
-                    class="w-20 px-2 py-1 border rounded text-sm"
-                    onInput={(e) => {
-                      updateRow(i, { op: { fn: currentOp.fn as ScalarBinaryOp, operand: 'literal', value: Number((e.target as HTMLInputElement).value) || 0 } as ScalarFunction });
-                    }}
-                  />
+                  <>
+                    <input
+                      type="number"
+                      value={(currentOp as any).value ?? 0}
+                      class="w-20 px-2 py-1 border rounded text-sm"
+                      onInput={(e) => {
+                        updateRow(i, { op: { fn: currentOp.fn as ScalarBinaryOp, operand: 'literal', value: Number((e.target as HTMLInputElement).value) || 0 } as ScalarFunction });
+                      }}
+                    />
+                    {(() => {
+                      const sweepParam = sweeps.get(`pipeline.literal:${nv.id}`);
+                      if (sweepParam) {
+                        return (
+                          <SweepIndicator
+                            parameterId={sweepParam.id}
+                            label={sweepParam.label}
+                            values={sweepParam.values}
+                            onJump={() => jumpToPipeline(nv.id)}
+                          />
+                        );
+                      }
+                      if (paramsCount < 3) {
+                        return (
+                          <button
+                            type="button"
+                            class="text-xs text-indigo-600 hover:text-indigo-800 px-1"
+                            onClick={() => setPopoverNvId(nv.id)}
+                            aria-label="Add sweep to pipeline literal"
+                          >
+                            + Sweep
+                          </button>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </>
                 ) : (
                   <select
                     value={(currentOp as any).source2 || ''}
@@ -255,6 +314,17 @@ export function PipelineEditor() {
         <button class="text-sm text-indigo-600 hover:text-indigo-800" onClick={addRow}>
           + Add named value
         </button>
+      )}
+
+      {popoverNvId && (
+        <SweepPopover
+          open={true}
+          defaultLabel="Modifier"
+          defaultValues="-2, -1, 0, 1, 2"
+          maxSimulationsReached={paramsCount >= 3}
+          onCreate={(label, values) => createPipelineSweep(popoverNvId, label, values)}
+          onCancel={() => setPopoverNvId(null)}
+        />
       )}
     </div>
   );

@@ -1,0 +1,105 @@
+import { describe, it, expect } from 'vitest';
+import { hashIdToColor, activeSweepsByTarget, totalIterations, dicePoolNotation } from '@/state/app-state';
+import { parameters, dicePool, outcomes, pipeline, resetToDefaults } from '@/state/app-state';
+import { DICE_CONDITION_TYPES } from '@/types';
+import type { Parameter, NamedValue, Outcome } from '@/types';
+
+describe('hashIdToColor', () => {
+  it('returns a valid color from the palette for any non-empty id', () => {
+    const c = hashIdToColor('abc');
+    expect(c).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+
+  it('returns a stable color for the same id', () => {
+    expect(hashIdToColor('parameter-1')).toBe(hashIdToColor('parameter-1'));
+  });
+
+  it('returns different colors for different ids in most cases', () => {
+    const colors = new Set([
+      hashIdToColor('a'),
+      hashIdToColor('b'),
+      hashIdToColor('c'),
+      hashIdToColor('d'),
+      hashIdToColor('e'),
+      hashIdToColor('f'),
+      hashIdToColor('g'),
+      hashIdToColor('h'),
+    ]);
+    expect(colors.size).toBeGreaterThan(1);
+  });
+
+  it('returns a fallback for an empty id', () => {
+    expect(hashIdToColor('')).toBe('#6b7280');
+  });
+});
+
+describe('activeSweepsByTarget', () => {
+  it('builds a map keyed by target:targetId', () => {
+    resetToDefaults();
+    const term = dicePool.value.terms[0];
+    const p: Parameter = {
+      id: 'p1',
+      label: 'Count',
+      values: [1, 2, 3],
+      target: 'pool.count',
+      targetTermId: term.id,
+    };
+    parameters.value = [p];
+    const m = activeSweepsByTarget.value;
+    expect(m.get(`pool.count:${term.id}`)).toBeDefined();
+    expect(m.get(`pool.count:${term.id}`)?.id).toBe('p1');
+  });
+
+  it('reacts to parameter list changes', () => {
+    resetToDefaults();
+    expect(activeSweepsByTarget.value.size).toBe(0);
+    const term = dicePool.value.terms[0];
+    parameters.value = [
+      { id: 'p1', label: 'A', values: [1, 2], target: 'pool.count', targetTermId: term.id },
+    ];
+    expect(activeSweepsByTarget.value.size).toBe(1);
+    parameters.value = [];
+    expect(activeSweepsByTarget.value.size).toBe(0);
+  });
+});
+
+describe('totalIterations', () => {
+  it('returns 1,000,000 with no parameters', () => {
+    resetToDefaults();
+    expect(totalIterations.value).toBe(1_000_000);
+  });
+
+  it('multiplies value counts and then by 1,000,000', () => {
+    resetToDefaults();
+    parameters.value = [
+      { id: 'a', label: 'A', values: [1, 2, 3], target: 'pool.count' },
+      { id: 'b', label: 'B', values: [10, 20], target: 'pool.count' },
+    ];
+    expect(totalIterations.value).toBe(3 * 2 * 1_000_000);
+  });
+});
+
+describe('dicePoolNotation with sweeps', () => {
+  it('shows the unswept notation when there are no parameters', () => {
+    resetToDefaults();
+    expect(dicePoolNotation.value).toBe('1d20');
+  });
+
+  it('renders a swept count as a range', () => {
+    resetToDefaults();
+    const term = dicePool.value.terms[0];
+    parameters.value = [
+      { id: 'p', label: 'Count', values: [1, 2, 3, 4, 5], target: 'pool.count', targetTermId: term.id },
+    ];
+    expect(dicePoolNotation.value).toBe('1..5d20');
+  });
+
+  it('renders a swept sides as a range', () => {
+    resetToDefaults();
+    const term = dicePool.value.terms[0];
+    parameters.value = [
+      { id: 'p', label: 'Sides', values: [4, 6, 8], target: 'pool.sides', targetTermId: term.id },
+    ];
+    expect(dicePoolNotation.value).toBe('1d{4, 6, 8}');
+  });
+});

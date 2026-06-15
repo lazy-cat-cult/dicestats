@@ -294,6 +294,81 @@ describe('validateConfig', () => {
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], parameters);
       expect(errors.some((e) => !e.blocking && e.message.includes('high'))).toBe(true);
     });
+
+    it('reports blocking error for outcome sweep with empty conditions list', () => {
+      const outcome: Outcome = { ...validOutcome, id: 'o-empty', conditions: [] };
+      const parameters: Parameter[] = [{
+        id: 'pm1',
+        label: 'DC',
+        values: [5, 10, 15],
+        target: 'outcome.value',
+        targetOutcomeId: 'o-empty',
+      }];
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], parameters);
+      expect(errors.some((e) => e.blocking && e.message.includes('no conditions'))).toBe(true);
+    });
+
+    it('reports blocking error for outcome sweep targeting a vector first condition', () => {
+      const outcome: Outcome = {
+        ...validOutcome,
+        conditions: [{ op: 'any', subCondition: '>=', value: 5 }],
+      };
+      const parameters: Parameter[] = [{
+        id: 'pm1',
+        label: 'DC',
+        values: [5, 10, 15],
+        target: 'outcome.value',
+        targetOutcomeId: outcome.id,
+      }];
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], parameters);
+      expect(errors.some((e) => e.blocking && e.message.includes('vector condition'))).toBe(true);
+    });
+
+    it('passes when outcome sweep targets a scalar first condition', () => {
+      const outcome: Outcome = { ...validOutcome, conditions: [{ op: '>=', value: 10 }] };
+      const parameters: Parameter[] = [{
+        id: 'pm1',
+        label: 'DC',
+        values: [5, 10, 15],
+        target: 'outcome.value',
+        targetOutcomeId: outcome.id,
+      }];
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], parameters);
+      expect(errors.some((e) => e.blocking && e.message.includes('vector condition'))).toBe(false);
+      expect(errors.some((e) => e.blocking && e.message.includes('no conditions'))).toBe(false);
+    });
+
+    it('reports blocking error for pipeline literal sweep when function is not binary-math-literal', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
+        { id: 'p2', name: 'ceil_total', source: 'total', op: { fn: 'ceil' }, comment: '' },
+      ];
+      const parameters: Parameter[] = [{
+        id: 'pm1',
+        label: 'Mod',
+        values: [1, 2],
+        target: 'pipeline.literal',
+        targetPipelineId: 'p2',
+      }];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], parameters);
+      expect(errors.some((e) => e.blocking && e.message.includes('not a binary-math-literal row'))).toBe(true);
+    });
+
+    it('passes when pipeline literal sweep targets a binary-math-literal row', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
+        { id: 'p2', name: 'modded', source: 'total', op: { fn: 'add', operand: 'literal', value: 5 }, comment: '' },
+      ];
+      const parameters: Parameter[] = [{
+        id: 'pm1',
+        label: 'Mod',
+        values: [1, 2],
+        target: 'pipeline.literal',
+        targetPipelineId: 'p2',
+      }];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], parameters);
+      expect(errors.some((e) => e.blocking && e.message.includes('not a binary-math-literal row'))).toBe(false);
+    });
   });
 
   describe('valid configurations', () => {

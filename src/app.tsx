@@ -1,6 +1,6 @@
 import { signal } from '@preact/signals';
 import type { SimResult, SimJob } from '@/types';
-import { dicePool, rerollConditions, pipeline, outcomes, parameters, isSimulating, simProgress } from '@/state/app-state';
+import { dicePool, rerollConditions, pipeline, outcomes, parameters, isSimulating, simProgress, totalIterations, confirmedHighCost, highlightTargetId, highlightTargetKind } from '@/state/app-state';
 import { currentStep } from '@/components/StepWizard';
 import { PresetSelector } from '@/components/PresetSelector';
 import { DicePoolEditor } from '@/components/DicePoolEditor';
@@ -9,6 +9,7 @@ import { PipelineEditor } from '@/components/PipelineEditor';
 import { OutcomeEditor } from '@/components/OutcomeEditor';
 import { ParameterEditor } from '@/components/ParameterEditor';
 import { ResultView } from '@/components/ResultView';
+import { SweepCostChip } from '@/components/SweepCostChip';
 import { OutcomeChart, ParameterChart } from '@/components/DistributionChart';
 import { saveConfig, loadConfig } from '@/state/persistence';
 import { validateConfig, canRunSimulation } from '@/utils/validation';
@@ -17,6 +18,7 @@ import { useEffect } from 'preact/hooks';
 
 export const simResults = signal<SimResult[]>([]);
 export const simError = signal<string | null>(null);
+export const highCostTooltip = signal<boolean>(false);
 
 let worker: Worker | null = null;
 
@@ -31,6 +33,14 @@ export function App() {
 
   function runSimulation() {
     if (!canRun.value) return;
+    const total = totalIterations.value;
+    if (total > 50_000_000 && !confirmedHighCost.value) {
+      confirmedHighCost.value = true;
+      highCostTooltip.value = true;
+      setTimeout(() => { highCostTooltip.value = false; }, 4000);
+      return;
+    }
+    confirmedHighCost.value = false;
     isSimulating.value = true;
     simError.value = null;
     simResults.value = [];
@@ -87,7 +97,7 @@ export function App() {
   return (
     <div class="min-h-screen bg-white text-gray-900">
       <header class="border-b border-gray-200 px-4 py-3">
-        <div class="max-w-2xl mx-auto flex items-center justify-between">
+        <div class="max-w-2xl mx-auto flex items-center justify-between gap-2">
           <h1 class="text-xl font-bold text-gray-800">Dice Probability</h1>
           <button
             class="text-sm text-gray-500 hover:text-gray-700"
@@ -138,71 +148,88 @@ export function App() {
             <div class="space-y-6">
               <PipelineEditor />
               <OutcomeEditor />
-              <ParameterEditor />
             </div>
           )}
           {currentStep.value === 2 && (
             <div>
               <div>
                 {!isSimulating.value && simResults.value.length === 0 && (
-                  <div class="text-center py-12">
-                    <p class="text-gray-500 mb-4">Configure dice pool and outcomes, then run simulation.</p>
-                    <button
-                      class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-lg font-semibold disabled:opacity-40"
-                      onClick={runSimulation}
-                      disabled={!canRun.value}
-                    >
-                      Run Simulation (1,000,000 rolls)
-                    </button>
+                  <div class="space-y-4">
+                    <ParameterEditor />
+                    <SweepCostChip onConfirmHighCost={() => { confirmedHighCost.value = true; highCostTooltip.value = true; setTimeout(() => { highCostTooltip.value = false; }, 4000); }} />
+                    <div class="text-center py-12">
+                      <p class="text-gray-500 mb-4">Configure dice pool and outcomes, then run simulation.</p>
+                      <div class="relative inline-block">
+                        <button
+                          class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-lg font-semibold disabled:opacity-40"
+                          onClick={runSimulation}
+                          disabled={!canRun.value}
+                        >
+                          Run Simulation (1,000,000 rolls)
+                        </button>
+                        {highCostTooltip.value && (
+                          <div class="absolute left-1/2 -translate-x-1/2 -top-12 w-64 bg-gray-900 text-white text-xs rounded px-2 py-2 shadow-lg z-10">
+                            This will run &gt;50M simulations. Click Run again to proceed.
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {isSimulating.value && (
-                  <div class="text-center py-12">
-                    <p class="text-gray-600 mb-2">Simulation running...</p>
-                    <p class="text-sm text-gray-400">
-                      {simProgress.value.completed} / {simProgress.value.total || '\u2026'}
-                    </p>
-                    <div class="w-full bg-gray-200 rounded-full h-2 mt-3">
-                      <div
-                        class="bg-indigo-600 h-2 rounded-full transition-all"
-                        style={{ width: simProgress.value.total > 0 ? `${(simProgress.value.completed / simProgress.value.total) * 100}%` : '0%' }}
-                      />
+                  <div class="space-y-4">
+                    <ParameterEditor />
+                    <div class="text-center py-12">
+                      <p class="text-gray-600 mb-2">Simulation running...</p>
+                      <p class="text-sm text-gray-400">
+                        {simProgress.value.completed} / {simProgress.value.total || '\u2026'}
+                      </p>
+                      <div class="w-full bg-gray-200 rounded-full h-2 mt-3">
+                        <div
+                          class="bg-indigo-600 h-2 rounded-full transition-all"
+                          style={{ width: simProgress.value.total > 0 ? `${(simProgress.value.completed / simProgress.value.total) * 100}%` : '0%' }}
+                        />
+                      </div>
+                      <button
+                        class="mt-4 px-4 py-2 border border-red-300 text-red-600 rounded hover:bg-red-50"
+                        onClick={cancelSimulation}
+                      >
+                        Cancel
+                      </button>
                     </div>
-                    <button
-                      class="mt-4 px-4 py-2 border border-red-300 text-red-600 rounded hover:bg-red-50"
-                      onClick={cancelSimulation}
-                    >
-                      Cancel
-                    </button>
                   </div>
                 )}
 
                 {simError.value && (
-                  <div class="bg-red-50 border border-red-200 rounded p-4 mb-4">
-                    <p class="text-red-700">{simError.value}</p>
+                  <div class="space-y-4">
+                    <ParameterEditor />
+                    <div class="bg-red-50 border border-red-200 rounded p-4 mb-4">
+                      <p class="text-red-700">{simError.value}</p>
+                    </div>
                   </div>
                 )}
 
                 {!isSimulating.value && simResults.value.length > 0 && (
-                  <div>
+                  <div class="space-y-4">
+                    <ParameterEditor />
                     <ResultView results={simResults.value} />
 
                     {simResults.value.length === 1 && (
-                      <div class="mt-6">
+                      <div>
                         <h3 class="text-sm font-semibold text-gray-600 mb-2">Outcome Probabilities</h3>
                         <OutcomeChart result={simResults.value[0]} />
                       </div>
                     )}
 
                     {simResults.value.length > 1 && (
-                      <div class="mt-6">
+                      <div>
                         <h3 class="text-sm font-semibold text-gray-600 mb-2">Outcome Probabilities</h3>
                         <ParameterChart results={simResults.value} />
                       </div>
                     )}
 
-                    <div class="mt-6 text-center">
+                    <div class="text-center">
                       <button
                         class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold"
                         onClick={runSimulation}
@@ -234,6 +261,12 @@ export function App() {
           </button>
         </div>
       </main>
+
+      <div class="sr-only" role="status" aria-live="polite">
+        {highlightTargetId.value && highlightTargetKind.value
+          ? `Jumped to ${highlightTargetId.value}`
+          : ''}
+      </div>
     </div>
   );
 }

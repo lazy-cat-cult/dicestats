@@ -54,28 +54,47 @@ function SingleResult({ result }: { result: SimResult }) {
 function ParamResults({ results }: { results: SimResult[] }) {
   const outcomeLabels = results[0]?.outcomes.map((o) => o.label) ?? [];
 
+  const headers: string[] = [];
+  const seen = new Set<string>();
+  for (const r of results) {
+    const before = r.label.indexOf('=');
+    if (before < 0) continue;
+    const head = r.label.slice(0, before);
+    if (!seen.has(head)) {
+      seen.add(head);
+      headers.push(head);
+    }
+  }
+
   return (
-    <div class="overflow-x-auto">
-      <table class="w-full border-collapse mb-4">
-        <thead>
-          <tr class="border-b border-gray-300">
-            <th class="text-left py-2 text-sm text-gray-600">Parameter</th>
-            {outcomeLabels.map((label) => (
-              <th key={label} class="text-right py-2 text-sm text-gray-600">{label}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {results.map((r) => (
-            <tr key={r.label} class="border-b border-gray-100">
-              <td class="py-2 text-sm font-mono">{r.label}</td>
-              {r.outcomes.map((o) => (
-                <td key={o.label} class="py-2 text-sm text-right font-mono">{formatPercent(o.probability)}</td>
+    <div>
+      {headers.length > 0 && (
+        <p class="text-sm text-gray-600 mb-2">
+          {headers.map((h) => `Sweep: ${h} \u2208 {${results.filter((r) => r.label.startsWith(h + '=')).map((r) => r.label.slice(h.length + 1)).join(', ')}}`).join('; ')}
+        </p>
+      )}
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse mb-4">
+          <thead>
+            <tr class="border-b border-gray-300">
+              <th class="text-left py-2 text-sm text-gray-600">Parameter</th>
+              {outcomeLabels.map((label) => (
+                <th key={label} class="text-right py-2 text-sm text-gray-600">{label}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {results.map((r) => (
+              <tr key={r.label} class="border-b border-gray-100">
+                <td class="py-2 text-sm font-mono">{r.label}</td>
+                {r.outcomes.map((o) => (
+                  <td key={o.label} class="py-2 text-sm text-right font-mono">{formatPercent(o.probability)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

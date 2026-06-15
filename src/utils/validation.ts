@@ -1,10 +1,25 @@
-import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter, PipelineValue, ConditionClause, ConditionChain, ScalarFunction, VectorFunction } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter, PipelineValue, ConditionClause, ConditionChain, ScalarFunction, VectorFunction, OutcomeCondition, ConditionOperator, DiceConditionType } from '@/types';
 import { DICE_CONDITION_TYPES } from '@/types';
 
 export interface ValidationError {
   id: string;
   message: string;
   blocking: boolean;
+}
+
+export function isScalarCondition(cond: OutcomeCondition): cond is { op: ConditionOperator; value: number } {
+  if (typeof cond !== 'object' || cond === null) return false;
+  if (!('op' in cond)) return false;
+  return !DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
+}
+
+export function isBinaryMathLiteral(nv: NamedValue): boolean {
+  const op = nv.op;
+  if (typeof op !== 'object' || op === null) return false;
+  if (!('fn' in op)) return false;
+  const fn = (op as { fn: string }).fn;
+  if (fn !== 'add' && fn !== 'subtract' && fn !== 'multiply' && fn !== 'divide') return false;
+  return (op as { operand?: string }).operand === 'literal';
 }
 
 export function validateConfig(
@@ -160,8 +175,17 @@ export function validateConfig(
       }
     }
     if (param.target === 'outcome.value') {
-      if (param.targetOutcomeId && !outcomes.find((o) => o.id === param.targetOutcomeId)) {
-        errors.push({ id: nextId(), message: `Parameter "${param.label}" references invalid outcome`, blocking: true });
+      if (param.targetOutcomeId) {
+        const o = outcomes.find((x) => x.id === param.targetOutcomeId);
+        if (!o) {
+          errors.push({ id: nextId(), message: `Parameter "${param.label}" references invalid outcome`, blocking: true });
+        } else {
+          if (o.conditions.length === 0) {
+            errors.push({ id: nextId(), message: `Parameter "${param.label}": target outcome has no conditions. Add a condition first.`, blocking: true });
+          } else if (!isScalarCondition(o.conditions[0])) {
+            errors.push({ id: nextId(), message: `Parameter "${param.label}": cannot sweep vector condition. Add a numeric condition first.`, blocking: true });
+          }
+        }
       }
     }
     if (param.target === 'pipeline.literal') {
@@ -169,6 +193,8 @@ export function validateConfig(
         const pNv = pipeline.find((p) => p.id === param.targetPipelineId);
         if (!pNv) {
           errors.push({ id: nextId(), message: `Parameter "${param.label}" references invalid pipeline step`, blocking: true });
+        } else if (!isBinaryMathLiteral(pNv)) {
+          errors.push({ id: nextId(), message: `Parameter "${param.label}": target is not a binary-math-literal row. Change the function or pick a different target.`, blocking: true });
         }
       }
     }

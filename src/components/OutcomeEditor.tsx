@@ -1,6 +1,9 @@
-import { outcomes, pipeline, dicePool } from '@/state/app-state';
-import type { Outcome, OutcomeCondition, ConditionOperator, DiceConditionType, NamedValue } from '@/types';
+import { useState } from 'preact/hooks';
+import { outcomes, pipeline, dicePool, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind } from '@/state/app-state';
+import type { Outcome, OutcomeCondition, ConditionOperator, DiceConditionType, NamedValue, Parameter } from '@/types';
 import { DICE_CONDITION_TYPES } from '@/types';
+import { SweepIndicator } from '@/components/SweepIndicator';
+import { SweepPopover } from '@/components/SweepPopover';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
 
@@ -47,8 +50,19 @@ function emptyOutcome(): Outcome {
   };
 }
 
+function isScalarCondition(cond: OutcomeCondition): cond is { op: ConditionOperator; value: number } {
+  return typeof cond === 'object' && 'op' in cond && typeof cond.op === 'string' && !DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
+}
+
+function isDiceCondition(cond: OutcomeCondition): cond is { op: DiceConditionType; subCondition: ConditionOperator; value: number } {
+  return typeof cond === 'object' && 'op' in cond && DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
+}
+
 export function OutcomeEditor() {
   const list = outcomes.value;
+  const sweeps = activeSweepsByTarget.value;
+  const paramsCount = parameters.value.length;
+  const [popoverOutcomeId, setPopoverOutcomeId] = useState<string | null>(null);
 
   function addOutcome() {
     if (list.length >= 10) return;
@@ -63,6 +77,31 @@ export function OutcomeEditor() {
     outcomes.value = list.map((o, i) => (i === index ? { ...o, ...partial } : o));
   }
 
+  function createOutcomeSweep(outcomeId: string, label: string, values: number[]) {
+    const newParam: Parameter = {
+      id: crypto.randomUUID(),
+      label,
+      values,
+      target: 'outcome.value',
+      targetOutcomeId: outcomeId,
+    };
+    parameters.value = [...parameters.value, newParam];
+    setPopoverOutcomeId(null);
+  }
+
+  function jumpToOutcome(outcomeId: string) {
+    highlightTargetId.value = outcomeId;
+    highlightTargetKind.value = 'outcome';
+    const el = document.getElementById(`outcome-row-${outcomeId}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el?.classList.add('outline', 'outline-2', 'outline-offset-2', 'outline-blue-500', 'animate-pulse');
+    setTimeout(() => {
+      el?.classList.remove('outline', 'outline-2', 'outline-offset-2', 'outline-blue-500', 'animate-pulse');
+      highlightTargetId.value = null;
+      highlightTargetKind.value = null;
+    }, 500);
+  }
+
   return (
     <div>
       <h2 class="text-lg font-semibold mb-4">Outcomes</h2>
@@ -70,9 +109,15 @@ export function OutcomeEditor() {
       {list.map((outcome, i) => {
         const scalar = isScalarSource(outcome.source);
         const sourceOptions = getSourceOptions();
+        const firstScalar = outcome.conditions.length > 0 && isScalarCondition(outcome.conditions[0]);
+        const sweepParam = sweeps.get(`outcome.value:${outcome.id}`);
 
         return (
-          <div key={outcome.id} class="border rounded p-3 mb-3 bg-gray-50">
+          <div
+            key={outcome.id}
+            id={`outcome-row-${outcome.id}`}
+            class={`border rounded p-3 mb-3 ${sweepParam ? 'border-blue-300 bg-blue-50/30' : 'bg-gray-50'}`}
+          >
             <div class="flex items-center gap-2 mb-2">
               <input
                 type="text"
@@ -125,6 +170,29 @@ export function OutcomeEditor() {
                         updateOutcome(i, { conditions });
                       }}
                     />
+                  )}
+                  {ci === 0 && firstScalar && (
+                    <>
+                      {sweepParam ? (
+                        <SweepIndicator
+                          parameterId={sweepParam.id}
+                          label={sweepParam.label}
+                          values={sweepParam.values}
+                          onJump={() => jumpToOutcome(outcome.id)}
+                        />
+                      ) : (
+                        paramsCount < 3 && (
+                          <button
+                            type="button"
+                            class="text-xs text-indigo-600 hover:text-indigo-800 px-1"
+                            onClick={() => setPopoverOutcomeId(outcome.id)}
+                            aria-label="Add sweep to first condition"
+                          >
+                            + Sweep
+                          </button>
+                        )
+                      )}
+                    </>
                   )}
                   {outcome.conditions.length > 1 && (
                     <button
@@ -183,16 +251,19 @@ export function OutcomeEditor() {
           + Add outcome
         </button>
       )}
+
+      {popoverOutcomeId && (
+        <SweepPopover
+          open={true}
+          defaultLabel="DC"
+          defaultValues="5, 10, 15, 20"
+          maxSimulationsReached={paramsCount >= 3}
+          onCreate={(label, values) => createOutcomeSweep(popoverOutcomeId, label, values)}
+          onCancel={() => setPopoverOutcomeId(null)}
+        />
+      )}
     </div>
   );
-}
-
-function isScalarCondition(cond: OutcomeCondition): cond is { op: ConditionOperator; value: number } {
-  return typeof cond === 'object' && 'op' in cond && typeof cond.op === 'string' && !DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
-}
-
-function isDiceCondition(cond: OutcomeCondition): cond is { op: DiceConditionType; subCondition: ConditionOperator; value: number } {
-  return typeof cond === 'object' && 'op' in cond && DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
 }
 
 function OutcomeScalarCondition({ cond, onChange }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void }) {

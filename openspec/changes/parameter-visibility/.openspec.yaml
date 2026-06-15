@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-06-15
+goal: Users can see at a glance which values are swept and how much the run will
+  cost; discoverability of the 'sweep' concept is obvious from the source row.
