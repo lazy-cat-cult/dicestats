@@ -56,6 +56,14 @@ export function evaluatePipeline(
         env.set(nv.name, Math.ceil(sourceVal));
       } else if (op.fn === 'floor') {
         env.set(nv.name, Math.floor(sourceVal));
+      } else if (op.fn === 'max' && (op as any).operand === 'named') {
+        const rightVal = env.get((op as any).source2 as string);
+        if (typeof rightVal !== 'number') continue;
+        env.set(nv.name, Math.max(sourceVal, rightVal));
+      } else if (op.fn === 'min' && (op as any).operand === 'named') {
+        const rightVal = env.get((op as any).source2 as string);
+        if (typeof rightVal !== 'number') continue;
+        env.set(nv.name, Math.min(sourceVal, rightVal));
       } else if ((op as any).operand === 'literal') {
         env.set(nv.name, applyScalarBinary(sourceVal, op.fn as ScalarBinaryOp, (op as any).value as number));
       } else if ((op as any).operand === 'named') {

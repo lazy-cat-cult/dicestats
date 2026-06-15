@@ -77,6 +77,63 @@ Outcomes:
 Parameters: TN sweep 1..5
 ```
 
+#### Preset: Daggerheart — Duality
+```
+Pool: 1d12 tag:hope + 1d12 tag:fear
+Reroll: none
+Pipeline:
+  hope_face = filter rolled where tag = hope
+  fear_face = filter rolled where tag = fear
+  hope_value = max hope_face
+  fear_value = max fear_face
+  delta = subtract hope_value by fear_value
+Outcomes:
+  "Hope" when delta > 0
+  "Fear" when delta < 0
+  "Critical Success" (default) when delta = 0
+Parameters: (none)
+```
+
+#### Preset: Cyberpunk RED — d10 + Skill (2d10)
+```
+Pool: 2d10
+Reroll: none
+Pipeline: (none)
+Outcomes: "Success" when rolled >= DV
+Parameters: DV sweep 10, 13, 15, 17, 20, 22, 25, 28, 30
+```
+
+#### Preset: Blades in the Dark — Xd6 action
+```
+Pool: 2d6 (default), sweeps 1..8
+Reroll: none
+Pipeline:
+  best = max rolled
+  six_count = filter rolled where face = 6
+Outcomes:
+  "Critical" when six_count >= 2
+  "Success" when best >= 4
+  "Partial" (default) when best in 1..3
+Parameters: dice count sweep 1..8
+```
+
+#### Preset: Savage Worlds — Trait + Wild die
+```
+Pool: 1dN tag:trait (default d8) + 1d6 tag:wild
+Reroll: explode when face = max_value (both dice), repeat 5
+Pipeline:
+  trait_only = filter rolled where tag = trait
+  wild_only = filter rolled where tag = wild
+  trait_best = max trait_only
+  wild_best = max wild_only
+  effective = max trait_best by wild_best
+Outcomes:
+  "Raise" when effective >= 8
+  "Success" when effective in 4..7
+  "Failure" (default) when effective < 4
+Parameters: trait die sides sweep 4, 6, 8, 10, 12
+```
+
 #### Scenario: Applying D&D preset
 - GIVEN the user selects "D&D 5e — d20" preset
 - WHEN the preset is applied

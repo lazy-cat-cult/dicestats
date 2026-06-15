@@ -33,7 +33,9 @@ type ScalarFunction =
   | { fn: ScalarBinaryOp; operand: 'literal'; value: number }
   | { fn: ScalarBinaryOp; operand: 'named'; source2: string }
   | { fn: 'ceil' }
-  | { fn: 'floor' };
+  | { fn: 'floor' }
+  | { fn: 'max'; operand: 'named'; source2: string }
+  | { fn: 'min'; operand: 'named'; source2: string };
 
 type NamedValue =
   | { id: string; name: string; source: string; op: VectorFunction; comment: string }
@@ -125,6 +127,21 @@ For `named` operand, `source2` MUST reference `rolled` or a named value defined 
 - GIVEN `rounded = floor half_crits`
 - WHEN `half_crits` is 1.5
 - THEN `rounded` is 1
+
+### Requirement: Max and Min of Two Scalars
+`max` and `min` SHALL also accept a named scalar operand (in addition to operating on a vector), producing the larger or smaller of the two scalars respectively.
+
+```typescript
+| { fn: 'max'; operand: 'named'; source2: string }
+| { fn: 'min'; operand: 'named'; source2: string }
+```
+
+`source2` MUST reference a prior named scalar.
+
+#### Scenario: Max of two scalars
+- GIVEN `effective = max trait_best by wild_best`
+- WHEN `trait_best` is 5 and `wild_best` is 6
+- THEN `effective` is 6
 
 ### Requirement: Source Ordering and Self-Reference
 A pipeline row's `source` and `source2` (for named operand) SHALL reference `rolled` or a named value defined in a **prior** row. Binary operations SHALL NOT use the same named value for both `source` and `source2`.

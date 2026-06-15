@@ -42,6 +42,42 @@ describe('PRESETS', () => {
     expect(v!.pipeline.length).toBeGreaterThan(3);
   });
 
+  it('has Daggerheart Duality preset', () => {
+    const dh = getPreset('daggerheart-duality');
+    expect(dh).toBeDefined();
+    expect(dh!.pool.terms).toHaveLength(2);
+    expect(dh!.pool.terms.some((t) => t.tag === 'hope')).toBe(true);
+    expect(dh!.pool.terms.some((t) => t.tag === 'fear')).toBe(true);
+    expect(dh!.outcomes.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('has Cyberpunk RED check preset', () => {
+    const cp = getPreset('cyberpunk-red-check');
+    expect(cp).toBeDefined();
+    expect(cp!.pool.terms[0].sides).toBe(10);
+    expect(cp!.pool.terms[0].count).toBe(2);
+    expect(cp!.parameters?.some((p) => p.label === 'DV')).toBe(true);
+  });
+
+  it('has Blades in the Dark preset with critical detection', () => {
+    const b = getPreset('blades-in-the-dark');
+    expect(b).toBeDefined();
+    expect(b!.pool.terms[0].sides).toBe(6);
+    const crit = b!.outcomes.find((o) => o.name === 'Critical');
+    expect(crit).toBeDefined();
+    expect(b!.parameters?.some((p) => p.target === 'pool.count')).toBe(true);
+  });
+
+  it('has Savage Worlds preset with trait and wild dice', () => {
+    const sw = getPreset('savage-worlds');
+    expect(sw).toBeDefined();
+    expect(sw!.pool.terms.some((t) => t.tag === 'trait')).toBe(true);
+    expect(sw!.pool.terms.some((t) => t.tag === 'wild')).toBe(true);
+    expect(sw!.rerollConditions.length).toBeGreaterThan(0);
+    expect(sw!.rerollConditions[0].action).toBe('explode');
+    expect(sw!.parameters?.some((p) => p.target === 'pool.sides')).toBe(true);
+  });
+
   it('all presets have valid pools', () => {
     for (const preset of PRESETS) {
       expect(preset.pool.terms.length).toBeGreaterThan(0);

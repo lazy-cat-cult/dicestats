@@ -46,7 +46,9 @@ export type ScalarFunction =
   | { fn: ScalarBinaryOp; operand: 'literal'; value: number }
   | { fn: ScalarBinaryOp; operand: 'named'; source2: string }
   | { fn: 'ceil' }
-  | { fn: 'floor' };
+  | { fn: 'floor' }
+  | { fn: 'max'; operand: 'named'; source2: string }
+  | { fn: 'min'; operand: 'named'; source2: string };
 
 export type NamedValue =
   | { id: string; name: string; source: string; op: VectorFunction; comment: string }
