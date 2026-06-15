@@ -29,6 +29,7 @@ npm run preview      # Preview production build
 npm run test         # Run tests once
 npm run test:watch   # Run tests in watch mode
 npm run typecheck    # Type-check only (tsc --noEmit)
+npm run lint         # Run ESLint (flat config, see eslint.config.js)
 ```
 
 ## Project Structure
@@ -117,3 +118,5 @@ This is simpler for the common case ("roll 2d20, take the best"). The `keep_high
 7. **No comments** in code unless explicitly requested.
 8. **Presets** must be updated when adding new features (reroll conditions, pipeline, outcome format) to maintain full preset coverage.
 9. **`max` and `min` are scalar functions** — they return a single number from a vector, not a subset of dice. Do not confuse them with `keep_highest`/`keep_lowest`.
+10. **After every code change, run the `verification-loop` skill** (`.kilocode/skills/verification-loop/SKILL.md`) before considering the work done. The skill runs build, type-check, lint, test, security, and diff review, and produces a `VERIFICATION REPORT`. Fix all issues and re-run until `Overall: READY for PR`.
+11. **ESLint is strict — do not suppress rules.** `npm run lint` runs with `no-unused-vars`, `no-explicit-any`, `no-console` (allow `warn`/`error` only), and `no-debugger` as errors. New and modified code must pass with zero new lint errors. Pre-existing lint errors are tracked as tech debt and must be fixed in dedicated commits, never by lowering rule severity.
