@@ -93,13 +93,19 @@ describe('validateConfig', () => {
       expect(errors.some((e) => e.blocking && e.message.includes('references undefined source'))).toBe(true);
     });
 
-    it('reports warning for none?/any? on scalar source', () => {
+    it('reports blocking error for dice condition on scalar source', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
       ];
-      const outcome = makeOutcome({ source: 'total', conditions: ['none?'] });
+      const outcome = makeOutcome({ source: 'total', conditions: [{ op: 'none', subCondition: '>=', value: 1 }] });
       const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validParameters);
-      expect(errors.some((e) => !e.blocking && e.message.includes('none?'))).toBe(true);
+      expect(errors.some((e) => e.blocking && e.message.includes('cannot be used on scalar'))).toBe(true);
+    });
+
+    it('reports blocking error for scalar condition on vector source', () => {
+      const outcome = makeOutcome({ source: 'rolled', conditions: [{ op: '>=', value: 10 }] });
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validParameters);
+      expect(errors.some((e) => e.blocking && e.message.includes('Scalar comparison on vector'))).toBe(true);
     });
 
     it('reports error for more than 10 outcomes', () => {

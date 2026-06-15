@@ -6,7 +6,7 @@ const STORAGE_KEY = 'dice-calc-config';
 
 export function saveConfig() {
   const config: SavedConfig = {
-version: 4,
+version: 5,
     pool: dicePool.value,
     rerollConditions: rerollConditions.value,
     pipeline: pipeline.value,
@@ -43,8 +43,33 @@ export function clearConfig() {
   }
 }
 
+function migrateOutcomeConditions(outcomes: any[]): any[] {
+  return outcomes.map((o: any) => ({
+    ...o,
+    conditions: (o.conditions || []).map((c: any) => {
+      if (c === 'none?') {
+        return { op: 'none', subCondition: '>=', value: 0 };
+      }
+      if (c === 'any?') {
+        return { op: 'any', subCondition: '>=', value: 0 };
+      }
+      if (typeof c === 'object' && c.op === 'all?') {
+        return { op: 'all', subCondition: c.subCondition, value: c.value };
+      }
+      return c;
+    }),
+  }));
+}
+
 function migrateConfig(config: any): SavedConfig {
+  if (config.version === 5) {
+    return config as SavedConfig;
+  }
+
   if (config.version === 4) {
+    const outcomes: Outcome[] = migrateOutcomeConditions(config.outcomes || []);
+    config.outcomes = outcomes;
+    config.version = 5;
     return config as SavedConfig;
   }
 

@@ -4,8 +4,7 @@ import type { Outcome, TaggedDie, PipelineValue, NamedValue } from '@/types';
 import { evaluatePipeline } from '@/domain/resolve';
 
 function makeEnv(rolled: TaggedDie[], pipeline: NamedValue[] = []): Map<string, PipelineValue> {
-  const env = evaluatePipeline(rolled, pipeline);
-  return env;
+  return evaluatePipeline(rolled, pipeline);
 }
 
 describe('evaluateOutcome', () => {
@@ -44,12 +43,12 @@ describe('evaluateOutcome', () => {
     expect(evaluateOutcome(outcome, env)).toBe(false);
   });
 
-  it('evaluates any? on vector', () => {
+  it('evaluates any dice condition on vector', () => {
     const outcome: Outcome = {
       id: '1',
       name: 'Any six',
       source: 'rolled',
-      conditions: ['any?'],
+      conditions: [{ op: 'any', subCondition: '=', value: 6 }],
       connector: 'and',
       comment: '',
       isDefault: false,
@@ -58,34 +57,40 @@ describe('evaluateOutcome', () => {
     env.set('rolled', [{ face: 6, tag: '' }, { face: 3, tag: '' }]);
     expect(evaluateOutcome(outcome, env)).toBe(true);
 
+    env.set('rolled', [{ face: 4, tag: '' }, { face: 3, tag: '' }]);
+    expect(evaluateOutcome(outcome, env)).toBe(false);
+
     env.set('rolled', []);
     expect(evaluateOutcome(outcome, env)).toBe(false);
   });
 
-  it('evaluates none? on vector', () => {
+  it('evaluates none dice condition on vector', () => {
     const outcome: Outcome = {
       id: '1',
-      name: 'Empty',
+      name: 'No hits',
       source: 'rolled',
-      conditions: ['none?'],
+      conditions: [{ op: 'none', subCondition: '>=', value: 6 }],
       connector: 'and',
       comment: '',
       isDefault: false,
     };
     const env = new Map<string, any>();
-    env.set('rolled', []);
+    env.set('rolled', [{ face: 4, tag: '' }, { face: 3, tag: '' }]);
     expect(evaluateOutcome(outcome, env)).toBe(true);
 
-    env.set('rolled', [{ face: 5, tag: '' }]);
+    env.set('rolled', [{ face: 6, tag: '' }]);
     expect(evaluateOutcome(outcome, env)).toBe(false);
+
+    env.set('rolled', []);
+    expect(evaluateOutcome(outcome, env)).toBe(true);
   });
 
-  it('evaluates all? with sub-condition', () => {
+  it('evaluates all dice condition on vector', () => {
     const outcome: Outcome = {
       id: '1',
       name: 'All >= 6',
       source: 'rolled',
-      conditions: [{ op: 'all?', subCondition: '>=', value: 6 }],
+      conditions: [{ op: 'all', subCondition: '>=', value: 6 }],
       connector: 'and',
       comment: '',
       isDefault: false,

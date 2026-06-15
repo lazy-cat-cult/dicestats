@@ -167,7 +167,7 @@ function applyParameter(job: SimJob, param: Parameter, value: number): SimJob {
     if (outcome) {
       for (let i = 0; i < outcome.conditions.length; i++) {
         const cond = outcome.conditions[i];
-        if (typeof cond === 'object' && 'op' in cond) {
+        if (typeof cond === 'object' && 'value' in cond) {
           outcome.conditions[i] = { ...cond, value };
           break;
         }

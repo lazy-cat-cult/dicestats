@@ -26,11 +26,13 @@ describe('PRESETS', () => {
     expect(maxStep.op).toBe('max');
   });
 
-  it('has Shadowrun preset with pipeline', () => {
+  it('has Shadowrun preset with dice conditions', () => {
     const sr = getPreset('shadowrun-xd6');
     expect(sr).toBeDefined();
-    expect(sr!.pipeline.length).toBeGreaterThan(0);
-    expect(sr!.pipeline[0].name).toBe('hits');
+    expect(sr!.outcomes.length).toBeGreaterThanOrEqual(2);
+    const hitOutcome = sr!.outcomes.find((o) => o.name === '1+ hits');
+    expect(hitOutcome).toBeDefined();
+    expect(hitOutcome!.conditions[0]).toEqual({ op: 'any', subCondition: '>=', value: 5 });
   });
 
   it('has Vampire V5 preset', () => {
