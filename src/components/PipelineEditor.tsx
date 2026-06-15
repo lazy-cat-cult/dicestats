@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
-import { pipeline, dicePool, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind } from '@/state/app-state';
-import type { NamedValue, ScalarFunction, VectorFunction, ConditionChain, ConditionClause, ConditionOperator, ScalarBinaryOp, FaceValueSpecial, Parameter } from '@/types';
+import { pipeline, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind } from '@/state/app-state';
+import type { NamedValue, ScalarFunction, VectorFunction, ConditionChain, ConditionClause, ConditionOperator, ScalarBinaryOp, FaceValueSpecial, Parameter, ScalarLiteralOp, ScalarNamedOp } from '@/types';
 import { SweepIndicator } from '@/components/SweepIndicator';
 import { SweepPopover } from '@/components/SweepPopover';
 
@@ -86,7 +86,7 @@ export function PipelineEditor() {
     }, 500);
   }
 
-  function updateRow(index: number, partial: Record<string, any>) {
+  function updateRow(index: number, partial: Partial<NamedValue>) {
     pipeline.value = pipe.map((nv, i) => (i === index ? { ...nv, ...partial } as NamedValue : nv));
   }
 
@@ -115,9 +115,7 @@ export function PipelineEditor() {
         const sources = getAvailableSources(pipe, i);
         const currentOp = nv.op;
         const isVectorOp = typeof currentOp === 'object' && 'fn' in currentOp && (currentOp.fn === 'filter' || currentOp.fn === 'remove');
-        const isCount = (currentOp as any) === 'count' || (currentOp as any) === 'sum';
         const isBinary = typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp);
-        const isCeilFloor = typeof currentOp === 'object' && 'fn' in currentOp && (currentOp.fn === 'ceil' || currentOp.fn === 'floor');
         const sourceType = nv.source === 'rolled' ? 'vector' : (() => {
           const src = pipe.find((p) => p.name === nv.source);
           return src ? getOutputType(src) : 'vector';
@@ -223,33 +221,35 @@ export function PipelineEditor() {
               />
             )}
 
-            {isBinary && typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp) && (
+            {isBinary && typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp) && (() => {
+              const binaryOp = currentOp as ScalarLiteralOp | ScalarNamedOp;
+              return (
               <div class="flex items-center gap-2 mb-1">
                 <select
-                  value={(currentOp as any).operand}
+                  value={binaryOp.operand}
                   class="px-2 py-1 border rounded text-sm"
                   onChange={(e) => {
                     const operand = (e.target as HTMLSelectElement).value;
                     if (operand === 'literal') {
-                      updateRow(i, { op: { fn: currentOp.fn as ScalarBinaryOp, operand: 'literal', value: 0 } as ScalarFunction });
+                      updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: 0 } as ScalarFunction });
                     } else {
                       const scalarNames = getScalarNgNames(i);
                       const firstScalar = scalarNames[0] || '';
-                      updateRow(i, { op: { fn: currentOp.fn as ScalarBinaryOp, operand: 'named', source2: firstScalar } as ScalarFunction });
+                      updateRow(i, { op: { fn: binaryOp.fn, operand: 'named', source2: firstScalar } as ScalarFunction });
                     }
                   }}
                 >
                   <option value="literal">literal</option>
                   <option value="named">named value</option>
                 </select>
-                {(currentOp as any).operand === 'literal' ? (
+                {binaryOp.operand === 'literal' ? (
                   <>
                     <input
                       type="number"
-                      value={(currentOp as any).value ?? 0}
+                      value={binaryOp.value ?? 0}
                       class="w-20 px-2 py-1 border rounded text-sm"
                       onInput={(e) => {
-                        updateRow(i, { op: { fn: currentOp.fn as ScalarBinaryOp, operand: 'literal', value: Number((e.target as HTMLInputElement).value) || 0 } as ScalarFunction });
+                        updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: Number((e.target as HTMLInputElement).value) || 0 } as ScalarFunction });
                       }}
                     />
                     {(() => {
@@ -281,10 +281,10 @@ export function PipelineEditor() {
                   </>
                 ) : (
                   <select
-                    value={(currentOp as any).source2 || ''}
+                    value={(binaryOp as ScalarNamedOp).source2 || ''}
                     class="px-2 py-1 border rounded text-sm"
                     onChange={(e) => {
-                      updateRow(i, { op: { fn: currentOp.fn as ScalarBinaryOp, operand: 'named', source2: (e.target as HTMLSelectElement).value } as ScalarFunction });
+                      updateRow(i, { op: { fn: binaryOp.fn, operand: 'named', source2: (e.target as HTMLSelectElement).value } as ScalarFunction });
                     }}
                   >
                     {getScalarNgNames(i).map((n) => (
@@ -293,7 +293,8 @@ export function PipelineEditor() {
                   </select>
                 )}
               </div>
-            )}
+              );
+            })()}
 
             <input
               type="text"

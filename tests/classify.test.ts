@@ -38,7 +38,7 @@ describe('evaluateOutcome', () => {
       comment: '',
       isDefault: false,
     };
-    const env = new Map<string, any>();
+    const env = new Map<string, PipelineValue>();
     env.set('rolled', [{ face: 18, tag: '' }]);
     expect(evaluateOutcome(outcome, env)).toBe(false);
   });
@@ -53,7 +53,7 @@ describe('evaluateOutcome', () => {
       comment: '',
       isDefault: false,
     };
-    const env = new Map<string, any>();
+    const env = new Map<string, PipelineValue>();
     env.set('rolled', [{ face: 6, tag: '' }, { face: 3, tag: '' }]);
     expect(evaluateOutcome(outcome, env)).toBe(true);
 
@@ -74,7 +74,7 @@ describe('evaluateOutcome', () => {
       comment: '',
       isDefault: false,
     };
-    const env = new Map<string, any>();
+    const env = new Map<string, PipelineValue>();
     env.set('rolled', [{ face: 4, tag: '' }, { face: 3, tag: '' }]);
     expect(evaluateOutcome(outcome, env)).toBe(true);
 
@@ -95,7 +95,7 @@ describe('evaluateOutcome', () => {
       comment: '',
       isDefault: false,
     };
-    const env = new Map<string, any>();
+    const env = new Map<string, PipelineValue>();
     env.set('rolled', [{ face: 6, tag: '' }, { face: 8, tag: '' }]);
     expect(evaluateOutcome(outcome, env)).toBe(true);
 

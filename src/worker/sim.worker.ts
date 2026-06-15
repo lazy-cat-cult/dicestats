@@ -176,9 +176,9 @@ function applyParameter(job: SimJob, param: Parameter, value: number): SimJob {
   } else if (param.target === 'pipeline.literal' && param.targetPipelineId) {
     const pNv = newJob.pipeline.find((p) => p.id === param.targetPipelineId);
     if (pNv && typeof pNv.op === 'object' && 'fn' in pNv.op) {
-      const op = pNv.op as any;
+      const op = pNv.op as { fn: string; operand?: string; value?: number };
       if ((op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') && op.operand === 'literal') {
-        pNv.op = { ...op, value };
+        pNv.op = { fn: op.fn, operand: 'literal', value };
       }
     }
   }

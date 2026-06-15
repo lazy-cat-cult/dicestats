@@ -1,0 +1,97 @@
+﻿
+> dice-probability-calculator@1.0.0 lint
+> eslint .
+
+
+C:\Users\eakse\OneDrive\_ws\dev\dice\src\components\DicePoolEditor.tsx
+  21:12  error  'updatePool' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\eakse\OneDrive\_ws\dev\dice\src\components\OutcomeEditor.tsx
+  2:30  error  'dicePool' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\eakse\OneDrive\_ws\dev\dice\src\components\ParameterEditor.tsx
+  2:92  error  'activeSweepsByTarget' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\eakse\OneDrive\_ws\dev\dice\src\components\PipelineEditor.tsx
+    2:20  error  'dicePool' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+   89:61  error  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  118:15  error  'isCount' is assigned a value but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+  118:39  error  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  118:73  error  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  120:15  error  'isCeilFloor' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  229:40  error  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  245:32  error  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  249:44  error  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+  284:42  error  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+
+C:\Users\eakse\OneDrive\_ws\dev\dice\src\domain\resolve.ts
+   1:69  error  'ScalarFunction' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  59:44  error  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  60:41  error  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  63:44  error  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  64:41  error  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  67:25  error  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  68:87  error  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  69:25  error  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  70:41  error  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  81:7   error  The value assigned to 'sourceType' is not used in subsequent statements           no-useless-assignment
+
+C:\Users\eakse\OneDrive\_ws\dev\dice\src\state\persistence.ts
+   18:11  error  Empty block statement                     no-empty
+   42:11  error  Empty block statement                     no-empty
+   46:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   46:53  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   47:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   49:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   64:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   77:69  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   96:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  130:75  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  156:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  182:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  193:69  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  203:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\eakse\OneDrive\_ws\dev\dice\src\utils\validation.ts
+    1:74   error  'PipelineValue' is defined but never used. Allowed unused vars must match /^_/u    @typescript-eslint/no-unused-vars
+    1:89   error  'ConditionClause' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+    1:106  error  'ConditionChain' is defined but never used. Allowed unused vars must match /^_/u   @typescript-eslint/no-unused-vars
+    1:122  error  'ScalarFunction' is defined but never used. Allowed unused vars must match /^_/u   @typescript-eslint/no-unused-vars
+    1:138  error  'VectorFunction' is defined but never used. Allowed unused vars must match /^_/u   @typescript-eslint/no-unused-vars
+   91:25   error  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   93:20   error  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   93:55   error  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   96:39   error  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   96:76   error  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  154:49   error  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  212:7    error  The value assigned to 'sourceType' is not used in subsequent statements            no-useless-assignment
+
+C:\Users\eakse\OneDrive\_ws\dev\dice\src\worker\sim.worker.ts
+  179:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\eakse\OneDrive\_ws\dev\dice\tests\app-state.test.ts
+  3:32  error  'outcomes' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+  3:42  error  'pipeline' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+  4:10  error  'DICE_CONDITION_TYPES' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  5:26  error  'NamedValue' is defined but never used. Allowed unused vars must match /^_/u            @typescript-eslint/no-unused-vars
+  5:38  error  'Outcome' is defined but never used. Allowed unused vars must match /^_/u               @typescript-eslint/no-unused-vars
+
+C:\Users\eakse\OneDrive\_ws\dev\dice\tests\classify.test.ts
+  41:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  56:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  77:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  98:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\eakse\OneDrive\_ws\dev\dice\tests\integration.test.ts
+    2:34  error    'OutcomeCondition' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+    2:64  error    'TaggedDie' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+  114:33  warning  Unexpected any. Specify a different type                                            @typescript-eslint/no-explicit-any
+
+C:\Users\eakse\OneDrive\_ws\dev\dice\tests\resolve.test.ts
+  169:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  188:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  210:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  249:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 66 problems (57 errors, 9 warnings)
+

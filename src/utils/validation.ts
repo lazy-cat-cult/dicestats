@@ -1,4 +1,4 @@
-import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter, PipelineValue, ConditionClause, ConditionChain, ScalarFunction, VectorFunction, OutcomeCondition, ConditionOperator, DiceConditionType } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter, OutcomeCondition, ConditionOperator, DiceConditionType, ScalarLiteralOp } from '@/types';
 import { DICE_CONDITION_TYPES } from '@/types';
 
 export interface ValidationError {
@@ -13,13 +13,27 @@ export function isScalarCondition(cond: OutcomeCondition): cond is { op: Conditi
   return !DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
 }
 
+function asScalarObjectOp(op: unknown): { fn: string; operand?: string; value?: number; source2?: string } | null {
+  if (typeof op !== 'object' || op === null) return null;
+  if (!('fn' in op)) return null;
+  return op as { fn: string; operand?: string; value?: number; source2?: string };
+}
+
 export function isBinaryMathLiteral(nv: NamedValue): boolean {
-  const op = nv.op;
-  if (typeof op !== 'object' || op === null) return false;
-  if (!('fn' in op)) return false;
-  const fn = (op as { fn: string }).fn;
+  const op = asScalarObjectOp(nv.op);
+  if (!op) return false;
+  const fn = op.fn;
   if (fn !== 'add' && fn !== 'subtract' && fn !== 'multiply' && fn !== 'divide') return false;
-  return (op as { operand?: string }).operand === 'literal';
+  return op.operand === 'literal';
+}
+
+export function asScalarLiteral(nv: NamedValue): ScalarLiteralOp | null {
+  const op = asScalarObjectOp(nv.op);
+  if (!op) return null;
+  if (op.operand !== 'literal') return null;
+  if (op.fn !== 'add' && op.fn !== 'subtract' && op.fn !== 'multiply' && op.fn !== 'divide') return null;
+  if (typeof op.value !== 'number') return null;
+  return { fn: op.fn, operand: 'literal', value: op.value };
 }
 
 export function validateConfig(
@@ -88,13 +102,16 @@ export function validateConfig(
 
     const op = nv.op;
     if (typeof op === 'object' && op !== null) {
-      const fn = (op as any).fn;
-      if (fn === 'add' || fn === 'subtract' || fn === 'multiply' || fn === 'divide') {
-        if ((op as any).operand === 'named' && (op as any).source2 === nv.name) {
-          errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" cannot reference itself`, blocking: true });
-        }
-        if (fn === 'divide' && (op as any).operand === 'literal' && (op as any).value === 0) {
-          errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" divides by zero`, blocking: false });
+      const obj = asScalarObjectOp(op);
+      if (obj) {
+        const fn = obj.fn;
+        if (fn === 'add' || fn === 'subtract' || fn === 'multiply' || fn === 'divide') {
+          if (obj.operand === 'named' && obj.source2 === nv.name) {
+            errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" cannot reference itself`, blocking: true });
+          }
+          if (fn === 'divide' && obj.operand === 'literal' && obj.value === 0) {
+            errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" divides by zero`, blocking: false });
+          }
         }
       }
     }
@@ -151,7 +168,7 @@ export function validateConfig(
     for (const cond of outcome.conditions) {
       if (typeof cond === 'object' && 'op' in cond) {
         const op = cond.op;
-        if (DICE_CONDITION_TYPES.includes(op as any)) {
+        if (DICE_CONDITION_TYPES.includes(op as DiceConditionType)) {
           if (isScalar) {
             errors.push({ id: nextId(), message: `Dice condition "${op}" cannot be used on scalar source`, blocking: true });
           }
@@ -209,25 +226,28 @@ export function validateConfig(
 }
 
 function inferType(nv: NamedValue, pipeline: NamedValue[]): 'vector' | 'scalar' | null {
-  let sourceType: 'vector' | 'scalar' | null = 'vector';
   if (nv.source === 'rolled') {
-    sourceType = 'vector';
-  } else {
-    const src = pipeline.find((p) => p.name === nv.source);
-    if (!src) return null;
-    const srcType = inferType(src, pipeline);
-    if (!srcType) return null;
-    sourceType = srcType;
+    return inferTypeFromOp(nv);
   }
 
+  const src = pipeline.find((p) => p.name === nv.source);
+  if (!src) return null;
+  const srcType = inferType(src, pipeline);
+  if (!srcType) return null;
+  if (srcType === 'vector' && (src.op === 'count' || src.op === 'sum')) {
+    return inferTypeFromOp(nv);
+  }
+  return inferTypeFromOp(nv);
+}
+
+function inferTypeFromOp(nv: NamedValue): 'vector' | 'scalar' {
   const op = nv.op;
   if (op === 'count' || op === 'sum' || op === 'max' || op === 'min') return 'scalar';
   if (typeof op === 'object' && op !== null && 'fn' in op) {
     if (op.fn === 'filter' || op.fn === 'remove') return 'vector';
     return 'scalar';
   }
-
-  return sourceType;
+  return 'vector';
 }
 
 export function canRunSimulation(errors: ValidationError[]): boolean {
