@@ -17,21 +17,11 @@ Each outcome SHALL have:
 - `isDefault`: boolean, at most one outcome MAY be marked as default
 
 ```typescript
-type OutcomeCondition =
-  | 'none?'                                         // vector is empty
-  | 'any?'                                          // vector has at least one element
-  | { op: 'all?'; subCondition: ConditionOperator; value: number }  // all elements satisfy condition
-  | { op: ConditionOperator; value: number };        // scalar comparison
+type DiceConditionType = 'any' | 'all' | 'none';
 
-interface Outcome {
-  id: string;
-  name: string;
-  source: string;
-  conditions: OutcomeCondition[];
-  connector: 'and' | 'or';
-  comment: string;
-  isDefault: boolean;
-}
+type OutcomeCondition =
+  | { op: ConditionOperator; value: number }                                        // scalar comparison
+  | { op: DiceConditionType; subCondition: ConditionOperator; value: number };      // dice quantifier
 ```
 
 #### Scenario: Default outcome
@@ -53,30 +43,58 @@ Outcomes SHALL be evaluated in order. The first matching outcome wins — subseq
 - THEN "Critical" is recorded (even though total >= 10 would also match "Success")
 
 ### Requirement: Scalar Outcome Conditions
-For scalar sources, conditions SHALL use `ConditionOperator` comparisons (`>`, `>=`, `<`, `<=`, `=`, `!=`) with a numeric `value`. A scalar source MUST only use comparison-based conditions.
+For scalar sources (numeric values like `sum`, `count`, `max`, `min`), conditions SHALL use `ConditionOperator` comparisons (`>`, `>=`, `<`, `<=`, `=`, `!=`) with a numeric `value`. Dice conditions (`any`, `all`, `none`) MUST NOT be used with scalar sources — they are meaningless on a single number.
 
 #### Scenario: Threshold outcome
-- GIVEN an outcome "Hit" with source `rolled` and condition `{ op: '>='; value: 15 }`
-- WHEN the rolled sum is 17
+- GIVEN an outcome "Hit" with source `total` (scalar) and condition `{ op: '>='; value: 15 }`
+- WHEN the total is 17
 - THEN "Hit" matches
 
-### Requirement: Vector Outcome Conditions
-For vector sources, conditions SHALL support four forms: noneQ (matches if vector is empty), anyQ (matches if vector has at least one element), allQ with a subCondition operator and value (matches if ALL elements satisfy the sub-condition), and scalar comparison operators with a numeric value (compares a scalar aggregate of the vector).
+### Requirement: Dice Outcome Conditions
+For vector (dice) sources (`rolled` or pipeline results of type `vector`), conditions SHALL use `DiceConditionType` quantifiers (`any`, `all`, `none`) with a `subCondition` operator and numeric `value`. Scalar comparison conditions MUST NOT be used with vector sources — they operate on a single number, not on individual dice.
 
-#### Scenario: Any condition on vector
-- GIVEN an outcome "Has hits" with source `hits` (vector) and condition `any?`
-- WHEN `hits` contains at least one element
-- THEN "Has hits" matches
+Each quantifier checks whether the given comparison holds against individual die face values:
+- `any`: true if at least one die face satisfies `subCondition value`
+- `all`: true if every die face satisfies `subCondition value`
+- `none`: true if no die face satisfies `subCondition value`
 
-#### Scenario: None condition on vector
-- GIVEN an outcome "No hits" with source `hits` (vector) and condition `none?`
-- WHEN `hits` is empty
-- THEN "No hits" matches
+#### Scenario: Any dice condition
+- GIVEN an outcome "Has crit" with source `rolled` (vector) and condition `{ op: 'any'; subCondition: '>='; value: 15 }`
+- WHEN rolled dice are [{face: 17, tag: ''}, {face: 3, tag: ''}]
+- THEN condition is true (at least one die >= 15)
 
-#### Scenario: All condition with sub-condition
-- GIVEN an outcome "All high" with source `hits` and condition `{ op: 'all?'; subCondition: '>='; value: 5 }`
-- WHEN every element in `hits` has face >= 5
-- THEN "All high" matches
+#### Scenario: All dice condition
+- GIVEN an outcome "All high" with source `rolled` (vector) and condition `{ op: 'all'; subCondition: '>='; value: 5 }`
+- WHEN rolled dice are [{face: 6, tag: ''}, {face: 5, tag: ''}]
+- THEN condition is true (all dice >= 5)
+
+#### Scenario: None dice condition
+- GIVEN an outcome "No hits" with source `successes` (vector) and condition `{ op: 'none'; subCondition: '>='; value: 6 }`
+- WHEN `successes` is empty
+- THEN condition is true (no die satisfies >= 6, vacuously true)
+
+#### Scenario: None dice condition with non-empty vector
+- GIVEN an outcome "No hits" with source `successes` (vector) and condition `{ op: 'none'; subCondition: '>='; value: 6 }`
+- WHEN `successes` contains [{face: 4, tag: ''}]
+- THEN condition is true (4 does not satisfy >= 6)
+
+#### Scenario: None dice condition with matching element
+- GIVEN an outcome "No hits" with source `successes` (vector) and condition `{ op: 'none'; subCondition: '>='; value: 6 }`
+- WHEN `successes` contains [{face: 8, tag: ''}]
+- THEN condition is false (8 satisfies >= 6)
+
+### Requirement: Dice Conditions on Scalar Source
+Using a `DiceConditionType` condition (`any`, `all`, `none`) on a scalar source SHALL produce a validation error (blocking). Using a scalar comparison condition on a vector source SHALL also produce a validation error (blocking).
+
+#### Scenario: Dice condition on scalar is invalid
+- GIVEN an outcome referencing a scalar pipeline value
+- WHEN the user adds an `any` dice condition
+- THEN a validation error is displayed and the simulation is blocked
+
+#### Scenario: Scalar condition on vector is invalid
+- GIVEN an outcome referencing a vector source (`rolled` or `filter`/`remove` pipeline result)
+- WHEN the user adds a scalar comparison condition `{ op: '>='; value: 10 }`
+- THEN a validation error is displayed and the simulation is blocked
 
 ### Requirement: Condition Connector Semantics
 When the connector is `and`, ALL conditions MUST match for the outcome to match. When the connector is `or`, ANY condition matching SHALL cause the outcome to match.
@@ -108,10 +126,15 @@ A configuration SHALL support a maximum of 10 outcomes.
 - WHEN the user attempts to add an 11th outcome
 - THEN the "Add outcome" button is disabled or hidden
 
-### Requirement: Scalar-Vector Mismatch Warnings
-Using `none?`, `any?`, or `all?` conditions on a scalar source SHALL produce a validation warning (not a block). Using a scalar comparison on a vector source without aggregation is also a potential mismatch.
+### Requirement: Scalar-Vector Condition Mismatch Errors
+Using `any`, `all`, or `none` dice conditions on a scalar source SHALL produce a validation error (blocking). Using a scalar comparison condition on a vector source without prior aggregation SHALL also produce a validation error (blocking).
 
-#### Scenario: Any on scalar produces warning
+#### Scenario: Dice condition on scalar produces error
 - GIVEN an outcome referencing a scalar pipeline value
-- WHEN the user adds an `any?` condition
-- THEN a warning is displayed indicating the condition is not meaningful for scalar values
+- WHEN the user adds an `any` dice condition
+- THEN a validation error is displayed and the simulation is blocked
+
+#### Scenario: Scalar condition on vector produces error
+- GIVEN an outcome referencing a vector source
+- WHEN the user adds a scalar comparison condition `{ op: '>='; value: 10 }`
+- THEN a validation error is displayed and the simulation is blocked

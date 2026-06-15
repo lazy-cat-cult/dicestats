@@ -1,21 +1,19 @@
-import type { Outcome, OutcomeCondition, TaggedDie, PipelineValue, ConditionChain } from '@/types';
-import { compare } from '@/types';
-import { matchConditions } from '@/domain/matching';
+import type { Outcome, OutcomeCondition, TaggedDie, PipelineValue, DiceConditionType, ConditionOperator } from '@/types';
+import { compare, DICE_CONDITION_TYPES } from '@/types';
 
 function evaluateCondition(sourceValue: PipelineValue, cond: OutcomeCondition): boolean {
-  if (cond === 'none?') {
-    return Array.isArray(sourceValue) && sourceValue.length === 0;
-  }
-  if (cond === 'any?') {
-    return Array.isArray(sourceValue) && sourceValue.length > 0;
-  }
   if (typeof cond === 'object' && 'op' in cond) {
-    if (cond.op === 'all?') {
+    if (DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType)) {
+      const diceCond = cond as { op: DiceConditionType; subCondition: ConditionOperator; value: number };
       if (!Array.isArray(sourceValue)) return false;
-      return (sourceValue as TaggedDie[]).every((die) => compare(die.face, cond.subCondition, cond.value));
+      const dice = sourceValue as TaggedDie[];
+      const results = dice.map((die) => compare(die.face, diceCond.subCondition, diceCond.value));
+      if (diceCond.op === 'any') return results.some(Boolean);
+      if (diceCond.op === 'all') return results.every(Boolean);
+      return !results.some(Boolean);
     }
     if (typeof sourceValue === 'number') {
-      return compare(sourceValue, cond.op as import('@/types').ConditionOperator, cond.value);
+      return compare(sourceValue, cond.op as ConditionOperator, cond.value);
     }
   }
   return false;

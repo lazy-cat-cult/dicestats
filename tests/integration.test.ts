@@ -108,7 +108,7 @@ describe('dice mechanics: outcomes with pipeline', () => {
       terms: [{ id: '1', count: 2, sides: 6, tag: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'Hit', source: 'rolled', conditions: ['any?' as OutcomeCondition], connector: 'and', comment: '', isDefault: false },
+      { id: 'o1', name: 'Hit', source: 'rolled', conditions: [{ op: 'any', subCondition: '>=' as const, value: 1 }], connector: 'and', comment: '', isDefault: false },
     ];
 
     const env = new Map<string, any>();

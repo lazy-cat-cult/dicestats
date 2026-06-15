@@ -128,37 +128,25 @@ export const PRESETS: PresetConfig[] = [
       terms: [{ id: 'd6-1', count: 5, sides: 6, tag: '' }],
     },
     rerollConditions: [],
-    pipeline: [
-      {
-        id: 'p1',
-        name: 'hits',
-        source: 'rolled',
-        op: {
-          fn: 'filter',
-          conditions: {
-            clauses: [{ field: 'face', operator: '>=', value: 5 }],
-            connector: 'and',
-          },
-        },
-        comment: '',
-      },
-      {
-        id: 'p2',
-        name: 'hit_count',
-        source: 'hits',
-        op: 'count',
-        comment: '',
-      },
-    ],
+    pipeline: [],
     outcomes: [
       {
         id: 'o1',
         name: '1+ hits',
-        source: 'hit_count',
-        conditions: [{ op: '>=', value: 1 }],
+        source: 'rolled',
+        conditions: [{ op: 'any', subCondition: '>=', value: 5 }],
         connector: 'and',
         comment: '',
         isDefault: false,
+      },
+      {
+        id: 'o2',
+        name: 'No hits',
+        source: 'rolled',
+        conditions: [{ op: 'none', subCondition: '>=', value: 5 }],
+        connector: 'and',
+        comment: '',
+        isDefault: true,
       },
     ],
     parameters: [
@@ -287,34 +275,13 @@ export const PRESETS: PresetConfig[] = [
         comment: '',
       },
     ],
-    pipeline: [
-      {
-        id: 'p1',
-        name: 'successes',
-        source: 'rolled',
-        op: {
-          fn: 'filter',
-          conditions: {
-            clauses: [{ field: 'face', operator: '>=', value: 8 }],
-            connector: 'and',
-          },
-        },
-        comment: '',
-      },
-      {
-        id: 'p2',
-        name: 'success_count',
-        source: 'successes',
-        op: 'count',
-        comment: '',
-      },
-    ],
+    pipeline: [],
     outcomes: [
       {
         id: 'o1',
         name: 'Success',
-        source: 'success_count',
-        conditions: [{ op: '>=', value: 1 }],
+        source: 'rolled',
+        conditions: [{ op: 'any', subCondition: '>=', value: 8 }],
         connector: 'and',
         comment: '',
         isDefault: false,
@@ -322,8 +289,8 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o2',
         name: 'Failure',
-        source: 'success_count',
-        conditions: [{ op: '=', value: 0 }],
+        source: 'rolled',
+        conditions: [{ op: 'none', subCondition: '>=', value: 8 }],
         connector: 'and',
         comment: '',
         isDefault: true,

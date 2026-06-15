@@ -1,4 +1,5 @@
 import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter, PipelineValue, ConditionClause, ConditionChain, ScalarFunction, VectorFunction } from '@/types';
+import { DICE_CONDITION_TYPES } from '@/types';
 
 export interface ValidationError {
   id: string;
@@ -133,11 +134,17 @@ export function validateConfig(
     })();
 
     for (const cond of outcome.conditions) {
-      if (typeof cond === 'string') {
-        if ((cond === 'none?' || cond === 'any?') && isScalar) {
-          errors.push({ id: nextId(), message: `"${cond}" on scalar source may not be meaningful`, blocking: false });
+      if (typeof cond === 'object' && 'op' in cond) {
+        const op = cond.op;
+        if (DICE_CONDITION_TYPES.includes(op as any)) {
+          if (isScalar) {
+            errors.push({ id: nextId(), message: `Dice condition "${op}" cannot be used on scalar source`, blocking: true });
+          }
+        } else {
+          if (!isScalar) {
+            errors.push({ id: nextId(), message: `Scalar comparison on vector source requires aggregation first`, blocking: true });
+          }
         }
-        if (cond === 'none?' || cond === 'any?') continue;
       }
     }
   }

@@ -1,5 +1,6 @@
 import { outcomes, pipeline, dicePool } from '@/state/app-state';
-import type { Outcome, OutcomeCondition, ConditionOperator, NamedValue } from '@/types';
+import type { Outcome, OutcomeCondition, ConditionOperator, DiceConditionType, NamedValue } from '@/types';
+import { DICE_CONDITION_TYPES } from '@/types';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
 
@@ -31,13 +32,7 @@ function isScalarSource(source: string): boolean {
   if (source === 'rolled') return false;
   const nv = pipeline.value.find((p) => p.name === source);
   if (!nv) return false;
-  const op = nv.op;
-  if (typeof op === 'string' && op === 'count') return true;
-  if (typeof op === 'object' && 'fn' in op) {
-    if (op.fn === 'filter' || op.fn === 'remove') return false;
-    return true;
-  }
-  return false;
+  return getOutputType(nv) === 'scalar';
 }
 
 function emptyOutcome(): Outcome {
@@ -45,7 +40,7 @@ function emptyOutcome(): Outcome {
     id: crypto.randomUUID(),
     name: 'New Outcome',
     source: 'rolled',
-    conditions: [{ op: '>=', value: 10 }],
+    conditions: [{ op: 'any', subCondition: '>=', value: 10 }],
     connector: 'and',
     comment: '',
     isDefault: false,
@@ -160,7 +155,10 @@ export function OutcomeEditor() {
                 <button
                   class="text-xs text-indigo-600 hover:text-indigo-800 ml-2"
                   onClick={() => {
-                    const conditions = [...outcome.conditions, { op: '>=', value: 0 } as OutcomeCondition];
+                    const newCond = scalar
+                      ? { op: '>=' as ConditionOperator, value: 0 }
+                      : { op: 'any' as DiceConditionType, subCondition: '>=' as ConditionOperator, value: 0 };
+                    const conditions = [...outcome.conditions, newCond as OutcomeCondition];
                     updateOutcome(i, { conditions });
                   }}
                 >
@@ -189,103 +187,79 @@ export function OutcomeEditor() {
   );
 }
 
-function OutcomeScalarCondition({ cond, onChange }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void }) {
-  if (typeof cond === 'object' && 'op' in cond && (cond as any).op !== 'all?' && typeof cond !== 'string') {
-    const c = cond as { op: ConditionOperator; value: number };
-    return (
-      <div class="flex items-center gap-1">
-        <select
-          value={c.op}
-          class="px-1 py-0.5 border rounded text-xs"
-          onChange={(e) => onChange({ op: (e.target as HTMLSelectElement).value as ConditionOperator, value: c.value })}
-        >
-          {CONDITION_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
-        </select>
-        <input
-          type="number"
-          value={c.value}
-          class="w-16 px-1 py-0.5 border rounded text-xs text-center"
-          onInput={(e) => onChange({ op: c.op, value: Number((e.target as HTMLInputElement).value) || 0 })}
-        />
-      </div>
-    );
-  }
-  return <span class="text-xs text-gray-500">Condition not applicable to scalar</span>;
+function isScalarCondition(cond: OutcomeCondition): cond is { op: ConditionOperator; value: number } {
+  return typeof cond === 'object' && 'op' in cond && typeof cond.op === 'string' && !DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
 }
 
-function OutcomeVectorCondition({ cond, onChange }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void }) {
-  if (cond === 'none?') {
-    return (
-      <button class="px-2 py-0.5 border rounded text-xs bg-blue-50" onClick={() => onChange({ op: '>=', value: 0 })}>
-        none?
-      </button>
-    );
-  }
-  if (cond === 'any?') {
-    return (
-      <button class="px-2 py-0.5 border rounded text-xs bg-blue-50" onClick={() => onChange({ op: '>=', value: 0 })}>
-        any?
-      </button>
-    );
-  }
-  const typeCond = typeof cond === 'object' && 'op' in cond;
+function isDiceCondition(cond: OutcomeCondition): cond is { op: DiceConditionType; subCondition: ConditionOperator; value: number } {
+  return typeof cond === 'object' && 'op' in cond && DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
+}
 
+function OutcomeScalarCondition({ cond, onChange }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void }) {
+  const scalar = isScalarCondition(cond) ? cond : null;
+  if (!scalar) {
+    return (
+      <button
+        class="px-2 py-0.5 border rounded text-xs bg-gray-100"
+        onClick={() => onChange({ op: '>=', value: 0 })}
+      >
+        Reset condition
+      </button>
+    );
+  }
   return (
     <div class="flex items-center gap-1">
       <select
-        value={typeCond && cond.op === 'all?' ? 'all?' : 'compare'}
+        value={scalar.op}
         class="px-1 py-0.5 border rounded text-xs"
-        onChange={(e) => {
-          const val = (e.target as HTMLSelectElement).value;
-          if (val === 'none?') onChange('none?' as OutcomeCondition);
-          else if (val === 'any?') onChange('any?' as OutcomeCondition);
-          else if (val === 'all?') onChange({ op: 'all?', subCondition: '>=', value: 1 } as OutcomeCondition);
-          else onChange({ op: '>=', value: 0 } as OutcomeCondition);
-        }}
+        onChange={(e) => onChange({ op: (e.target as HTMLSelectElement).value as ConditionOperator, value: scalar.value })}
       >
-        <option value="compare">compare</option>
-        <option value="none?">none?</option>
-        <option value="any?">any?</option>
-        <option value="all?">all?</option>
+        {CONDITION_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
       </select>
-      {typeCond && (
-        <>
-          {cond.op === 'all?' ? (
-            <>
-              <span class="text-xs text-gray-500">all</span>
-              <select
-                value={(cond as any).subCondition}
-                class="px-1 py-0.5 border rounded text-xs"
-                onChange={(e) => onChange({ op: 'all?', subCondition: (e.target as HTMLSelectElement).value as ConditionOperator, value: (cond as any).value })}
-              >
-                {CONDITION_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
-              </select>
-              <input
-                type="number"
-                value={(cond as any).value}
-                class="w-14 px-1 py-0.5 border rounded text-xs text-center"
-                onInput={(e) => onChange({ op: 'all?', subCondition: (cond as any).subCondition, value: Number((e.target as HTMLInputElement).value) || 0 })}
-              />
-            </>
-          ) : (
-            <>
-              <select
-                value={(cond as any).op}
-                class="px-1 py-0.5 border rounded text-xs"
-                onChange={(e) => onChange({ op: (e.target as HTMLSelectElement).value as ConditionOperator, value: (cond as any).value })}
-              >
-                {CONDITION_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
-              </select>
-              <input
-                type="number"
-                value={(cond as any).value}
-                class="w-16 px-1 py-0.5 border rounded text-xs text-center"
-                onInput={(e) => onChange({ op: (cond as any).op, value: Number((e.target as HTMLInputElement).value) || 0 })}
-              />
-            </>
-          )}
-        </>
-      )}
+      <input
+        type="number"
+        value={scalar.value}
+        class="w-16 px-1 py-0.5 border rounded text-xs text-center"
+        onInput={(e) => onChange({ op: scalar.op, value: Number((e.target as HTMLInputElement).value) || 0 })}
+      />
+    </div>
+  );
+}
+
+function OutcomeVectorCondition({ cond, onChange }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void }) {
+  const dice = isDiceCondition(cond) ? cond : null;
+  if (!dice) {
+    return (
+      <button
+        class="px-2 py-0.5 border rounded text-xs bg-gray-100"
+        onClick={() => onChange({ op: 'any', subCondition: '>=', value: 0 })}
+      >
+        Reset condition
+      </button>
+    );
+  }
+  return (
+    <div class="flex items-center gap-1">
+      <select
+        value={dice.op}
+        class="px-1 py-0.5 border rounded text-xs"
+        onChange={(e) => onChange({ op: (e.target as HTMLSelectElement).value as DiceConditionType, subCondition: dice.subCondition, value: dice.value })}
+      >
+        {DICE_CONDITION_TYPES.map((t) => (<option key={t} value={t}>{t} dice</option>))}
+      </select>
+      <select
+        value={dice.subCondition}
+        class="px-1 py-0.5 border rounded text-xs"
+        onChange={(e) => onChange({ op: dice.op, subCondition: (e.target as HTMLSelectElement).value as ConditionOperator, value: dice.value })}
+      >
+        {CONDITION_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
+      </select>
+      <input
+        type="number"
+        value={dice.value}
+        class="w-14 px-1 py-0.5 border rounded text-xs text-center"
+        onInput={(e) => onChange({ op: dice.op, subCondition: dice.subCondition, value: Number((e.target as HTMLInputElement).value) || 0 })}
+      />
     </div>
   );
 }

@@ -52,11 +52,13 @@ export type NamedValue =
   | { id: string; name: string; source: string; op: VectorFunction; comment: string }
   | { id: string; name: string; source: string; op: ScalarFunction; comment: string };
 
+export type DiceConditionType = 'any' | 'all' | 'none';
+
+export const DICE_CONDITION_TYPES: DiceConditionType[] = ['any', 'all', 'none'];
+
 export type OutcomeCondition =
-  | 'none?'
-  | 'any?'
-  | { op: 'all?'; subCondition: ConditionOperator; value: number }
-  | { op: ConditionOperator; value: number };
+  | { op: ConditionOperator; value: number }
+  | { op: DiceConditionType; subCondition: ConditionOperator; value: number };
 
 export interface Outcome {
   id: string;
