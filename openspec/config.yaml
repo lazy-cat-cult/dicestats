@@ -1,0 +1,29 @@
+schema: spec-driven
+
+context: |
+  Project: Dice Probability Calculator
+  Single-page web application for calculating dice roll outcome probabilities
+  in tabletop RPGs using Monte Carlo simulation (1,000,000 iterations).
+  Tech stack: Vite 8.x, Preact 10.x, Preact Signals 2.x, Tailwind CSS 4.x,
+  Chart.js 4.x, Web Worker, Vitest 4.x, TypeScript 6.x.
+  Path alias: @/ -> ./src/
+  State management: Preact Signals (not React hooks).
+  All UI strings in English only. No comments in code unless requested.
+  Worker isolation: domain modules imported by worker must not use Preact/DOM/Node APIs.
+  max and min are scalar functions returning a single number, not keep_highest/keep_lowest.
+  OpenSpec specs in openspec/specs/ are the source of truth for all data models, algorithms, and behavior.
+
+rules:
+  proposal:
+    - Reference spec section numbers from doc/spec.md
+    - Include impact analysis on existing domain types
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use SHALL/MUST/SHOULD/MAY from RFC 2119
+    - Reference TypeScript type names from src/types/index.ts
+  design:
+    - Include data flow diagrams for component interactions
+    - Specify worker message boundaries explicitly
+  tasks:
+    - Group tasks by domain module
+    - Each task must reference the spec requirement it implements
