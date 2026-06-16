@@ -265,7 +265,7 @@ export function OutcomeEditor() {
                     ariaLabel="Conditions connector"
                     value={outcome.connector}
                     onChange={(v) => updateOutcome(i, { connector: v as 'and' | 'or' })}
-                    className="w-14"
+                    className="w-16"
                     mono
                     options={[{ value: 'and', label: 'AND' }, { value: 'or', label: 'OR' }]}
                   />

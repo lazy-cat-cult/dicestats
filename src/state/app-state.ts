@@ -151,8 +151,8 @@ export const dicePoolNotation = computed(() => {
       const countStr = countParam ? formatSweepRange(countParam.values) : String(t.count);
       const sidesStr = sidesParam ? formatSweepRange(sidesParam.values) : String(t.sides);
       let s = `${countStr}d${sidesStr}`;
-      if (t.tag) s += ` \u25CF${t.tag}`;
+      if (t.tag) s += ` <${t.tag}>`;
       return s;
     })
-    .join(' + ');
+    .join(', ');
 });
