@@ -28,7 +28,7 @@ export function Section({ eyebrow, title, description, index, total, actions, ch
             {title}
           </h2>
           {description && (
-            <p class="text-[13px] text-ink-soft mt-2 max-w-prose leading-relaxed">{description}</p>
+            <p class="text-[13px] text-ink-soft mt-2 leading-relaxed">{description}</p>
           )}
         </div>
         {actions && <div class="flex items-center gap-2 shrink-0">{actions}</div>}
