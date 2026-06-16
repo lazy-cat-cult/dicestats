@@ -5,7 +5,7 @@ import type { DicePool } from '@/types';
 describe('rollPool', () => {
   it('rolls a single d20', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 1, sides: 20, tag: '' }],
+      terms: [{ id: '1', count: 1, sides: 20, tag: '', comment: '' }],
     };
     const result = rollPool(pool);
     expect(result.length).toBe(1);
@@ -16,7 +16,7 @@ describe('rollPool', () => {
 
   it('rolls 2d6 with tags', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 2, sides: 6, tag: 'fire' }],
+      terms: [{ id: '1', count: 2, sides: 6, tag: 'fire', comment: '' }],
     };
     const result = rollPool(pool);
     expect(result.length).toBe(2);
@@ -27,8 +27,8 @@ describe('rollPool', () => {
   it('rolls mixed pool with different tags', () => {
     const pool: DicePool = {
       terms: [
-        { id: '1', count: 1, sides: 20, tag: 'normal' },
-        { id: '2', count: 2, sides: 6, tag: 'fire' },
+        { id: '1', count: 1, sides: 20, tag: 'normal', comment: '' },
+        { id: '2', count: 2, sides: 6, tag: 'fire', comment: '' },
       ],
     };
     const result = rollPool(pool);

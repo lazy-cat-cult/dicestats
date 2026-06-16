@@ -5,7 +5,7 @@ export const PRESETS: PresetConfig[] = [
     id: 'dnd-d20',
     name: 'D&D 5e — d20',
     pool: {
-      terms: [{ id: 'd20-1', count: 1, sides: 20, tag: '' }],
+      terms: [{ id: 'd20-1', count: 1, sides: 20, tag: '', comment: '' }],
     },
     rerollConditions: [],
     pipeline: [
@@ -41,7 +41,7 @@ export const PRESETS: PresetConfig[] = [
     id: 'dnd-advantage',
     name: 'D&D 5e — Advantage 2d20 best',
     pool: {
-      terms: [{ id: 'd20-1', count: 2, sides: 20, tag: '' }],
+      terms: [{ id: 'd20-1', count: 2, sides: 20, tag: '', comment: '' }],
     },
     rerollConditions: [],
     pipeline: [
@@ -77,7 +77,7 @@ export const PRESETS: PresetConfig[] = [
     id: 'pbta-2d6',
     name: 'PbtA — 2d6',
     pool: {
-      terms: [{ id: 'd6-1', count: 2, sides: 6, tag: '' }],
+      terms: [{ id: 'd6-1', count: 2, sides: 6, tag: '', comment: '' }],
     },
     rerollConditions: [],
     pipeline: [
@@ -120,7 +120,7 @@ export const PRESETS: PresetConfig[] = [
     id: 'shadowrun-xd6',
     name: 'Shadowrun — Xd6',
     pool: {
-      terms: [{ id: 'd6-1', count: 5, sides: 6, tag: '' }],
+      terms: [{ id: 'd6-1', count: 5, sides: 6, tag: '', comment: '' }],
     },
     rerollConditions: [],
     pipeline: [],
@@ -157,8 +157,8 @@ export const PRESETS: PresetConfig[] = [
     name: 'Vampire V5',
     pool: {
       terms: [
-        { id: 'normal', count: 3, sides: 10, tag: 'normal' },
-        { id: 'hunger', count: 2, sides: 10, tag: 'hunger' },
+        { id: 'normal', count: 3, sides: 10, tag: 'normal', comment: '' },
+        { id: 'hunger', count: 2, sides: 10, tag: 'hunger', comment: '' },
       ],
     },
     rerollConditions: [],
@@ -256,8 +256,8 @@ export const PRESETS: PresetConfig[] = [
     name: 'Daggerheart — Duality (2d12)',
     pool: {
       terms: [
-        { id: 'd12-hope', count: 1, sides: 12, tag: 'hope' },
-        { id: 'd12-fear', count: 1, sides: 12, tag: 'fear' },
+        { id: 'd12-hope', count: 1, sides: 12, tag: 'hope', comment: '' },
+        { id: 'd12-fear', count: 1, sides: 12, tag: 'fear', comment: '' },
       ],
     },
     rerollConditions: [],
@@ -342,8 +342,8 @@ export const PRESETS: PresetConfig[] = [
     name: 'Daggerheart — Compound Outcomes (2d12)',
     pool: {
       terms: [
-        { id: 'd12-hope', count: 1, sides: 12, tag: 'hope' },
-        { id: 'd12-fear', count: 1, sides: 12, tag: 'fear' },
+        { id: 'd12-hope', count: 1, sides: 12, tag: 'hope', comment: '' },
+        { id: 'd12-fear', count: 1, sides: 12, tag: 'fear', comment: '' },
       ],
     },
     rerollConditions: [],
@@ -440,7 +440,7 @@ export const PRESETS: PresetConfig[] = [
     id: 'cyberpunk-red-check',
     name: 'Cyberpunk RED — d10 + Skill (2d10)',
     pool: {
-      terms: [{ id: 'd10-1', count: 2, sides: 10, tag: '' }],
+      terms: [{ id: 'd10-1', count: 2, sides: 10, tag: '', comment: '' }],
     },
     rerollConditions: [],
     pipeline: [
@@ -476,7 +476,7 @@ export const PRESETS: PresetConfig[] = [
     id: 'blades-in-the-dark',
     name: 'Blades in the Dark — Xd6 action',
     pool: {
-      terms: [{ id: 'd6-1', count: 2, sides: 6, tag: '' }],
+      terms: [{ id: 'd6-1', count: 2, sides: 6, tag: '', comment: '' }],
     },
     rerollConditions: [],
     pipeline: [
@@ -542,8 +542,8 @@ export const PRESETS: PresetConfig[] = [
     name: 'Savage Worlds — Trait (d8) + Wild (d6)',
     pool: {
       terms: [
-        { id: 'trait-d8', count: 1, sides: 8, tag: 'trait' },
-        { id: 'wild-d6', count: 1, sides: 6, tag: 'wild' },
+        { id: 'trait-d8', count: 1, sides: 8, tag: 'trait', comment: '' },
+        { id: 'wild-d6', count: 1, sides: 6, tag: 'wild', comment: '' },
       ],
     },
     rerollConditions: [
@@ -644,7 +644,7 @@ export const PRESETS: PresetConfig[] = [
     id: 'wod-explode',
     name: 'World of Darkness — Xd10 explode',
     pool: {
-      terms: [{ id: 'd10-1', count: 5, sides: 10, tag: '' }],
+      terms: [{ id: 'd10-1', count: 5, sides: 10, tag: '', comment: '' }],
     },
     rerollConditions: [
       {

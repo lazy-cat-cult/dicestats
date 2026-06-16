@@ -107,10 +107,10 @@ describe('existingTags', () => {
   it('returns the unique sorted non-empty tags from the pool', () => {
     resetToDefaults();
     dicePool.value = { terms: [
-      { id: 't1', count: 1, sides: 6, tag: 'normal' },
-      { id: 't2', count: 1, sides: 10, tag: 'hunger' },
-      { id: 't3', count: 1, sides: 6, tag: 'normal' },
-      { id: 't4', count: 1, sides: 6, tag: '' },
+      { id: 't1', count: 1, sides: 6, tag: 'normal', comment: '' },
+      { id: 't2', count: 1, sides: 10, tag: 'hunger', comment: '' },
+      { id: 't3', count: 1, sides: 6, tag: 'normal', comment: '' },
+      { id: 't4', count: 1, sides: 6, tag: '', comment: '' },
     ] };
     expect(existingTags.value).toEqual(['hunger', 'normal']);
   });

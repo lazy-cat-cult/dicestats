@@ -6,7 +6,7 @@ import { loadUiPrefs, saveUiPrefs } from '@/state/persistence';
 
 function defaultPool(): DicePool {
   return {
-    terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '' }],
+    terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '', comment: '' }],
   };
 }
 

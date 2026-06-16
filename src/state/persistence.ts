@@ -221,7 +221,7 @@ function migrateConfig(config: V1Config): SavedConfig {
     });
     return {
       version: 6,
-      pool: (v5.pool as DicePool) ?? { terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '' }] },
+      pool: (v5.pool as DicePool) ?? { terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '', comment: '' }] },
       rerollConditions: v5.rerollConditions || [],
       pipeline: v5.pipeline || [],
       outcomes: migratedOutcomes,
@@ -258,7 +258,7 @@ function migrateConfig(config: V1Config): SavedConfig {
     });
     return {
       version: 5,
-      pool: (v3.pool as unknown as DicePool) ?? { terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '' }] },
+      pool: (v3.pool as unknown as DicePool) ?? { terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '', comment: '' }] },
       rerollConditions: v3.rerollConditions || [],
       pipeline: migratedPipeline,
       outcomes: (v3.outcomes as unknown as Outcome[]) || [],
@@ -273,8 +273,9 @@ function migrateConfig(config: V1Config): SavedConfig {
       count: t.count ?? 1,
       sides: t.sides ?? 6,
       tag: t.tag ?? '',
+      comment: '',
     })),
-  } : { terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '' }] };
+  } : { terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '', comment: '' }] };
 
   const rerollConditions: RerollCondition[] = config.rerollConditions || [];
 
