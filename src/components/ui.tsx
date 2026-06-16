@@ -68,7 +68,6 @@ export function TextField({
   className = '',
   id,
   ariaLabel,
-  mono = false,
   suffix,
 }: TextFieldProps) {
   const inputId = id ?? `f-${Math.random().toString(36).slice(2, 8)}`;
@@ -90,7 +89,7 @@ export function TextField({
           placeholder={placeholder}
           maxLength={maxLength}
           aria-label={ariaLabel ?? label}
-          class={`w-full bg-transparent px-2.5 py-1.5 text-[13px] text-ink outline-none placeholder:text-ink-mute ${mono ? 'font-mono tabular' : 'font-body'}`}
+          class="w-full bg-transparent px-2.5 py-1.5 text-[13px] font-mono tabular text-ink outline-none placeholder:text-ink-mute"
           onInput={(e) => onInput((e.target as HTMLInputElement).value)}
         />
         {suffix && (
@@ -143,7 +142,6 @@ interface SelectProps<T extends string> {
   className?: string;
   id?: string;
   ariaLabel?: string;
-  mono?: boolean;
   style?: Record<string, string>;
 }
 
@@ -155,7 +153,6 @@ export function Select<T extends string>({
   className = '',
   id,
   ariaLabel,
-  mono = false,
   style,
 }: SelectProps<T>) {
   const selectId = id ?? `s-${Math.random().toString(36).slice(2, 8)}`;
@@ -174,7 +171,7 @@ export function Select<T extends string>({
           id={selectId}
           value={value}
           aria-label={ariaLabel ?? label}
-          class={`w-full appearance-none bg-transparent px-2.5 py-1.5 pr-7 text-[13px] text-ink outline-none ${mono ? 'font-mono tabular' : 'font-body'}`}
+          class="w-full appearance-none bg-transparent px-2.5 py-1.5 pr-7 text-[13px] font-mono tabular text-ink outline-none"
           style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22><path d=%22M2 4l4 4 4-4%22 stroke=%22%232f7a4d%22 stroke-width=%221.4%22 fill=%22none%22 stroke-linecap=%22square%22/></svg>'); background-size: 12px; background-repeat: no-repeat; background-position: right 8px center;"
           onChange={(e) => onChange((e.target as HTMLSelectElement).value as T)}
         >

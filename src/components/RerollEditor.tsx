@@ -79,8 +79,7 @@ export function RerollEditor() {
                   { value: 'reroll', label: 'Reroll' },
                   { value: 'explode', label: 'Explode' },
                 ]}
-                mono
-              />
+                />
               <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">if</span>
               <ConditionChainEditor
                 chain={rc.conditions}
@@ -97,8 +96,7 @@ export function RerollEditor() {
                 value={rc.repeat}
                 onInput={(v) => updateCondition(i, { repeat: Number(v) || 1 })}
                 className="w-16"
-                mono
-              />
+                />
               <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute">
                 {rc.action === 'explode' ? 'max cascade depth' : 'times'}
               </span>
@@ -181,8 +179,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                 onChange={(v) => onChange({ ...chain, connector: v as 'and' | 'or' })}
                 className="w-16"
                 options={[{ value: 'and', label: 'AND' }, { value: 'or', label: 'OR' }]}
-                mono
-              />
+                />
             )}
             <Select
               ariaLabel="Field"
@@ -190,8 +187,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
               onChange={(v) => updateClause(ci, { field: v as 'face' | 'tag' })}
               className="w-20"
               options={[{ value: 'face', label: 'face' }, { value: 'tag', label: 'tag' }]}
-              mono
-            />
+                />
             {isFace ? (
               <>
                 <Select
@@ -199,8 +195,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                   value={clause.operator}
                   onChange={(v) => updateClause(ci, { operator: v as ConditionOperator })}
                   className="w-14"
-                  mono
-                  options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
+                options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
                 />
                 {isStringValue ? (
                   <Select
@@ -211,8 +206,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                       else updateClause(ci, { value: v as FaceValueSpecial });
                     }}
                     className="w-24"
-                    mono
-                    options={[
+                options={[
                       ...FACE_VALUE_OPTIONS.map((opt) => ({ value: opt.value as string, label: opt.label })),
                       { value: '__number__', label: 'number…' },
                     ]}
@@ -225,8 +219,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                       value={clause.value as number}
                       onInput={(v) => updateClause(ci, { value: Number(v) || 0 })}
                       className="w-16"
-                      mono
-                    />
+                />
                     <Select
                       ariaLabel="Switch to special"
                       value="__number__"
@@ -236,8 +229,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                         }
                       }}
                       className="w-16 text-ink-mute"
-                      mono
-                      options={[
+                options={[
                         { value: '__number__', label: 'num' },
                         ...FACE_VALUE_OPTIONS.map((opt) => ({ value: opt.value as string, label: opt.label })),
                       ]}
@@ -252,8 +244,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                   value={clause.operator}
                   onChange={(v) => updateClause(ci, { operator: v as '=' | '!=' })}
                   className="w-14"
-                  mono
-                  options={TAG_OPERATORS.map((op) => ({ value: op, label: op }))}
+                options={TAG_OPERATORS.map((op) => ({ value: op, label: op }))}
                 />
                 <Select
                   ariaLabel="Tag value"

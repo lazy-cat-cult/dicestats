@@ -142,7 +142,6 @@ export function ParameterEditor() {
                   label="Label"
                   value={param.label}
                   onInput={(v) => updateParameter(i, { label: v })}
-                  mono
                 />
                 <Select
                   label="Target"
@@ -192,7 +191,6 @@ export function ParameterEditor() {
                     const values = parseValues(v);
                     updateParameter(i, { values });
                   }}
-                  mono
                 />
               </div>
               {stale && (

@@ -199,8 +199,7 @@ export function PipelineEditor() {
                       }
                     }}
                     className="w-24"
-                    mono
-                    options={[
+                options={[
                       { value: 'filter', label: 'filter' },
                       { value: 'remove', label: 'remove' },
                       { value: 'count', label: 'count' },
@@ -222,8 +221,7 @@ export function PipelineEditor() {
                       }
                     }}
                     className="w-24"
-                    mono
-                    options={[
+                options={[
                       ...SCALAR_BINARY_OPS.map((op) => ({ value: op, label: op })),
                       { value: 'ceil', label: 'ceil' },
                       { value: 'floor', label: 'floor' },
@@ -266,8 +264,7 @@ export function PipelineEditor() {
                         }
                       }}
                       className="w-24"
-                      mono
-                      options={[
+                options={[
                         { value: 'literal', label: 'literal' },
                         { value: 'named', label: 'named' },
                       ]}
@@ -282,8 +279,7 @@ export function PipelineEditor() {
                             updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: Number(v) || 0 } as ScalarFunction });
                           }}
                           className="w-20"
-                          mono
-                        />
+                />
                         {(() => {
                           const sweepParam = sweeps.get(`pipeline.literal:${nv.id}`);
                           if (sweepParam) {
@@ -409,7 +405,6 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                 value={chain.connector}
                 onChange={(v) => onChange({ ...chain, connector: v as 'and' | 'or' })}
                 className="w-16"
-                mono
                 options={[{ value: 'and', label: 'AND' }, { value: 'or', label: 'OR' }]}
               />
             )}
@@ -418,8 +413,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
               value={clause.field}
               onChange={(v) => updateClause(ci, { field: v as 'face' | 'tag' })}
               className="w-20"
-              mono
-              options={[{ value: 'face', label: 'face' }, { value: 'tag', label: 'tag' }]}
+                options={[{ value: 'face', label: 'face' }, { value: 'tag', label: 'tag' }]}
             />
             {isFace ? (
               <>
@@ -428,8 +422,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                   value={clause.operator}
                   onChange={(v) => updateClause(ci, { operator: v as ConditionOperator })}
                   className="w-14"
-                  mono
-                  options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
+                options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
                 />
                 {isStringValue ? (
                   <Select
@@ -440,8 +433,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                       else updateClause(ci, { value: v as FaceValueSpecial });
                     }}
                     className="w-24"
-                    mono
-                    options={[
+                options={[
                       ...FACE_VALUE_OPTIONS.map((opt) => ({ value: opt.value as string, label: opt.label })),
                       { value: '__number__', label: 'number…' },
                     ]}
@@ -454,8 +446,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                       value={clause.value as number}
                       onInput={(v) => updateClause(ci, { value: Number(v) || 0 })}
                       className="w-16"
-                      mono
-                    />
+                />
                     <Select
                       ariaLabel="Switch to special"
                       value="__number__"
@@ -465,8 +456,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                         }
                       }}
                       className="w-16"
-                      mono
-                      options={[
+                options={[
                         { value: '__number__', label: 'num' },
                         ...FACE_VALUE_OPTIONS.map((opt) => ({ value: opt.value as string, label: opt.label })),
                       ]}
@@ -481,8 +471,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                   value={clause.operator}
                   onChange={(v) => updateClause(ci, { operator: v as '=' | '!=' })}
                   className="w-14"
-                  mono
-                  options={TAG_OPERATORS.map((op) => ({ value: op, label: op }))}
+                options={TAG_OPERATORS.map((op) => ({ value: op, label: op }))}
                 />
                 <Select
                   ariaLabel="Tag value"
