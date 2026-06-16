@@ -125,6 +125,7 @@ export interface SimJob {
   outcomes: Outcome[];
   parameters?: Parameter[];
   iterations: number;
+  taskName?: string;
 }
 
 export interface PresetConfig {

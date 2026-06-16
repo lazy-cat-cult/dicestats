@@ -101,7 +101,8 @@ function runSimulation(
   rerollConditions: RerollCondition[],
   pipeline: NamedValue[],
   outcomes: Outcome[],
-  iterations: number
+  iterations: number,
+  taskName?: string
 ): SimResult {
   const termsSides = pool.terms.map((t) => ({ sides: t.sides, tag: t.tag }));
   const outcomeCounts = new Map<string, number>();
@@ -132,7 +133,7 @@ function runSimulation(
   }
 
   return {
-    label: '',
+    label: taskName ?? '',
     outcomes: outcomes.map((o) => ({
       label: o.name,
       probability: (outcomeCounts.get(o.name) ?? 0) / iterations,
@@ -207,11 +208,11 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
 
   if (msg.type === 'run') {
     cancelled = false;
-    const { pool, rerollConditions, pipeline, outcomes, parameters, iterations } = msg.job;
+    const { pool, rerollConditions, pipeline, outcomes, parameters, iterations, taskName } = msg.job;
 
     try {
       if (!parameters || parameters.length === 0) {
-        const result = runSimulation(pool, rerollConditions, pipeline, outcomes, iterations);
+        const result = runSimulation(pool, rerollConditions, pipeline, outcomes, iterations, taskName);
         self.postMessage({ type: 'result', results: [result] } as WorkerResponse);
       } else {
         const results: SimResult[] = [];
@@ -228,8 +229,8 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
 
           const param = parameters[sweep.paramIndex];
           const modifiedJob = applyParameter(msg.job, param, sweep.value);
-          const result = runSimulation(modifiedJob.pool, modifiedJob.rerollConditions, modifiedJob.pipeline, modifiedJob.outcomes, iterations);
-          result.label = `${param.label}=${sweep.value}`;
+          const result = runSimulation(modifiedJob.pool, modifiedJob.rerollConditions, modifiedJob.pipeline, modifiedJob.outcomes, iterations, taskName);
+          result.label = taskName ? `${taskName} · ${param.label}=${sweep.value}` : `${param.label}=${sweep.value}`;
           results.push(result);
 
           self.postMessage({ type: 'progress', completed: results.length, total: paramSweeps.length } as WorkerResponse);

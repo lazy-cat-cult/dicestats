@@ -12,6 +12,7 @@ import {
   confirmedHighCost,
   configDirty,
   showComments,
+  currentPresetName,
 } from '@/state/app-state';
 import { PresetSelector } from '@/components/PresetSelector';
 import { DicePoolEditor } from '@/components/DicePoolEditor';
@@ -103,6 +104,7 @@ export function App() {
       outcomes: outcomes.value.map((o) => ({ ...o, conditions: [...o.conditions] })),
       parameters: parameters.value.length > 0 ? parameters.value.map((p) => ({ ...p })) : undefined,
       iterations: 1_000_000,
+      taskName: currentPresetName.value ?? undefined,
     };
 
     worker = new Worker(new URL('@/worker/sim.worker.ts', import.meta.url), { type: 'module' });

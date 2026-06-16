@@ -46,6 +46,7 @@ export function resetToDefaults() {
   pipeline.value = [];
   outcomes.value = [];
   parameters.value = [];
+  currentPresetName.value = null;
 }
 
 const TAG_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -88,6 +89,7 @@ export const highlightTargetKind = signal<'term' | 'outcome' | 'pipeline' | null
 
 export const userPresets = signal<PresetConfig[]>([]);
 export const allPresets = computed<PresetConfig[]>(() => [...PRESETS, ...userPresets.value]);
+export const currentPresetName = signal<string | null>(null);
 
 export function applyPresetConfig(preset: PresetConfig) {
   dicePool.value = { ...preset.pool, terms: preset.pool.terms.map((t) => ({ ...t })) };
@@ -95,6 +97,7 @@ export function applyPresetConfig(preset: PresetConfig) {
   pipeline.value = preset.pipeline.map((p) => ({ ...p }));
   outcomes.value = preset.outcomes.map((o) => ({ ...o, conditions: [...o.conditions] }));
   parameters.value = preset.parameters?.map((p) => ({ ...p })) ?? [];
+  currentPresetName.value = preset.name;
 }
 
 export function resetUiForPresetApply() {

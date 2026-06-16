@@ -1,6 +1,7 @@
 import { Stat } from '@/components/ui';
 import { formatPercent } from '@/utils/format';
 import type { SimResult } from '@/types';
+import { currentPresetName } from '@/state/app-state';
 
 interface OddsTapeProps {
   result: SimResult;
@@ -12,6 +13,7 @@ export function OddsTape({ result, progress }: OddsTapeProps) {
   const head = sorted[0];
   const maxProb = head?.probability ?? 0;
   const total = result.outcomes.length;
+  const presetName = currentPresetName.value;
 
   return (
     <div class="relative bg-paper border border-rule shadow-[0_2px_0_0_var(--color-gold)]">
@@ -19,6 +21,11 @@ export function OddsTape({ result, progress }: OddsTapeProps) {
 
       <div class="flex items-end justify-between gap-4 px-5 pt-5 pb-3">
         <div class="min-w-0">
+          {presetName && (
+            <p class="font-display text-[13px] tracking-[0.14em] text-ink mb-2 truncate" title={presetName}>
+              {presetName}
+            </p>
+          )}
           <div class="flex items-center gap-2 mb-2">
             <span class="h-px w-6 bg-gold" aria-hidden="true" />
             <p class="font-mono text-[10px] uppercase tracking-[0.24em] text-gold-deep">
