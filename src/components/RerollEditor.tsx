@@ -1,5 +1,6 @@
 import { rerollConditions, existingTags, getTagColor } from '@/state/app-state';
 import type { RerollCondition, ConditionClause, ConditionChain, ConditionOperator, FaceValueSpecial } from '@/types';
+import { Button, IconButton, Select, TextField } from '@/components/ui';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
 const TAG_OPERATORS: ('=' | '!=')[] = ['=', '!='];
@@ -50,60 +51,87 @@ export function RerollEditor() {
 
   return (
     <div>
-      <h2 class="text-lg font-semibold mb-4">Reroll Conditions</h2>
-
       {conditions.length === 0 && (
-        <p class="text-sm text-gray-500 mb-4">No reroll conditions. Click '+' to add one.</p>
+        <div class="border border-dashed border-rule px-4 py-5 text-center">
+          <p class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">
+            No reroll conditions
+          </p>
+          <p class="text-[12px] text-ink-soft mt-1">
+            Add a condition to replace or explode dice that meet a face or tag rule.
+          </p>
+        </div>
       )}
 
-      {conditions.map((rc, i) => (
-        <div key={rc.id} class="border rounded p-3 mb-3 bg-gray-50">
-          <div class="flex items-center gap-2 mb-2">
-            <select
-              value={rc.action}
-              class="px-2 py-1 border rounded text-sm"
-              onChange={(e) => updateCondition(i, { action: (e.target as HTMLSelectElement).value as 'reroll' | 'explode' })}
-            >
-              <option value="reroll">Reroll</option>
-              <option value="explode">Explode</option>
-            </select>
-            <span class="text-gray-500 text-sm">if</span>
-            <span class="text-gray-500 text-sm">repeat</span>
-            <input
-              type="number"
-              min={1}
-              max={99}
-              value={rc.repeat}
-              class="w-14 px-2 py-1 border rounded text-sm text-center"
-              onInput={(e) => updateCondition(i, { repeat: Number((e.target as HTMLInputElement).value) || 1 })}
-            />
-            <span class="text-gray-400 text-xs">{rc.action === 'explode' ? 'max cascade' : 'times'}</span>
-            <div class="flex-1" />
-            <button class="text-xs text-gray-400 hover:text-gray-600" onClick={() => moveUp(i)} disabled={i === 0}>↑</button>
-            <button class="text-xs text-gray-400 hover:text-gray-600" onClick={() => moveDown(i)} disabled={i === conditions.length - 1}>↓</button>
-            <button class="text-red-400 hover:text-red-600" onClick={() => removeCondition(i)}>×</button>
+      <div class="space-y-2">
+        {conditions.map((rc, i) => (
+          <div
+            key={rc.id}
+            id={`reroll-row-${rc.id}`}
+            class="border border-rule bg-paper-deep/30 px-3 py-2.5"
+          >
+            <div class="flex items-center gap-2 flex-wrap">
+              <Select
+                ariaLabel="Action"
+                value={rc.action}
+                onChange={(v) => updateCondition(i, { action: v as 'reroll' | 'explode' })}
+                className="w-24"
+                options={[
+                  { value: 'reroll', label: 'Reroll' },
+                  { value: 'explode', label: 'Explode' },
+                ]}
+                mono
+              />
+              <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">if</span>
+              <ConditionChainEditor
+                chain={rc.conditions}
+                onChange={(chain) => updateCondition(i, { conditions: chain })}
+              />
+            </div>
+            <div class="mt-2 flex items-center gap-2 flex-wrap">
+              <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">repeat</span>
+              <TextField
+                ariaLabel="Repeat count"
+                type="number"
+                min={1}
+                max={99}
+                value={rc.repeat}
+                onInput={(v) => updateCondition(i, { repeat: Number(v) || 1 })}
+                className="w-16"
+                mono
+              />
+              <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute">
+                {rc.action === 'explode' ? 'max cascade depth' : 'times'}
+              </span>
+              <TextField
+                ariaLabel="Comment"
+                value={rc.comment}
+                placeholder="Comment (optional)"
+                maxLength={100}
+                onInput={(v) => updateCondition(i, { comment: v })}
+                className="flex-1 min-w-[180px]"
+              />
+              <div class="flex items-center gap-0.5 ml-auto">
+                <IconButton onClick={() => moveUp(i)} ariaLabel="Move up" disabled={i === 0}>
+                  <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 7l3-3 3 3" stroke="currentColor" stroke-width="1.4" fill="none" /></svg>
+                </IconButton>
+                <IconButton onClick={() => moveDown(i)} ariaLabel="Move down" disabled={i === conditions.length - 1}>
+                  <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.4" fill="none" /></svg>
+                </IconButton>
+                <IconButton onClick={() => removeCondition(i)} ariaLabel="Delete this condition" variant="danger">
+                  <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" fill="none" /></svg>
+                </IconButton>
+              </div>
+            </div>
           </div>
-
-          <ConditionChainEditor
-            chain={rc.conditions}
-            onChange={(chain) => updateCondition(i, { conditions: chain })}
-          />
-
-          <input
-            type="text"
-            value={rc.comment}
-            placeholder="Comment (optional)"
-            maxLength={100}
-            class="w-full mt-2 px-2 py-1 border rounded text-sm"
-            onInput={(e) => updateCondition(i, { comment: (e.target as HTMLInputElement).value })}
-          />
-        </div>
-      ))}
+        ))}
+      </div>
 
       {conditions.length < 10 && (
-        <button class="text-sm text-indigo-600 hover:text-indigo-800" onClick={addCondition}>
-          + Add condition
-        </button>
+        <div class="mt-3">
+          <Button variant="ghost" size="sm" onClick={addCondition}>
+            + Add condition
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -140,115 +168,117 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
   ];
 
   return (
-    <div>
-      {chain.clauses.map((clause, ci) => (
-        <div key={ci} class="flex items-center gap-1 mb-1 flex-wrap">
-          {ci > 0 && (
-            <select
-              value={chain.connector}
-              class="px-1 py-0.5 border rounded text-xs"
-              onChange={(e) => onChange({ ...chain, connector: (e.target as HTMLSelectElement).value as 'and' | 'or' })}
-            >
-              <option value="and">AND</option>
-              <option value="or">OR</option>
-            </select>
-          )}
-          <select
-            value={clause.field}
-            class="px-1 py-0.5 border rounded text-xs"
-            onChange={(e) => updateClause(ci, { field: (e.target as HTMLSelectElement).value as 'face' | 'tag' })}
-          >
-            <option value="face">face</option>
-            <option value="tag">tag</option>
-          </select>
-
-          {clause.field === 'face' ? (
-            <>
-              <select
-                value={clause.operator}
-                class="px-1 py-0.5 border rounded text-xs"
-                onChange={(e) => updateClause(ci, { operator: (e.target as HTMLSelectElement).value as ConditionOperator })}
-              >
-                {CONDITION_OPERATORS.map((op) => (
-                  <option key={op} value={op}>{op}</option>
-                ))}
-              </select>
-              {typeof clause.value === 'string' ? (
-                <select
-                  value={clause.value}
-                  class="px-1 py-0.5 border rounded text-xs bg-yellow-50"
-                  onChange={(e) => {
-                    const val = (e.target as HTMLSelectElement).value;
-                    if (val === '__number__') {
-                      updateClause(ci, { value: 1 });
-                    } else {
-                      updateClause(ci, { value: val as FaceValueSpecial });
-                    }
-                  }}
-                >
-                  {FACE_VALUE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                  <option value="__number__">number…</option>
-                </select>
-              ) : (
-                <span class="flex items-center gap-0.5">
-                  <input
-                    type="number"
-                    value={clause.value as number}
-                    class="w-14 px-1 py-0.5 border rounded text-xs text-center"
-                    onInput={(e) => updateClause(ci, { value: Number((e.target as HTMLInputElement).value) || 0 })}
-                  />
-                  <select
-                    value="__number__"
-                    class="px-0.5 py-0.5 border rounded text-xs text-gray-400"
-                    onChange={(e) => {
-                      const val = (e.target as HTMLSelectElement).value;
-                      if (val === 'max_value' || val === 'min_value') {
-                        updateClause(ci, { value: val as FaceValueSpecial });
-                      }
+    <div class="flex flex-wrap items-center gap-1.5">
+      {chain.clauses.map((clause, ci) => {
+        const isFace = clause.field === 'face';
+        const isStringValue = isFace && typeof clause.value === 'string';
+        return (
+          <div key={ci} class="flex items-center gap-1 flex-wrap">
+            {ci > 0 && (
+              <Select
+                ariaLabel="Connector"
+                value={chain.connector}
+                onChange={(v) => onChange({ ...chain, connector: v as 'and' | 'or' })}
+                className="w-14"
+                options={[{ value: 'and', label: 'AND' }, { value: 'or', label: 'OR' }]}
+                mono
+              />
+            )}
+            <Select
+              ariaLabel="Field"
+              value={clause.field}
+              onChange={(v) => updateClause(ci, { field: v as 'face' | 'tag' })}
+              className="w-16"
+              options={[{ value: 'face', label: 'face' }, { value: 'tag', label: 'tag' }]}
+              mono
+            />
+            {isFace ? (
+              <>
+                <Select
+                  ariaLabel="Operator"
+                  value={clause.operator}
+                  onChange={(v) => updateClause(ci, { operator: v as ConditionOperator })}
+                  className="w-14"
+                  mono
+                  options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
+                />
+                {isStringValue ? (
+                  <Select
+                    ariaLabel="Value"
+                    value={clause.value as string}
+                    onChange={(v) => {
+                      if (v === '__number__') updateClause(ci, { value: 1 });
+                      else updateClause(ci, { value: v as FaceValueSpecial });
                     }}
-                  >
-                    <option value="__number__">number</option>
-                    {FACE_VALUE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </span>
-              )}
-            </>
-          ) : (
-            <>
-              <select
-                value={clause.operator}
-                class="px-1 py-0.5 border rounded text-xs"
-                onChange={(e) => updateClause(ci, { operator: (e.target as HTMLSelectElement).value as '=' | '!=' })}
-              >
-                {TAG_OPERATORS.map((op) => (
-                  <option key={op} value={op}>{op}</option>
-                ))}
-              </select>
-              <select
-                value={clause.value as string}
-                class="px-1 py-0.5 border rounded text-xs"
-                style={typeof clause.value === 'string' && clause.value ? { borderColor: getTagColor(clause.value) } : {}}
-                onChange={(e) => updateClause(ci, { value: (e.target as HTMLSelectElement).value })}
-              >
-                {existingTags.value.length === 0 && <option value="">Select tag…</option>}
-                {existingTags.value.map((tag) => (
-                  <option key={tag} value={tag}>{tag}</option>
-                ))}
-              </select>
-            </>
-          )}
-
-          {chain.clauses.length > 1 && (
-            <button class="text-red-400 hover:text-red-600 text-xs" onClick={() => removeClause(ci)}>×</button>
-          )}
-        </div>
-      ))}
+                    className="w-24"
+                    mono
+                    options={[
+                      ...FACE_VALUE_OPTIONS.map((opt) => ({ value: opt.value as string, label: opt.label })),
+                      { value: '__number__', label: 'number…' },
+                    ]}
+                  />
+                ) : (
+                  <div class="flex items-center gap-1">
+                    <TextField
+                      ariaLabel="Value"
+                      type="number"
+                      value={clause.value as number}
+                      onInput={(v) => updateClause(ci, { value: Number(v) || 0 })}
+                      className="w-16"
+                      mono
+                    />
+                    <Select
+                      ariaLabel="Switch to special"
+                      value="__number__"
+                      onChange={(v) => {
+                        if (v === 'max_value' || v === 'min_value') {
+                          updateClause(ci, { value: v as FaceValueSpecial });
+                        }
+                      }}
+                      className="w-16 text-ink-mute"
+                      mono
+                      options={[
+                        { value: '__number__', label: 'num' },
+                        ...FACE_VALUE_OPTIONS.map((opt) => ({ value: opt.value as string, label: opt.label })),
+                      ]}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <Select
+                  ariaLabel="Operator"
+                  value={clause.operator}
+                  onChange={(v) => updateClause(ci, { operator: v as '=' | '!=' })}
+                  className="w-14"
+                  mono
+                  options={TAG_OPERATORS.map((op) => ({ value: op, label: op }))}
+                />
+                <Select
+                  ariaLabel="Tag value"
+                  value={clause.value as string}
+                  onChange={(v) => updateClause(ci, { value: v })}
+                  className="w-32"
+                  style={typeof clause.value === 'string' && clause.value ? { borderColor: getTagColor(clause.value) } : undefined}
+                  options={existingTags.value.length === 0
+                    ? [{ value: '', label: 'Select tag…' }]
+                    : existingTags.value.map((tag) => ({ value: tag, label: tag }))}
+                />
+              </>
+            )}
+            {chain.clauses.length > 1 && (
+              <IconButton onClick={() => removeClause(ci)} ariaLabel="Remove clause" variant="danger">
+                <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" fill="none" /></svg>
+              </IconButton>
+            )}
+          </div>
+        );
+      })}
       {chain.clauses.length < 10 && (
-        <button class="text-xs text-indigo-600 hover:text-indigo-800" onClick={addClause}>+ clause</button>
+        <Button variant="quiet" size="sm" onClick={addClause} ariaLabel="Add clause">
+          + clause
+        </Button>
       )}
     </div>
   );

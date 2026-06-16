@@ -1,8 +1,28 @@
 import { useState } from 'preact/hooks';
-import { pipeline, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind, showComments, existingTags, getTagColor } from '@/state/app-state';
-import type { NamedValue, ScalarFunction, VectorFunction, ConditionChain, ConditionClause, ConditionOperator, ScalarBinaryOp, FaceValueSpecial, Parameter, ScalarLiteralOp, ScalarNamedOp } from '@/types';
+import {
+  pipeline,
+  activeSweepsByTarget,
+  parameters,
+  showComments,
+  existingTags,
+  getTagColor,
+} from '@/state/app-state';
+import type {
+  NamedValue,
+  ScalarFunction,
+  VectorFunction,
+  ConditionChain,
+  ConditionClause,
+  ConditionOperator,
+  ScalarBinaryOp,
+  FaceValueSpecial,
+  Parameter,
+  ScalarLiteralOp,
+  ScalarNamedOp,
+} from '@/types';
 import { SweepIndicator } from '@/components/SweepIndicator';
 import { SweepPopover } from '@/components/SweepPopover';
+import { Button, IconButton, Pill, Select, TextField } from '@/components/ui';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
 const TAG_OPERATORS: ('=' | '!=')[] = ['=', '!='];
@@ -35,10 +55,10 @@ function getOutputType(nv: NamedValue): 'vector' | 'scalar' {
   return 'vector';
 }
 
-function getAvailableSources(pipeline: NamedValue[], currentIndex: number): { id: string; label: string; type: 'vector' | 'scalar' }[] {
+function getAvailableSources(pipe: NamedValue[], currentIndex: number): { id: string; label: string; type: 'vector' | 'scalar' }[] {
   const sources: { id: string; label: string; type: 'vector' | 'scalar' }[] = [{ id: 'rolled', label: 'rolled', type: 'vector' }];
-  for (let i = 0; i < currentIndex && i < pipeline.length; i++) {
-    const nv = pipeline[i];
+  for (let i = 0; i < currentIndex && i < pipe.length; i++) {
+    const nv = pipe[i];
     if (nv.name) {
       sources.push({ id: nv.name, label: nv.name, type: getOutputType(nv) });
     }
@@ -73,19 +93,6 @@ export function PipelineEditor() {
     setPopoverNvId(null);
   }
 
-  function jumpToPipeline(nvId: string) {
-    highlightTargetId.value = nvId;
-    highlightTargetKind.value = 'pipeline';
-    const el = document.getElementById(`pipeline-row-${nvId}`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el?.classList.add('outline', 'outline-2', 'outline-offset-2', 'outline-blue-500', 'animate-pulse');
-    setTimeout(() => {
-      el?.classList.remove('outline', 'outline-2', 'outline-offset-2', 'outline-blue-500', 'animate-pulse');
-      highlightTargetId.value = null;
-      highlightTargetKind.value = null;
-    }, 500);
-  }
-
   function updateRow(index: number, partial: Partial<NamedValue>) {
     pipeline.value = pipe.map((nv, i) => (i === index ? { ...nv, ...partial } as NamedValue : nv));
   }
@@ -105,228 +112,247 @@ export function PipelineEditor() {
 
   return (
     <div>
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold">Resolution Pipeline</h2>
-        <label class="flex items-center gap-1 text-xs text-gray-600">
-          <input
-            type="checkbox"
-            checked={showComments.value}
-            onChange={(e) => { showComments.value = (e.target as HTMLInputElement).checked; }}
-          />
-          Show comments
-        </label>
-      </div>
-
       {pipe.length === 0 && (
-        <p class="text-sm text-gray-500 mb-4">No pipeline steps. Outcomes will reference rolled values directly.</p>
+        <div class="border border-dashed border-rule px-4 py-5 text-center">
+          <p class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">
+            No pipeline steps
+          </p>
+          <p class="text-[12px] text-ink-soft mt-1">
+            Outcomes will reference rolled values directly.
+          </p>
+        </div>
       )}
 
-      {pipe.map((nv, i) => {
-        const sources = getAvailableSources(pipe, i);
-        const currentOp = nv.op;
-        const isVectorOp = typeof currentOp === 'object' && 'fn' in currentOp && (currentOp.fn === 'filter' || currentOp.fn === 'remove');
-        const isBinary = typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp);
-        const sourceType = nv.source === 'rolled' ? 'vector' : (() => {
-          const src = pipe.find((p) => p.name === nv.source);
-          return src ? getOutputType(src) : 'vector';
-        })();
+      <div class="space-y-2">
+        {pipe.map((nv, i) => {
+          const sources = getAvailableSources(pipe, i);
+          const currentOp = nv.op;
+          const isVectorOp = typeof currentOp === 'object' && 'fn' in currentOp && (currentOp.fn === 'filter' || currentOp.fn === 'remove');
+          const isBinary = typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp);
+          const sourceType = nv.source === 'rolled' ? 'vector' : (() => {
+            const src = pipe.find((p) => p.name === nv.source);
+            return src ? getOutputType(src) : 'vector';
+          })();
 
-        const nameInvalid = nv.name && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(nv.name);
-        const nameDuplicate = nv.name && pipe.filter((p) => p.name === nv.name).length > 1;
-        const sourceInvalid = nv.source !== 'rolled' && !pipe.find((p) => p.name === nv.source);
+          const nameInvalid = nv.name && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(nv.name);
+          const nameDuplicate = nv.name && pipe.filter((p) => p.name === nv.name).length > 1;
+          const sourceInvalid = nv.source !== 'rolled' && !pipe.find((p) => p.name === nv.source);
+          const hasError = nameInvalid || nameDuplicate || sourceInvalid;
 
-        const outputType = getOutputType(nv);
+          const outputType = getOutputType(nv);
 
-        return (
-          <div key={nv.id} id={`pipeline-row-${nv.id}`} class={`border rounded p-3 mb-3 ${nameInvalid || nameDuplicate || sourceInvalid ? 'border-red-300 bg-red-50' : 'bg-gray-50'}`}>
-            <div class="flex items-center gap-2 mb-2 flex-wrap">
-              <input
-                type="text"
-                value={nv.name}
-                placeholder="name"
-                maxLength={30}
-                class={`w-28 px-2 py-1 border rounded text-sm font-mono ${nameInvalid || nameDuplicate ? 'border-red-400' : ''}`}
-                onInput={(e) => updateRow(i, { name: (e.target as HTMLInputElement).value })}
-              />
-              <span class="text-xs px-1.5 py-0.5 rounded bg-slate-200 text-slate-800">{outputType === 'scalar' ? 'num' : 'vec'}</span>
-              <span class="text-gray-500 text-sm">=</span>
-              <select
-                value={nv.source}
-                class="px-2 py-1 border rounded text-sm"
-                onChange={(e) => {
-                  const newSource = (e.target as HTMLSelectElement).value;
-                  const newSourceType = newSource === 'rolled' ? 'vector' : (() => {
-                    const src = pipe.find((p) => p.name === newSource);
-                    return src ? getOutputType(src) : 'vector';
-                  })();
-                  if (sourceType !== newSourceType) {
-                    if (newSourceType === 'scalar') {
-                      updateRow(i, { source: newSource, op: { fn: 'add', operand: 'literal', value: 0 } as ScalarFunction });
+          const fnKey = typeof currentOp === 'string'
+            ? currentOp
+            : typeof currentOp === 'object' && 'fn' in currentOp
+              ? currentOp.fn
+              : 'filter';
+
+          return (
+            <div
+              key={nv.id}
+              id={`pipeline-row-${nv.id}`}
+              class={`border bg-paper-deep/30 px-3 py-2.5 ${hasError ? 'border-billiard' : 'border-rule'}`}
+            >
+              <div class="flex items-center gap-2 flex-wrap">
+                <TextField
+                  ariaLabel="Name"
+                  value={nv.name}
+                  placeholder="name"
+                  maxLength={30}
+                  onInput={(v) => updateRow(i, { name: v })}
+                  className="w-32"
+                  mono
+                />
+                <Pill variant={outputType === 'scalar' ? 'accent' : 'mute'}>
+                  {outputType === 'scalar' ? 'value' : 'dice'}
+                </Pill>
+                <span class="font-mono text-[13px] text-ink-mute">=</span>
+                <Select
+                  ariaLabel="Source"
+                  value={nv.source}
+                  onChange={(v) => {
+                    const newSource = v;
+                    const newSourceType = newSource === 'rolled' ? 'vector' : (() => {
+                      const src = pipe.find((p) => p.name === newSource);
+                      return src ? getOutputType(src) : 'vector';
+                    })();
+                    if (sourceType !== newSourceType) {
+                      if (newSourceType === 'scalar') {
+                        updateRow(i, { source: newSource, op: { fn: 'add', operand: 'literal', value: 0 } as ScalarFunction });
+                      } else {
+                        updateRow(i, { source: newSource, op: { fn: 'filter', conditions: emptyCondition() } as VectorFunction });
+                      }
                     } else {
-                      updateRow(i, { source: newSource, op: { fn: 'filter', conditions: emptyCondition() } as VectorFunction });
+                      updateRow(i, { source: newSource });
                     }
-                  } else {
-                    updateRow(i, { source: newSource });
-                  }
-                }}
-              >
-                {sources.map((s) => (
-                  <option key={s.id} value={s.id}>{s.label} ({s.type === 'scalar' ? 'num' : 'vec'})</option>
-                ))}
-              </select>
+                  }}
+                  className="w-40"
+                  options={sources.map((s) => ({ value: s.id, label: `${s.label} (${s.type === 'scalar' ? 'value' : 'dice'})` }))}
+                />
+                {sourceType === 'vector' ? (
+                  <Select
+                    ariaLabel="Function"
+                    value={fnKey}
+                    onChange={(v) => {
+                      const fn = v;
+                      if (fn === 'filter' || fn === 'remove') {
+                        updateRow(i, { op: { fn, conditions: emptyCondition() } as VectorFunction });
+                      } else if (fn === 'count' || fn === 'sum' || fn === 'max' || fn === 'min') {
+                        updateRow(i, { op: fn as ScalarFunction });
+                      }
+                    }}
+                    className="w-24"
+                    mono
+                    options={[
+                      { value: 'filter', label: 'filter' },
+                      { value: 'remove', label: 'remove' },
+                      { value: 'count', label: 'count' },
+                      { value: 'sum', label: 'sum' },
+                      { value: 'max', label: 'max' },
+                      { value: 'min', label: 'min' },
+                    ]}
+                  />
+                ) : (
+                  <Select
+                    ariaLabel="Function"
+                    value={fnKey}
+                    onChange={(v) => {
+                      const val = v;
+                      if (val === 'ceil' || val === 'floor') {
+                        updateRow(i, { op: { fn: val } as ScalarFunction });
+                      } else if (SCALAR_BINARY_OPS.includes(val as ScalarBinaryOp)) {
+                        updateRow(i, { op: { fn: val as ScalarBinaryOp, operand: 'literal', value: 0 } as ScalarFunction });
+                      }
+                    }}
+                    className="w-24"
+                    mono
+                    options={[
+                      ...SCALAR_BINARY_OPS.map((op) => ({ value: op, label: op })),
+                      { value: 'ceil', label: 'ceil' },
+                      { value: 'floor', label: 'floor' },
+                    ]}
+                  />
+                )}
+                <div class="ml-auto">
+                  <IconButton onClick={() => removeRow(i)} ariaLabel="Remove pipeline step" variant="danger">
+                    <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" fill="none" /></svg>
+                  </IconButton>
+                </div>
+              </div>
 
-              {sourceType === 'vector' ? (
-                <select
-                  value={typeof currentOp === 'object' && 'fn' in currentOp ? currentOp.fn : (currentOp === 'count' ? 'count' : currentOp === 'sum' ? 'sum' : currentOp === 'max' ? 'max' : currentOp === 'min' ? 'min' : 'filter')}
-                  class="px-2 py-1 border rounded text-sm"
-                  onChange={(e) => {
-                    const fn = (e.target as HTMLSelectElement).value;
-                    if (fn === 'filter' || fn === 'remove') {
-                      updateRow(i, { op: { fn, conditions: emptyCondition() } as VectorFunction });
-                    } else if (fn === 'count' || fn === 'sum' || fn === 'max' || fn === 'min') {
-                      updateRow(i, { op: fn as ScalarFunction });
-                    }
-                  }}
-                >
-                  <option value="filter">filter</option>
-                  <option value="remove">remove</option>
-                  <option value="count">count</option>
-                  <option value="sum">sum</option>
-                  <option value="max">max</option>
-                  <option value="min">min</option>
-                </select>
-              ) : (
-                <select
-                  value={
-                    typeof currentOp === 'string' ? currentOp :
-                    typeof currentOp === 'object' && 'fn' in currentOp ? currentOp.fn : 'add'
-                  }
-                  class="px-2 py-1 border rounded text-sm"
-                  onChange={(e) => {
-                    const val = (e.target as HTMLSelectElement).value;
-                    if (val === 'ceil' || val === 'floor') {
-                      updateRow(i, { op: { fn: val } as ScalarFunction });
-                    } else if (SCALAR_BINARY_OPS.includes(val as ScalarBinaryOp)) {
-                      updateRow(i, { op: { fn: val as ScalarBinaryOp, operand: 'literal', value: 0 } as ScalarFunction });
-                    }
-                  }}
-                >
-                  {SCALAR_BINARY_OPS.map((op) => (
-                    <option key={op} value={op}>{op}</option>
-                  ))}
-                  <option value="ceil">ceil</option>
-                  <option value="floor">floor</option>
-                </select>
+              {isVectorOp && typeof currentOp === 'object' && 'fn' in currentOp && (currentOp.fn === 'filter' || currentOp.fn === 'remove') && (
+                <div class="mt-2 pl-1 border-l border-rule">
+                  <ConditionChainEditor
+                    chain={currentOp.conditions}
+                    onChange={(chain) => {
+                      updateRow(i, { op: { ...currentOp, conditions: chain } as VectorFunction });
+                    }}
+                  />
+                </div>
               )}
 
-              <button class="text-red-400 hover:text-red-600" onClick={() => removeRow(i)}>×</button>
-            </div>
-
-            {isVectorOp && typeof currentOp === 'object' && 'fn' in currentOp && (currentOp.fn === 'filter' || currentOp.fn === 'remove') && (
-              <ConditionChainEditor
-                chain={currentOp.conditions}
-                onChange={(chain) => {
-                  updateRow(i, { op: { ...currentOp, conditions: chain } as VectorFunction });
-                }}
-              />
-            )}
-
-            {isBinary && typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp) && (() => {
-              const binaryOp = currentOp as ScalarLiteralOp | ScalarNamedOp;
-              return (
-              <div class="flex items-center gap-2 mb-1">
-                <select
-                  value={binaryOp.operand}
-                  class="px-2 py-1 border rounded text-sm"
-                  onChange={(e) => {
-                    const operand = (e.target as HTMLSelectElement).value;
-                    if (operand === 'literal') {
-                      updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: 0 } as ScalarFunction });
-                    } else {
-                      const scalarNames = getScalarNgNames(i);
-                      const firstScalar = scalarNames[0] || '';
-                      updateRow(i, { op: { fn: binaryOp.fn, operand: 'named', source2: firstScalar } as ScalarFunction });
-                    }
-                  }}
-                >
-                  <option value="literal">literal</option>
-                  <option value="named">named value</option>
-                </select>
-                {binaryOp.operand === 'literal' ? (
-                  <>
-                    <input
-                      type="number"
-                      value={binaryOp.value ?? 0}
-                      class="w-20 px-2 py-1 border rounded text-sm"
-                      onInput={(e) => {
-                        updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: Number((e.target as HTMLInputElement).value) || 0 } as ScalarFunction });
+              {isBinary && typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp) && (() => {
+                const binaryOp = currentOp as ScalarLiteralOp | ScalarNamedOp;
+                return (
+                  <div class="mt-2 flex items-center gap-2 flex-wrap pl-1 border-l border-rule">
+                    <Select
+                      ariaLabel="Operand"
+                      value={binaryOp.operand}
+                      onChange={(v) => {
+                        const operand = v;
+                        if (operand === 'literal') {
+                          updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: 0 } as ScalarFunction });
+                        } else {
+                          const scalarNames = getScalarNgNames(i);
+                          const firstScalar = scalarNames[0] || '';
+                          updateRow(i, { op: { fn: binaryOp.fn, operand: 'named', source2: firstScalar } as ScalarFunction });
+                        }
                       }}
+                      className="w-24"
+                      mono
+                      options={[
+                        { value: 'literal', label: 'literal' },
+                        { value: 'named', label: 'named' },
+                      ]}
                     />
-                    {(() => {
-                      const sweepParam = sweeps.get(`pipeline.literal:${nv.id}`);
-                      if (sweepParam) {
-                        return (
-                          <SweepIndicator
-                            parameterId={sweepParam.id}
-                            label={sweepParam.label}
-                            values={sweepParam.values}
-                            onJump={() => jumpToPipeline(nv.id)}
-                          />
-                        );
-                      }
-                      if (paramsCount < 3) {
-                        return (
-                          <button
-                            type="button"
-                            class="text-xs text-indigo-600 hover:text-indigo-800 px-1"
-                            onClick={() => setPopoverNvId(nv.id)}
-                            aria-label="Add sweep to pipeline literal"
-                          >
-                            + Sweep
-                          </button>
-                        );
-                      }
-                      return null;
-                    })()}
-                  </>
-                ) : (
-                  <select
-                    value={(binaryOp as ScalarNamedOp).source2 || ''}
-                    class="px-2 py-1 border rounded text-sm"
-                    onChange={(e) => {
-                      updateRow(i, { op: { fn: binaryOp.fn, operand: 'named', source2: (e.target as HTMLSelectElement).value } as ScalarFunction });
-                    }}
-                  >
-                    {getScalarNgNames(i).map((n) => (
-                      <option key={n} value={n}>{n}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-              );
-            })()}
+                    {binaryOp.operand === 'literal' ? (
+                      <>
+                        <TextField
+                          ariaLabel="Literal value"
+                          type="number"
+                          value={binaryOp.value ?? 0}
+                          onInput={(v) => {
+                            updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: Number(v) || 0 } as ScalarFunction });
+                          }}
+                          className="w-20"
+                          mono
+                        />
+                        {(() => {
+                          const sweepParam = sweeps.get(`pipeline.literal:${nv.id}`);
+                          if (sweepParam) {
+                            return (
+                              <SweepIndicator
+                                parameterId={sweepParam.id}
+                                label={sweepParam.label}
+                                values={sweepParam.values}
+                              />
+                            );
+                          }
+                          if (paramsCount < 3) {
+                            return (
+                              <Button variant="quiet" size="sm" onClick={() => setPopoverNvId(nv.id)} ariaLabel="Add sweep to pipeline literal">
+                                ↻ Sweep
+                              </Button>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </>
+                    ) : (
+                      <Select
+                        ariaLabel="Source 2"
+                        value={(binaryOp as ScalarNamedOp).source2 || ''}
+                        onChange={(v) => {
+                          updateRow(i, { op: { fn: binaryOp.fn, operand: 'named', source2: v } as ScalarFunction });
+                        }}
+                        className="w-32"
+                        options={getScalarNgNames(i).map((n) => ({ value: n, label: n }))}
+                      />
+                    )}
+                  </div>
+                );
+              })()}
 
-            {showComments.value && (
-              <input
-                type="text"
-                value={nv.comment}
-                placeholder="Comment (optional)"
-                class="w-full mt-1 px-2 py-1 border rounded text-sm"
-                onInput={(e) => updateRow(i, { comment: (e.target as HTMLInputElement).value })}
-              />
-            )}
+              {showComments.value && (
+                <div class="mt-2">
+                  <TextField
+                    ariaLabel="Comment"
+                    value={nv.comment}
+                    placeholder="Comment (optional)"
+                    onInput={(v) => updateRow(i, { comment: v })}
+                    className="w-full"
+                  />
+                </div>
+              )}
 
-            {(nameInvalid && <p class="text-red-500 text-xs mt-1">Name must match /^[a-zA-Z_][a-zA-Z0-9_]*$/</p>)}
-            {(nameDuplicate && <p class="text-red-500 text-xs mt-1">Duplicate name</p>)}
-            {(sourceInvalid && <p class="text-red-500 text-xs mt-1">Invalid source reference</p>)}
-          </div>
-        );
-      })}
+              {hasError && (
+                <ul class="mt-1.5 space-y-0.5">
+                  {nameInvalid && <li class="font-mono text-[11px] text-billiard">Name must match /^[a-zA-Z_][a-zA-Z0-9_]*$/</li>}
+                  {nameDuplicate && <li class="font-mono text-[11px] text-billiard">Duplicate name</li>}
+                  {sourceInvalid && <li class="font-mono text-[11px] text-billiard">Invalid source reference</li>}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {pipe.length < 20 && (
-        <button class="text-sm text-indigo-600 hover:text-indigo-800" onClick={addRow}>
-          + Add named value
-        </button>
+        <div class="mt-3">
+          <Button variant="ghost" size="sm" onClick={addRow}>
+            + Add named value
+          </Button>
+        </div>
       )}
 
       {popoverNvId && (
@@ -374,109 +400,117 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
   ];
 
   return (
-    <div>
-      {chain.clauses.map((clause, ci) => (
-        <div key={ci} class="flex items-center gap-1 mb-1 flex-wrap">
-          {ci > 0 && (
-            <select
-              value={chain.connector}
-              class="px-1 py-0.5 border rounded text-xs"
-              onChange={(e) => onChange({ ...chain, connector: (e.target as HTMLSelectElement).value as 'and' | 'or' })}
-            >
-              <option value="and">AND</option>
-              <option value="or">OR</option>
-            </select>
-          )}
-          <select
-            value={clause.field}
-            class="px-1 py-0.5 border rounded text-xs"
-            onChange={(e) => updateClause(ci, { field: (e.target as HTMLSelectElement).value as 'face' | 'tag' })}
-          >
-            <option value="face">face</option>
-            <option value="tag">tag</option>
-          </select>
-          {clause.field === 'face' ? (
-            <>
-              <select
-                value={clause.operator}
-                class="px-1 py-0.5 border rounded text-xs"
-                onChange={(e) => updateClause(ci, { operator: (e.target as HTMLSelectElement).value as ConditionOperator })}
-              >
-                {CONDITION_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
-              </select>
-              {typeof clause.value === 'string' ? (
-                <select
-                  value={clause.value}
-                  class="px-1 py-0.5 border rounded text-xs bg-yellow-50"
-                  onChange={(e) => {
-                    const val = (e.target as HTMLSelectElement).value;
-                    if (val === '__number__') {
-                      updateClause(ci, { value: 1 });
-                    } else {
-                      updateClause(ci, { value: val as FaceValueSpecial });
-                    }
-                  }}
-                >
-                  {FACE_VALUE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                  <option value="__number__">number…</option>
-                </select>
-              ) : (
-                <span class="flex items-center gap-0.5">
-                  <input
-                    type="number"
-                    value={clause.value as number}
-                    class="w-14 px-1 py-0.5 border rounded text-xs text-center"
-                    onInput={(e) => updateClause(ci, { value: Number((e.target as HTMLInputElement).value) || 0 })}
-                  />
-                  <select
-                    value="__number__"
-                    class="px-0.5 py-0.5 border rounded text-xs text-gray-400"
-                    onChange={(e) => {
-                      const val = (e.target as HTMLSelectElement).value;
-                      if (val === 'max_value' || val === 'min_value') {
-                        updateClause(ci, { value: val as FaceValueSpecial });
-                      }
+    <div class="flex flex-wrap items-center gap-1.5">
+      {chain.clauses.map((clause, ci) => {
+        const isFace = clause.field === 'face';
+        const isStringValue = isFace && typeof clause.value === 'string';
+        return (
+          <div key={ci} class="flex items-center gap-1 flex-wrap">
+            {ci > 0 && (
+              <Select
+                ariaLabel="Connector"
+                value={chain.connector}
+                onChange={(v) => onChange({ ...chain, connector: v as 'and' | 'or' })}
+                className="w-14"
+                mono
+                options={[{ value: 'and', label: 'AND' }, { value: 'or', label: 'OR' }]}
+              />
+            )}
+            <Select
+              ariaLabel="Field"
+              value={clause.field}
+              onChange={(v) => updateClause(ci, { field: v as 'face' | 'tag' })}
+              className="w-16"
+              mono
+              options={[{ value: 'face', label: 'face' }, { value: 'tag', label: 'tag' }]}
+            />
+            {isFace ? (
+              <>
+                <Select
+                  ariaLabel="Operator"
+                  value={clause.operator}
+                  onChange={(v) => updateClause(ci, { operator: v as ConditionOperator })}
+                  className="w-14"
+                  mono
+                  options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
+                />
+                {isStringValue ? (
+                  <Select
+                    ariaLabel="Value"
+                    value={clause.value as string}
+                    onChange={(v) => {
+                      if (v === '__number__') updateClause(ci, { value: 1 });
+                      else updateClause(ci, { value: v as FaceValueSpecial });
                     }}
-                  >
-                    <option value="__number__">number</option>
-                    {FACE_VALUE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </span>
-              )}
-            </>
-          ) : (
-            <>
-              <select
-                value={clause.operator}
-                class="px-1 py-0.5 border rounded text-xs"
-                onChange={(e) => updateClause(ci, { operator: (e.target as HTMLSelectElement).value as '=' | '!=' })}
-              >
-                {TAG_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
-              </select>
-              <select
-                value={clause.value as string}
-                class="px-1 py-0.5 border rounded text-xs"
-                style={typeof clause.value === 'string' && clause.value ? { borderColor: getTagColor(clause.value) } : {}}
-                onChange={(e) => updateClause(ci, { value: (e.target as HTMLSelectElement).value })}
-              >
-                {existingTags.value.length === 0 && <option value="">Select tag…</option>}
-                {existingTags.value.map((tag) => (
-                  <option key={tag} value={tag}>{tag}</option>
-                ))}
-              </select>
-            </>
-          )}
-          {chain.clauses.length > 1 && (
-            <button class="text-red-400 hover:text-red-600 text-xs" onClick={() => removeClause(ci)}>×</button>
-          )}
-        </div>
-      ))}
+                    className="w-24"
+                    mono
+                    options={[
+                      ...FACE_VALUE_OPTIONS.map((opt) => ({ value: opt.value as string, label: opt.label })),
+                      { value: '__number__', label: 'number…' },
+                    ]}
+                  />
+                ) : (
+                  <div class="flex items-center gap-1">
+                    <TextField
+                      ariaLabel="Value"
+                      type="number"
+                      value={clause.value as number}
+                      onInput={(v) => updateClause(ci, { value: Number(v) || 0 })}
+                      className="w-16"
+                      mono
+                    />
+                    <Select
+                      ariaLabel="Switch to special"
+                      value="__number__"
+                      onChange={(v) => {
+                        if (v === 'max_value' || v === 'min_value') {
+                          updateClause(ci, { value: v as FaceValueSpecial });
+                        }
+                      }}
+                      className="w-16"
+                      mono
+                      options={[
+                        { value: '__number__', label: 'num' },
+                        ...FACE_VALUE_OPTIONS.map((opt) => ({ value: opt.value as string, label: opt.label })),
+                      ]}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <Select
+                  ariaLabel="Operator"
+                  value={clause.operator}
+                  onChange={(v) => updateClause(ci, { operator: v as '=' | '!=' })}
+                  className="w-14"
+                  mono
+                  options={TAG_OPERATORS.map((op) => ({ value: op, label: op }))}
+                />
+                <Select
+                  ariaLabel="Tag value"
+                  value={clause.value as string}
+                  onChange={(v) => updateClause(ci, { value: v })}
+                  className="w-32"
+                  style={typeof clause.value === 'string' && clause.value ? { borderColor: getTagColor(clause.value) } : undefined}
+                  options={existingTags.value.length === 0
+                    ? [{ value: '', label: 'Select tag…' }]
+                    : existingTags.value.map((tag) => ({ value: tag, label: tag }))}
+                />
+              </>
+            )}
+            {chain.clauses.length > 1 && (
+              <IconButton onClick={() => removeClause(ci)} ariaLabel="Remove clause" variant="danger">
+                <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" fill="none" /></svg>
+              </IconButton>
+            )}
+          </div>
+        );
+      })}
       {chain.clauses.length < 10 && (
-        <button class="text-xs text-indigo-600 hover:text-indigo-800" onClick={addClause}>+ clause</button>
+        <Button variant="quiet" size="sm" onClick={addClause} ariaLabel="Add clause">
+          + clause
+        </Button>
       )}
     </div>
   );
