@@ -408,7 +408,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
                 ariaLabel="Connector"
                 value={chain.connector}
                 onChange={(v) => onChange({ ...chain, connector: v as 'and' | 'or' })}
-                className="w-14"
+                className="w-16"
                 mono
                 options={[{ value: 'and', label: 'AND' }, { value: 'or', label: 'OR' }]}
               />
@@ -417,7 +417,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
               ariaLabel="Field"
               value={clause.field}
               onChange={(v) => updateClause(ci, { field: v as 'face' | 'tag' })}
-              className="w-16"
+              className="w-20"
               mono
               options={[{ value: 'face', label: 'face' }, { value: 'tag', label: 'tag' }]}
             />
