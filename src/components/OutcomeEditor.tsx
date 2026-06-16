@@ -210,7 +210,7 @@ export function OutcomeEditor() {
                           }
                         }}
                         className="w-32"
-                        options={sourceOptions.map((s) => ({ value: s.id, label: `${s.label} (${s.type === 'scalar' ? 'value' : 'dice'})` }))}
+                        options={sourceOptions.map((s) => ({ value: s.id, label: s.type === 'vector' ? `[ ${s.label} ]` : s.label }))}
                       />
                       {condType === 'scalar' ? (
                         <OutcomeScalarCondition

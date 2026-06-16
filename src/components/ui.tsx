@@ -103,6 +103,38 @@ export function TextField({
   );
 }
 
+interface BracketedNameInputProps {
+  value: string;
+  onInput: (v: string) => void;
+  bracketed: boolean;
+  placeholder?: string;
+  maxLength?: number;
+  className?: string;
+  ariaLabel?: string;
+}
+
+export function BracketedNameInput({ value, onInput, bracketed, placeholder, maxLength = 30, className = '', ariaLabel }: BracketedNameInputProps) {
+  return (
+    <div class={`flex items-stretch border border-rule bg-paper focus-within:border-billiard focus-within:shadow-[0_0_0_1px_var(--color-billiard)] transition-all ${className}`}>
+      {bracketed && (
+        <span aria-hidden="true" class="flex items-center px-2 font-mono text-[13px] text-ink-mute select-none">[</span>
+      )}
+      <input
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        aria-label={ariaLabel}
+        class="w-full bg-transparent px-1 py-1.5 text-[13px] font-mono tabular text-ink outline-none placeholder:text-ink-mute"
+        onInput={(e) => onInput((e.target as HTMLInputElement).value)}
+      />
+      {bracketed && (
+        <span aria-hidden="true" class="flex items-center px-2 font-mono text-[13px] text-ink-mute select-none">]</span>
+      )}
+    </div>
+  );
+}
+
 interface SelectProps<T extends string> {
   label?: string;
   value: T;
