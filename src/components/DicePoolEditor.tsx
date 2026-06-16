@@ -87,8 +87,7 @@ export function DicePoolEditor() {
                 value={term.count}
                 onInput={(v) => updateTerm(i, { count: Math.max(1, Number(v) || 1) })}
                 className="w-16"
-                mono
-              />
+                />
               {!countParam && paramsCount < 3 && (
                 <Button variant="quiet" size="sm" onClick={() => setPopover({ field: 'count', termId: term.id })} ariaLabel="Add sweep to dice count">
                   ↻ Sweep
@@ -111,7 +110,6 @@ export function DicePoolEditor() {
                   if (v !== 'custom') updateTerm(i, { sides: Number(v) });
                 }}
                 className="w-20"
-                mono
                 options={[
                   ...DIE_SIDES.map((s) => ({ value: String(s), label: String(s) })),
                   { value: 'custom', label: '…' },
@@ -126,7 +124,6 @@ export function DicePoolEditor() {
                   value={term.sides}
                   onInput={(v) => updateTerm(i, { sides: Math.max(1, Number(v) || 1) })}
                   className="w-16"
-                  mono
                 />
               )}
               {!sidesParam && paramsCount < 3 && (

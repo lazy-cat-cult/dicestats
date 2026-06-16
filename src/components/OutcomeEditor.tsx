@@ -266,8 +266,7 @@ export function OutcomeEditor() {
                     value={outcome.connector}
                     onChange={(v) => updateOutcome(i, { connector: v as 'and' | 'or' })}
                     className="w-16"
-                    mono
-                    options={[{ value: 'and', label: 'AND' }, { value: 'or', label: 'OR' }]}
+                options={[{ value: 'and', label: 'AND' }, { value: 'or', label: 'OR' }]}
                   />
                 )}
 
@@ -338,8 +337,7 @@ function OutcomeScalarCondition({ cond, onChange }: { cond: OutcomeCondition; on
         value={scalar.op}
         onChange={(v) => onChange({ source: scalar.source, op: v as ConditionOperator, value: scalar.value })}
         className="w-14"
-        mono
-        options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
+                options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
       />
       <TextField
         ariaLabel="Value"
@@ -347,8 +345,7 @@ function OutcomeScalarCondition({ cond, onChange }: { cond: OutcomeCondition; on
         value={scalar.value}
         onInput={(v) => onChange({ source: scalar.source, op: scalar.op, value: Number(v) || 0 })}
         className="w-20"
-        mono
-      />
+                />
     </div>
   );
 }
@@ -368,17 +365,15 @@ function OutcomeVectorCondition({ cond, onChange }: { cond: OutcomeCondition; on
         ariaLabel="Type"
         value={dice.op}
         onChange={(v) => onChange({ source: dice.source, op: v as DiceConditionType, subCondition: dice.subCondition, value: dice.value })}
-        className="w-20"
-        mono
-        options={DICE_CONDITION_TYPES.map((t) => ({ value: t, label: `${t} dice` }))}
+        className="w-28"
+                options={DICE_CONDITION_TYPES.map((t) => ({ value: t, label: `${t} dice` }))}
       />
       <Select
         ariaLabel="Sub-operator"
         value={dice.subCondition}
         onChange={(v) => onChange({ source: dice.source, op: dice.op, subCondition: v as ConditionOperator, value: dice.value })}
         className="w-14"
-        mono
-        options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
+                options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
       />
       <TextField
         ariaLabel="Value"
@@ -386,8 +381,7 @@ function OutcomeVectorCondition({ cond, onChange }: { cond: OutcomeCondition; on
         value={dice.value}
         onInput={(v) => onChange({ source: dice.source, op: dice.op, subCondition: dice.subCondition, value: Number(v) || 0 })}
         className="w-16"
-        mono
-      />
+                />
     </div>
   );
 }
