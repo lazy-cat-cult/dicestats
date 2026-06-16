@@ -10,8 +10,6 @@ import {
   simProgress,
   totalIterations,
   confirmedHighCost,
-  applyPresetConfig,
-  mergeOrStagePreset,
   configDirty,
   showComments,
 } from '@/state/app-state';
@@ -25,10 +23,10 @@ import { ResultView } from '@/components/ResultView';
 import { SweepCostChip } from '@/components/SweepCostChip';
 import { OutcomeChart, ParameterChart } from '@/components/DistributionChart';
 import { OddsTape } from '@/components/OddsTape';
-import { saveConfig, loadConfig, exportCurrentAsYaml, downloadYamlFile, readYamlFile, importPresetFromYamlText } from '@/state/persistence';
+import { saveConfig, loadConfig } from '@/state/persistence';
 import { validateConfig, canRunSimulation } from '@/utils/validation';
 import { computed } from '@preact/signals';
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect } from 'preact/hooks';
 import { Section, Button, Checkbox } from '@/components/ui';
 
 export const simResults = signal<SimResult[]>([]);
@@ -83,34 +81,6 @@ export function App() {
       window.removeEventListener('pagehide', onPageHide);
     };
   }, []);
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  function handleSave() {
-    loadError.value = null;
-    const nameFromParams = parameters.value[0]?.label;
-    const name = nameFromParams || 'Dice Roll';
-    const { filename, text } = exportCurrentAsYaml(name);
-    downloadYamlFile(filename, text);
-  }
-
-  async function handleLoadFile(e: Event) {
-    loadError.value = null;
-    const input = e.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) return;
-    try {
-      const text = await readYamlFile(file);
-      const config = importPresetFromYamlText(text);
-      resetUiForPresetApply();
-      mergeOrStagePreset(config);
-      applyPresetConfig(config);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load file';
-      loadError.value = message.replace(/^Preset error: /, '').replace(/^YAML error at \d+:\d+: /, 'YAML: ');
-    }
-  }
 
   function runSimulation() {
     if (!canRun.value) return;
@@ -194,27 +164,6 @@ export function App() {
               </span>
             </span>
           </a>
-
-          <div class="flex items-center gap-2 sm:gap-3">
-            {loadError.value && (
-              <span class="hidden sm:inline font-mono text-[11px] text-gold-soft max-w-xs truncate" title={loadError.value}>
-                {loadError.value}
-              </span>
-            )}
-            <Button variant="ghost" size="sm" onClick={handleSave} ariaLabel="Save current configuration as YAML" className="border-gold/50 text-paper hover:border-gold hover:text-gold">
-              Save
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} ariaLabel="Load configuration from YAML file" className="border-gold/50 text-paper hover:border-gold hover:text-gold">
-              Load
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".yaml,.yml"
-              class="hidden"
-              onChange={handleLoadFile}
-            />
-          </div>
         </div>
       </header>
 

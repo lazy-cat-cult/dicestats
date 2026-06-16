@@ -686,6 +686,13 @@ export const PRESETS: PresetConfig[] = [
   },
 ];
 
+export const FEATURED_PRESET_IDS: readonly string[] = [
+  'dnd-d20',
+  'pbta-2d6',
+  'blades-in-the-dark',
+  'daggerheart-duality',
+];
+
 export function getPreset(id: string): PresetConfig | undefined {
   return PRESETS.find((p) => p.id === id);
 }
