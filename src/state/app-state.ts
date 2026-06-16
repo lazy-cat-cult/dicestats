@@ -36,7 +36,7 @@ export function mergeOrStagePreset(config: PresetConfig): 'merged' | 'staged' {
     userPresets.value = userPresets.value.map((p) => (p === existing ? { ...config, id: existing.id } : p));
     return 'staged';
   }
-  userPresets.value = [...userPresets.value, config];
+  userPresets.value = [config, ...userPresets.value];
   return 'staged';
 }
 
