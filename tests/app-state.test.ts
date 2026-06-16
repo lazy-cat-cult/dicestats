@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { hashIdToColor, activeSweepsByTarget, totalIterations, dicePoolNotation, existingTags, showComments } from '@/state/app-state';
-import { parameters, dicePool, resetToDefaults } from '@/state/app-state';
+import { parameters, dicePool, resetToDefaults, applyPresetConfig, currentPresetName } from '@/state/app-state';
+import { PRESETS } from '@/domain/presets';
 import type { Parameter } from '@/types';
 
 describe('hashIdToColor', () => {
@@ -130,5 +131,38 @@ describe('showComments persistence', () => {
     const raw = localStorage.getItem('dice-calc-ui');
     expect(raw).not.toBeNull();
     expect(JSON.parse(raw as string).showComments).toBe(true);
+  });
+});
+
+describe('currentPresetName', () => {
+  beforeEach(() => {
+    resetToDefaults();
+  });
+
+  it('is null after resetToDefaults', () => {
+    expect(currentPresetName.value).toBeNull();
+  });
+
+  it('is set to preset name when applyPresetConfig is called', () => {
+    const preset = PRESETS[0];
+    applyPresetConfig(preset);
+    expect(currentPresetName.value).toBe(preset.name);
+  });
+
+  it('is updated when a different preset is applied', () => {
+    const preset1 = PRESETS[0];
+    const preset2 = PRESETS[1];
+    applyPresetConfig(preset1);
+    expect(currentPresetName.value).toBe(preset1.name);
+    applyPresetConfig(preset2);
+    expect(currentPresetName.value).toBe(preset2.name);
+  });
+
+  it('is cleared when resetToDefaults is called', () => {
+    const preset = PRESETS[0];
+    applyPresetConfig(preset);
+    expect(currentPresetName.value).toBe(preset.name);
+    resetToDefaults();
+    expect(currentPresetName.value).toBeNull();
   });
 });
