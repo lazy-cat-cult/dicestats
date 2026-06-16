@@ -26,7 +26,7 @@ export function DicePoolEditor() {
   function addTerm() {
     dicePool.value = {
       ...dicePool.value,
-      terms: [...dicePool.value.terms, { id: crypto.randomUUID(), count: 1, sides: 6, tag: '' }],
+      terms: [...dicePool.value.terms, { id: crypto.randomUUID(), count: 1, sides: 6, tag: '', comment: '' }],
     };
   }
 

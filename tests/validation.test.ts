@@ -2,13 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { validateConfig, canRunSimulation } from '@/utils/validation';
 import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter } from '@/types';
 
-function makePool(terms?: Partial<{ id: string; count: number; sides: number; tag: string }>[]): DicePool {
+function makePool(terms?: Partial<{ id: string; count: number; sides: number; tag: string; comment: string }>[]): DicePool {
   return {
-    terms: (terms ?? [{ count: 1, sides: 20, tag: '' }]).map((t, i) => ({
+    terms: (terms ?? [{ count: 1, sides: 20, tag: '', comment: '' }]).map((t, i) => ({
       id: t.id ?? `t${i}`,
       count: t.count ?? 1,
       sides: t.sides ?? 20,
       tag: t.tag ?? '',
+      comment: t.comment ?? '',
     })),
   };
 }

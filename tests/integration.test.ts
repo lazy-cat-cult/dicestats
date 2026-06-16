@@ -7,7 +7,7 @@ import { evaluatePipeline } from '@/domain/resolve';
 describe('dice mechanics: rollPool basics', () => {
   it('2d6 total ranges from 2 to 12', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 2, sides: 6, tag: '' }],
+      terms: [{ id: '1', count: 2, sides: 6, tag: '', comment: '' }],
     };
     let min = 100, max = 0;
     for (let i = 0; i < 5000; i++) {
@@ -22,7 +22,7 @@ describe('dice mechanics: rollPool basics', () => {
 
   it('2d6 mean is approximately 7', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 2, sides: 6, tag: '' }],
+      terms: [{ id: '1', count: 2, sides: 6, tag: '', comment: '' }],
     };
     let sum = 0;
     const N = 10000;
@@ -36,7 +36,7 @@ describe('dice mechanics: rollPool basics', () => {
 
   it('1d6 produces all faces with reasonable frequency', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 1, sides: 6, tag: '' }],
+      terms: [{ id: '1', count: 1, sides: 6, tag: '', comment: '' }],
     };
     const counts = new Map<number, number>();
     const N = 60000;
@@ -55,7 +55,7 @@ describe('dice mechanics: rollPool basics', () => {
 describe('dice mechanics: keep via pipeline', () => {
   it('D&D advantage: 2d20 max via pipeline', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 2, sides: 20, tag: '' }],
+      terms: [{ id: '1', count: 2, sides: 20, tag: '', comment: '' }],
     };
     const pipeline: NamedValue[] = [
       { id: 'p1', name: 'best', source: 'rolled', op: 'max', comment: '' },
@@ -74,7 +74,7 @@ describe('dice mechanics: keep via pipeline', () => {
 describe('dice mechanics: outcomes with pipeline', () => {
   it('Shadowrun: 5d6 at least 1 hit (>=5) via pipeline', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 5, sides: 6, tag: '' }],
+      terms: [{ id: '1', count: 5, sides: 6, tag: '', comment: '' }],
     };
     const pipeline = [
       {
@@ -105,7 +105,7 @@ describe('dice mechanics: outcomes with pipeline', () => {
 
   it('PbtA: 2d6 sum outcomes', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 2, sides: 6, tag: '' }],
+      terms: [{ id: '1', count: 2, sides: 6, tag: '', comment: '' }],
     };
     const outcomes: Outcome[] = [
       { id: 'o1', name: 'Hit', conditions: [{ source: 'rolled', op: 'any', subCondition: '>=' as const, value: 1 }], connector: 'and', comment: '', isDefault: false },
@@ -128,8 +128,8 @@ describe('dice mechanics: compound outcomes (per-condition source)', () => {
   it('AND across two different pipeline values', () => {
     const pool: DicePool = {
       terms: [
-        { id: 'd12-hope', count: 1, sides: 12, tag: 'hope' },
-        { id: 'd12-fear', count: 1, sides: 12, tag: 'fear' },
+        { id: 'd12-hope', count: 1, sides: 12, tag: 'hope', comment: '' },
+        { id: 'd12-fear', count: 1, sides: 12, tag: 'fear', comment: '' },
       ],
     };
     const pipeline: NamedValue[] = [
@@ -154,8 +154,8 @@ describe('dice mechanics: tagged dice', () => {
   it('rolls mixed tags correctly', () => {
     const pool: DicePool = {
       terms: [
-        { id: '1', count: 3, sides: 10, tag: 'normal' },
-        { id: '2', count: 2, sides: 10, tag: 'hunger' },
+        { id: '1', count: 3, sides: 10, tag: 'normal', comment: '' },
+        { id: '2', count: 2, sides: 10, tag: 'hunger', comment: '' },
       ],
     };
     const dice = rollPool(pool);

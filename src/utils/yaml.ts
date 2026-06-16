@@ -44,6 +44,7 @@ interface Token {
   kind: 'key' | 'value' | 'list-dash' | 'indent' | 'dedent' | 'newline' | 'comment';
   indent: number;
   text: string;
+  comment?: string;
 }
 
 function slugify(name: string): string {
@@ -65,44 +66,99 @@ function tokenize(text: string): Token[] {
     const indent = i;
     const rest = raw.slice(i);
 
-    if (rest === '' || rest.trim().startsWith('#')) {
+    if (rest === '') {
       continue;
     }
 
-    let j = 0;
-    if (j === 0 && rest.startsWith('- ')) {
-      tokens.push({ line: lineNo, col: indent + 1, kind: 'list-dash', indent, text: '' });
-      j = 2;
-      const afterDash = rest.slice(j);
-      const keyColonIdx = afterDash.indexOf(':');
-      const keySpaceIdx = afterDash.search(/\s/);
-      if (keyColonIdx > 0 && (keySpaceIdx < 0 || keyColonIdx < keySpaceIdx)) {
-        const key = afterDash.slice(0, keyColonIdx).trim();
-        if (/^[A-Za-z_][A-Za-z0-9_.-]*$/.test(key)) {
-          tokens.push({ line: lineNo, col: indent + j + 1, kind: 'key', indent, text: key });
-          j += keyColonIdx + 1;
-          while (j < rest.length && rest[j] === ' ') j++;
+    const hashIdx = rest.indexOf('#');
+    if (hashIdx >= 0) {
+      const prefix = rest.slice(0, hashIdx);
+      if (prefix.trim() === '') {
+        continue;
+      }
+      const trailingComment = rest.slice(hashIdx + 1).trim();
+      let j = 0;
+      while (j < prefix.length && (prefix[j] === ' ' || prefix[j] === '\t')) j++;
+      const trimmedPrefix = prefix.slice(j);
+      let effectiveRest: string;
+      let k: number;
+      if (trimmedPrefix.startsWith('- ')) {
+        tokens.push({ line: lineNo, col: indent + 1, kind: 'list-dash', indent, text: '' });
+        k = 2;
+        const afterDash = trimmedPrefix.slice(k);
+        effectiveRest = afterDash;
+        const colonIdx = afterDash.indexOf(':');
+        const eqIdx = afterDash.indexOf('=');
+        const delimIdx = colonIdx >= 0 && (eqIdx < 0 || colonIdx < eqIdx) ? colonIdx : eqIdx;
+        const spaceIdx = afterDash.search(/\s/);
+        if (delimIdx > 0 && (spaceIdx < 0 || delimIdx < spaceIdx)) {
+          const delim = afterDash[delimIdx];
+          const key = afterDash.slice(0, delimIdx).trim();
+          if (/^[A-Za-z_][A-Za-z0-9_.\- ]*$/.test(key) && delim === ':') {
+            tokens.push({ line: lineNo, col: indent + k + 1, kind: 'key', indent, text: key });
+            k += delimIdx + 1;
+            while (k < trimmedPrefix.length && trimmedPrefix[k] === ' ') k++;
+            effectiveRest = trimmedPrefix.slice(k);
+          }
         }
+      } else {
+        const colonIdx = trimmedPrefix.indexOf(':');
+        if (colonIdx < 0) {
+          throw new YamlError(`Expected ':' in mapping line`, lineNo, indent + 1);
+        }
+        const key = trimmedPrefix.slice(0, colonIdx).trim();
+        if (!/^[A-Za-z_][A-Za-z0-9_.\- ]*$/.test(key)) {
+          throw new YamlError(`Invalid key "${key}"`, lineNo, indent + 1);
+        }
+        tokens.push({ line: lineNo, col: indent + 1, kind: 'key', indent, text: key });
+        k = colonIdx + 1;
+        while (k < trimmedPrefix.length && trimmedPrefix[k] === ' ') k++;
+        effectiveRest = trimmedPrefix.slice(k);
       }
+      const valueText = effectiveRest.trim();
+      if (valueText !== '') {
+        tokens.push({ line: lineNo, col: indent + k + 1, kind: 'value', indent, text: valueText });
+      }
+      tokens.push({ line: lineNo, col: hashIdx + 1, kind: 'comment', indent, text: trailingComment });
     } else {
-      const colonIdx = rest.indexOf(':');
-      if (colonIdx < 0) {
-        throw new YamlError(`Expected ':' in mapping line`, lineNo, indent + 1);
-      }
-      const key = rest.slice(0, colonIdx).trim();
-      if (!/^[A-Za-z_][A-Za-z0-9_.-]*$/.test(key)) {
-        throw new YamlError(`Invalid key "${key}"`, lineNo, indent + 1);
-      }
-      tokens.push({ line: lineNo, col: indent + 1, kind: 'key', indent, text: key });
-      j = colonIdx + 1;
-      while (j < rest.length && rest[j] === ' ') j++;
-    }
-
-    const valueText = rest.slice(j).trim();
-    if (valueText !== '') {
-      const trimmed = valueText.replace(/\s*#.*$/, '').trim();
-      if (trimmed !== '') {
-        tokens.push({ line: lineNo, col: indent + j + 1, kind: 'value', indent, text: trimmed });
+      let j: number;
+      if (rest.startsWith('- ')) {
+        tokens.push({ line: lineNo, col: indent + 1, kind: 'list-dash', indent, text: '' });
+        j = 2;
+        const afterDash = rest.slice(j);
+        const colonIdx = afterDash.indexOf(':');
+        const eqIdx = afterDash.indexOf('=');
+        const delimIdx = colonIdx >= 0 && (eqIdx < 0 || colonIdx < eqIdx) ? colonIdx : eqIdx;
+        const spaceIdx = afterDash.search(/\s/);
+        if (delimIdx > 0 && (spaceIdx < 0 || delimIdx < spaceIdx)) {
+          const delim = afterDash[delimIdx];
+          const key = afterDash.slice(0, delimIdx).trim();
+          if (/^[A-Za-z_][A-Za-z0-9_.\- ]*$/.test(key) && delim === ':') {
+            tokens.push({ line: lineNo, col: indent + j + 1, kind: 'key', indent, text: key });
+            j += delimIdx + 1;
+            while (j < rest.length && rest[j] === ' ') j++;
+          }
+        }
+        const valueText = rest.slice(j).trim();
+        if (valueText !== '') {
+          tokens.push({ line: lineNo, col: indent + j + 1, kind: 'value', indent, text: valueText });
+        }
+      } else {
+        const colonIdx = rest.indexOf(':');
+        if (colonIdx < 0) {
+          throw new YamlError(`Expected ':' in mapping line`, lineNo, indent + 1);
+        }
+        const key = rest.slice(0, colonIdx).trim();
+        if (!/^[A-Za-z_][A-Za-z0-9_.\- ]*$/.test(key)) {
+          throw new YamlError(`Invalid key "${key}"`, lineNo, indent + 1);
+        }
+        tokens.push({ line: lineNo, col: indent + 1, kind: 'key', indent, text: key });
+        j = colonIdx + 1;
+        while (j < rest.length && rest[j] === ' ') j++;
+        const valueText = rest.slice(j).trim();
+        if (valueText !== '') {
+          tokens.push({ line: lineNo, col: indent + j + 1, kind: 'value', indent, text: valueText });
+        }
       }
     }
 
@@ -136,7 +192,16 @@ function parseBlocks(tokens: Token[]): YamlNode {
   function next(): Token { return tokens[pos++] ?? { line: 0, col: 0, kind: 'newline', indent: 0, text: '' }; }
 
   function skipNewlines(): void {
-    while (peek() && peek()!.kind === 'newline') next();
+    while (peek() && (peek()!.kind === 'newline' || peek()!.kind === 'comment')) next();
+  }
+
+  function consumeInlineComment(): string {
+    const t = peek();
+    if (t && t.kind === 'comment') {
+      next();
+      return t.text;
+    }
+    return '';
   }
 
   function parseList(indent: number): YamlNode[] {
@@ -144,7 +209,7 @@ function parseBlocks(tokens: Token[]): YamlNode {
     while (true) {
       const t = peek();
       if (!t) break;
-      if (t.kind === 'newline') { next(); continue; }
+      if (t.kind === 'newline' || t.kind === 'comment') { next(); continue; }
       if (t.indent < indent) break;
       if (t.indent === indent && t.kind === 'list-dash') {
         const dashTok = next();
@@ -155,7 +220,9 @@ function parseBlocks(tokens: Token[]): YamlNode {
         }
         if (inline.kind === 'value') {
           next();
-          arr.push(parseScalar(inline.text));
+          const c = consumeInlineComment();
+          const v = parseScalar(inline.text);
+          arr.push(c ? { _value: v, _comment: c } : v);
           continue;
         }
         if (inline.kind === 'key') {
@@ -185,7 +252,8 @@ function parseBlocks(tokens: Token[]): YamlNode {
       const v = afterKey.text;
       if (v === '[]') { obj[keyTok.text] = []; return; }
       if (v === '{}') { obj[keyTok.text] = {}; return; }
-      obj[keyTok.text] = parseScalar(v);
+      const c = consumeInlineComment();
+      obj[keyTok.text] = c ? { _value: parseScalar(v), _comment: c } : parseScalar(v);
       parseMappingContinuation(obj, minIndent);
       return;
     }
@@ -194,7 +262,7 @@ function parseBlocks(tokens: Token[]): YamlNode {
       parseMappingContinuation(obj, minIndent);
       return;
     }
-    if (afterKey && afterKey.kind === 'newline') {
+    if (afterKey && (afterKey.kind === 'newline' || afterKey.kind === 'comment')) {
       next();
       const peekNext = peek();
       if (peekNext && peekNext.indent > keyTok.indent) {
@@ -213,6 +281,7 @@ function parseBlocks(tokens: Token[]): YamlNode {
       skipNewlines();
       const t = peek();
       if (!t) break;
+      if (t.kind === 'comment') { next(); continue; }
       if (t.indent < minIndent) break;
       if (t.indent === minIndent && t.kind === 'key') {
         const keyTok = next();
@@ -251,6 +320,14 @@ function isList(n: YamlNode): n is YamlNode[] {
   return Array.isArray(n);
 }
 
+function unwrapListItem(node: YamlNode): { value: string; comment: string } {
+  if (typeof node === 'string') return { value: node, comment: '' };
+  if (isMapping(node) && typeof node['_value'] === 'string') {
+    return { value: node['_value'] as string, comment: typeof node['_comment'] === 'string' ? (node['_comment'] as string) : '' };
+  }
+  throw new PresetError(`Expected list item to be a string, got ${typeof node === 'object' && node !== null ? 'object' : typeof node}`);
+}
+
 function escapeYamlString(s: string): string {
   if (/[:#\n"]/.test(s) || s === '' || s === 'true' || s === 'false' || s === 'null') {
     return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
@@ -266,6 +343,11 @@ function serializeNode(node: YamlNode, indent: number): string {
     if (node.length === 0) return '[]';
     const pad = ' '.repeat(indent);
     return '\n' + node.map((item) => {
+      if (isMapping(item) && typeof item['_value'] === 'string') {
+        const v = escapeYamlString(item['_value'] as string);
+        const c = typeof item['_comment'] === 'string' ? (item['_comment'] as string) : '';
+        return c ? `${pad}- ${v}  # ${c}` : `${pad}- ${v}`;
+      }
       if (isMapping(item) && Object.keys(item).length > 0) {
         const keys = Object.keys(item);
         const first = keys[0]!;
@@ -361,19 +443,39 @@ function parseConditionChain(text: string): { chain: ConditionChain; connector: 
   return { chain: { clauses, connector: topConnector }, connector: topConnector };
 }
 
-function parsePool(text: string): DicePool {
-  const terms = text.split(/\s*\+\s*/).map((s) => s.trim()).filter(Boolean);
+function parsePool(poolNode: YamlNode): DicePool {
+  const items: { value: string; comment: string }[] = [];
+  if (typeof poolNode === 'string') {
+    const terms = poolNode.split(/\s*\+\s*/).map((s) => s.trim()).filter(Boolean);
+    for (const t of terms) {
+      items.push({ value: t, comment: '' });
+    }
+  } else if (isList(poolNode)) {
+    for (const item of poolNode) {
+      if (typeof item === 'string') {
+        items.push({ value: item, comment: '' });
+      } else if (isMapping(item) && typeof item['_value'] === 'string') {
+        items.push({ value: item['_value'] as string, comment: typeof item['_comment'] === 'string' ? (item['_comment'] as string) : '' });
+      } else {
+        throw new PresetError('Each pool entry must be a die term string');
+      }
+    }
+  } else {
+    throw new PresetError('"pool:" must be a die term string or a list of die terms');
+  }
+
   const result: DiceTerm[] = [];
-  for (const t of terms) {
-    const m = /^(\d+)d(\d+)(?:<([A-Za-z][A-Za-z0-9_]*)>)?$/.exec(t);
+  for (const { value, comment } of items) {
+    const m = /^(\d+)d(\d+)(?:<([A-Za-z][A-Za-z0-9_]*)>)?$/.exec(value);
     if (!m) {
-      throw new PresetError(`Invalid die notation "${t}"`);
+      throw new PresetError(`Invalid die notation "${value}"`);
     }
     result.push({
       id: crypto.randomUUID(),
       count: parseInt(m[1]!, 10),
       sides: parseInt(m[2]!, 10),
       tag: m[3] ?? '',
+      comment,
     });
   }
   if (result.length === 0) {
@@ -382,11 +484,14 @@ function parsePool(text: string): DicePool {
   return { terms: result };
 }
 
-function serializePool(pool: DicePool): string {
-  return pool.terms.map((t) => `${t.count}d${t.sides}${t.tag ? `<${t.tag}>` : ''}`).join(' + ');
+function serializePool(pool: DicePool): YamlNode {
+  return pool.terms.map((t) => {
+    const v = `${t.count}d${t.sides}${t.tag ? `<${t.tag}>` : ''}`;
+    return t.comment ? { _value: v, _comment: t.comment } : v;
+  });
 }
 
-function parseRerollEntry(text: string): RerollCondition {
+function parseRerollEntry(text: string, comment: string): RerollCondition {
   const m = /^(reroll|explode)\s+when\s+(.+?)(?:\s+up to\s+(\d+)\s+times?)?$/i.exec(text);
   if (!m) {
     throw new PresetError(`Invalid reroll entry: "${text}"`);
@@ -400,7 +505,7 @@ function parseRerollEntry(text: string): RerollCondition {
     action,
     conditions: chain,
     repeat,
-    comment: '',
+    comment,
   };
 }
 
@@ -414,13 +519,14 @@ function serializeClauseValue(c: ConditionClause): string {
   return String(c.value);
 }
 
-function serializeRerollEntry(rc: RerollCondition): string {
+function serializeRerollEntry(rc: RerollCondition): YamlNode {
   const clauses = rc.conditions.clauses.map((c) => `${c.field} ${c.operator} ${serializeClauseValue(c)}`).join(rc.conditions.connector === 'or' ? ' or ' : ' and ');
   const tail = rc.repeat > 1 ? ` up to ${rc.repeat} times` : '';
-  return `${rc.action} when ${clauses}${tail}`;
+  const v = `${rc.action} when ${clauses}${tail}`;
+  return rc.comment ? { _value: v, _comment: rc.comment } : v;
 }
 
-function parsePipelineEntry(text: string): { name: string; op: ScalarFunction | VectorFunction; source: string } {
+function parsePipelineEntry(text: string, comment: string): { name: string; op: ScalarFunction | VectorFunction; source: string; comment: string } {
   const m = new RegExp('^([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.+)$').exec(text);
   if (!m) {
     throw new PresetError(`Invalid pipeline entry: "${text}"`);
@@ -433,7 +539,7 @@ function parsePipelineEntry(text: string): { name: string; op: ScalarFunction | 
     const fn = filterM[1]!.toLowerCase() as 'filter' | 'remove';
     const source = filterM[2]!;
     const { chain } = parseConditionChain(filterM[3]!);
-    return { name, source, op: { fn, conditions: chain } as VectorFunction };
+    return { name, source, op: { fn, conditions: chain } as VectorFunction, comment };
   }
 
   const binaryM = /^([A-Za-z_][A-Za-z0-9_]*)\s*([+\-*/])\s*([A-Za-z_][A-Za-z0-9_]*|-?\d+(?:\.\d+)?)$/.exec(expr);
@@ -447,12 +553,14 @@ function parsePipelineEntry(text: string): { name: string; op: ScalarFunction | 
         name,
         source: left,
         op: { fn: opMap[opChar]!, operand: 'literal', value: parseFloat(right) },
+        comment,
       };
     }
     return {
       name,
       source: left,
       op: { fn: opMap[opChar]!, operand: 'named', source2: right },
+      comment,
     };
   }
 
@@ -463,6 +571,7 @@ function parsePipelineEntry(text: string): { name: string; op: ScalarFunction | 
       name,
       source: twoArgM[2]!,
       op: { fn, operand: 'named', source2: twoArgM[3]! },
+      comment,
     };
   }
 
@@ -471,42 +580,42 @@ function parsePipelineEntry(text: string): { name: string; op: ScalarFunction | 
     const fn = unaryM[1]!.toLowerCase();
     const source = unaryM[2]!;
     if (fn === 'ceil' || fn === 'floor') {
-      return { name, source, op: { fn } as { fn: 'ceil' | 'floor' } };
+      return { name, source, op: { fn } as { fn: 'ceil' | 'floor' }, comment };
     }
-    return { name, source, op: fn as ScalarFunction };
+    return { name, source, op: fn as ScalarFunction, comment };
   }
 
   throw new PresetError(`Could not parse pipeline expression: "${expr}"`);
 }
 
-function serializePipelineEntry(nv: NamedValue): string {
+function serializePipelineEntry(nv: NamedValue): YamlNode {
   const op = nv.op;
+  let v: string;
   if (typeof op === 'string') {
-    return `${nv.name} = ${op} ${nv.source}`;
-  }
-  if (op.fn === 'filter' || op.fn === 'remove') {
+    v = `${nv.name} = ${op} ${nv.source}`;
+  } else if (op.fn === 'filter' || op.fn === 'remove') {
     const clauses = op.conditions.clauses.map((c) => `${c.field} ${c.operator} ${serializeClauseValue(c)}`).join(op.conditions.connector === 'or' ? ' or ' : ' and ');
-    return `${nv.name} = ${op.fn} ${nv.source} where ${clauses}`;
-  }
-  if (op.fn === 'ceil' || op.fn === 'floor') {
-    return `${nv.name} = ${op.fn} ${nv.source}`;
-  }
-  if (op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') {
+    v = `${nv.name} = ${op.fn} ${nv.source} where ${clauses}`;
+  } else if (op.fn === 'ceil' || op.fn === 'floor') {
+    v = `${nv.name} = ${op.fn} ${nv.source}`;
+  } else if (op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') {
     const sym: Record<ScalarBinaryOp, string> = { add: '+', subtract: '-', multiply: '*', divide: '/' };
     if (op.operand === 'named' && op.source2) {
-      return `${nv.name} = ${nv.source} ${sym[op.fn]} ${op.source2}`;
+      v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${op.source2}`;
+    } else if (op.operand === 'literal' && typeof op.value === 'number') {
+      v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${op.value}`;
+    } else {
+      v = `${nv.name} = ${JSON.stringify(op)}`;
     }
-    if (op.operand === 'literal' && typeof op.value === 'number') {
-      return `${nv.name} = ${nv.source} ${sym[op.fn]} ${op.value}`;
-    }
+  } else if ((op.fn === 'max' || op.fn === 'min') && op.operand === 'named' && op.source2) {
+    v = `${nv.name} = ${op.fn}(${nv.source}, ${op.source2})`;
+  } else {
+    v = `${nv.name} = ${JSON.stringify(op)}`;
   }
-  if ((op.fn === 'max' || op.fn === 'min') && op.operand === 'named' && op.source2) {
-    return `${nv.name} = ${op.fn}(${nv.source}, ${op.source2})`;
-  }
-  return `${nv.name} = ${JSON.stringify(op)}`;
+  return nv.comment ? { _value: v, _comment: nv.comment } : v;
 }
 
-function parseOutcomeEntry(text: string): Outcome {
+function parseOutcomeEntry(text: string, comment: string): Outcome {
   const isDefault = /\(default\)\s*$/i.test(text);
   const stripped = text.replace(/\(default\)\s*$/i, '').trim();
   const m = /^(.+?)\s+when\s+(.+)$/i.exec(stripped);
@@ -517,7 +626,17 @@ function parseOutcomeEntry(text: string): Outcome {
         name: 'default',
         conditions: [],
         connector: 'and',
-        comment: '',
+        comment,
+        isDefault: true,
+      };
+    }
+    if (isDefault) {
+      return {
+        id: crypto.randomUUID(),
+        name: stripped || 'default',
+        conditions: [],
+        connector: 'and',
+        comment,
         isDefault: true,
       };
     }
@@ -532,7 +651,7 @@ function parseOutcomeEntry(text: string): Outcome {
     name,
     conditions,
     connector: 'and',
-    comment: '',
+    comment,
     isDefault,
   };
 }
@@ -588,7 +707,7 @@ function parseSingleOutcomeCondition(tokens: string[]): OutcomeCondition {
   return { source, op, value };
 }
 
-function serializeOutcomeEntry(o: Outcome): string {
+function serializeOutcomeEntry(o: Outcome): YamlNode {
   const conds = o.conditions.map((c) => {
     if (c.op === 'any' || c.op === 'all' || c.op === 'none') {
       return `${c.op} ${c.source} ${c.subCondition} ${c.value}`;
@@ -596,10 +715,13 @@ function serializeOutcomeEntry(o: Outcome): string {
     return `${c.source} ${c.op} ${c.value}`;
   }).join(' and ');
   const suffix = o.isDefault ? ' (default)' : '';
+  let v: string;
   if (conds === '' && o.isDefault) {
-    return `${o.name} when (always) (default)`;
+    v = `${o.name} when (always) (default)`;
+  } else {
+    v = `${o.name} when ${conds}${suffix}`;
   }
-  return `${o.name} when ${conds}${suffix}`;
+  return o.comment ? { _value: v, _comment: o.comment } : v;
 }
 
 function parseParameterEntry(text: string): Parameter {
@@ -607,7 +729,7 @@ function parseParameterEntry(text: string): Parameter {
   if ((stripped.startsWith('"') && stripped.endsWith('"')) || (stripped.startsWith("'") && stripped.endsWith("'"))) {
     stripped = stripped.slice(1, -1);
   }
-  const m = new RegExp('^([A-Za-z_][A-Za-z0-9_.\\- ]*?):\\s*\\[([^\\]]*)\\]\\s+over\\s+([A-Za-z_][A-Za-z0-9_.]*)(?:\\s+on\\s+([A-Za-z0-9_.\\-]+))?$', 'i').exec(stripped);
+  const m = new RegExp('^([A-Za-z_][A-Za-z0-9_.\\- ]*?)\\s*=\\s*\\[([^\\]]*)\\]\\s+over\\s+([A-Za-z_][A-Za-z0-9_.]*)(?:\\s+on\\s+([A-Za-z0-9_.\\-]+))?$', 'i').exec(stripped);
   if (!m) {
     throw new PresetError(`Invalid parameter entry: "${text}"`);
   }
@@ -642,7 +764,7 @@ function parseParameterEntry(text: string): Parameter {
 function serializeParameterEntry(p: Parameter & { _resolvedName?: string }): string {
   const on = (p as unknown as { _resolvedName?: string })._resolvedName;
   const onStr = on ? ` on ${on}` : '';
-  return `${p.label}: [${p.values.join(', ')}] over ${p.target}${onStr}`;
+  return `${p.label} = [${p.values.join(', ')}] over ${p.target}${onStr}`;
 }
 
 function astToPreset(ast: YamlNode, _existingNames?: Set<string>): PresetConfig {
@@ -657,10 +779,10 @@ function astToPreset(ast: YamlNode, _existingNames?: Set<string>): PresetConfig 
   }
 
   const name = typeof ast['name'] === 'string' ? ast['name'] : 'Untitled';
-  if (typeof ast['pool'] !== 'string') {
-    throw new PresetError('"pool:" is required and must be a string');
+  if (ast['pool'] === undefined) {
+    throw new PresetError('"pool:" is required');
   }
-  const pool = parsePool(ast['pool'] as string);
+  const pool = parsePool(ast['pool']);
 
   const reroll: RerollCondition[] = [];
   if (ast['reroll'] !== undefined && ast['reroll'] !== null) {
@@ -668,10 +790,8 @@ function astToPreset(ast: YamlNode, _existingNames?: Set<string>): PresetConfig 
       throw new PresetError('"reroll:" must be a list');
     }
     for (const item of ast['reroll']) {
-      if (typeof item !== 'string') {
-        throw new PresetError('Each reroll entry must be a string');
-      }
-      reroll.push(parseRerollEntry(item));
+      const { value, comment } = unwrapListItem(item);
+      reroll.push(parseRerollEntry(value, comment));
     }
   }
 
@@ -682,10 +802,8 @@ function astToPreset(ast: YamlNode, _existingNames?: Set<string>): PresetConfig 
       throw new PresetError('"pipeline:" must be a list');
     }
     for (const item of ast['pipeline']) {
-      if (typeof item !== 'string') {
-        throw new PresetError('Each pipeline entry must be a string');
-      }
-      const entry = parsePipelineEntry(item);
+      const { value, comment } = unwrapListItem(item);
+      const entry = parsePipelineEntry(value, comment);
       if (pipelineNames.has(entry.name)) {
         throw new PresetError(`Duplicate pipeline name "${entry.name}"`);
       }
@@ -695,7 +813,7 @@ function astToPreset(ast: YamlNode, _existingNames?: Set<string>): PresetConfig 
         name: entry.name,
         source: entry.source,
         op: entry.op as VectorFunction | ScalarFunction,
-        comment: '',
+        comment: entry.comment,
       } as NamedValue);
     }
   }
@@ -706,10 +824,8 @@ function astToPreset(ast: YamlNode, _existingNames?: Set<string>): PresetConfig 
       throw new PresetError('"outcomes:" must be a list');
     }
     for (const item of ast['outcomes']) {
-      if (typeof item !== 'string') {
-        throw new PresetError('Each outcome entry must be a string');
-      }
-      outcomes.push(parseOutcomeEntry(item));
+      const { value, comment } = unwrapListItem(item);
+      outcomes.push(parseOutcomeEntry(value, comment));
     }
   }
 
@@ -720,10 +836,8 @@ function astToPreset(ast: YamlNode, _existingNames?: Set<string>): PresetConfig 
     }
     parameters = [];
     for (const item of ast['parameters']) {
-      if (typeof item !== 'string') {
-        throw new PresetError('Each parameter entry must be a string');
-      }
-      parameters.push(parseParameterEntry(item));
+      const { value } = unwrapListItem(item);
+      parameters.push(parseParameterEntry(value));
     }
   }
 

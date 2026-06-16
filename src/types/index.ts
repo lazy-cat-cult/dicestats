@@ -11,6 +11,7 @@ export interface DiceTerm {
   count: number;
   sides: number;
   tag: string;
+  comment: string;
 }
 
 export interface DicePool {

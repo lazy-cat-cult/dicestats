@@ -128,6 +128,29 @@ describe('yaml pool parser', () => {
     expect(cfg.pool.terms[0]?.tag).toBe('');
   });
 
+  it('parses pool as YAML list with comments', () => {
+    const cfg = parsePreset([
+      'name: T',
+      'pool:',
+      '  - 3d10<normal>  # non-hunger dice',
+      '  - 2d10<hunger>',
+      'outcomes:',
+      '  - F when rolled >= 0',
+    ].join('\n'));
+    expect(cfg.pool.terms).toHaveLength(2);
+    expect(cfg.pool.terms[0]?.tag).toBe('normal');
+    expect(cfg.pool.terms[0]?.comment).toBe('non-hunger dice');
+    expect(cfg.pool.terms[1]?.tag).toBe('hunger');
+    expect(cfg.pool.terms[1]?.comment).toBe('');
+  });
+
+  it('parses inline string pool for backwards compat', () => {
+    const cfg = parsePreset('name: T\npool: 1d20 + 2d6\noutcomes:\n  - F when rolled >= 0\n');
+    expect(cfg.pool.terms).toHaveLength(2);
+    expect(cfg.pool.terms[0]?.sides).toBe(20);
+    expect(cfg.pool.terms[1]?.sides).toBe(6);
+  });
+
   it('parses tagged multi-term pool', () => {
     const cfg = parsePreset('name: T\npool: 3d10<normal> + 2d10<hunger>\noutcomes:\n  - F when rolled >= 0\n');
     expect(cfg.pool.terms).toHaveLength(2);
@@ -307,7 +330,7 @@ describe('yaml parameter parser', () => {
       'outcomes:',
       '  - F when rolled >= 0',
       'parameters:',
-      '  - "Dice count: [1, 2, 3] over pool.count"',
+      '  - Dice count = [1, 2, 3] over pool.count',
     ].join('\n'));
     const p = cfg.parameters![0]!;
     expect(p.target).toBe('pool.count');
@@ -321,7 +344,7 @@ describe('yaml parameter parser', () => {
       'outcomes:',
       '  - F when rolled >= 0',
       'parameters:',
-      '  - "X: [1, 2] over pool.count"',
+      '  - X = [1, 2] over pool.count',
     ].join('\n'))).toThrow(/requires/);
   });
 
@@ -332,7 +355,7 @@ describe('yaml parameter parser', () => {
       'outcomes:',
       '  - F when rolled >= 0',
       'parameters:',
-      '  - "X: [1, 2] over pool.count on a"',
+      '  - X = [1, 2] over pool.count on a',
     ].join('\n'));
     const term = cfg.pool.terms.find((t) => t.tag === 'a')!;
     expect(cfg.parameters![0]?.targetTermId).toBe(term.id);
@@ -345,7 +368,7 @@ describe('yaml parameter parser', () => {
       'outcomes:',
       '  - Hit when rolled >= 15',
       'parameters:',
-      '  - "DC: [5, 10] over outcome.value on Hit"',
+      '  - DC = [5, 10] over outcome.value on Hit',
     ].join('\n'));
     expect(cfg.parameters![0]?.targetOutcomeId).toBe(cfg.outcomes[0]!.id);
   });
@@ -427,5 +450,46 @@ describe('yaml multi-default validation', () => {
       '  - B when rolled < 10',
     ].join('\n'));
     expect(cfg.outcomes.filter((o) => o.isDefault)).toHaveLength(0);
+  });
+});
+
+describe('yaml inline comments', () => {
+  it('round-trips comments on pipeline, outcome, and reroll', () => {
+    const cfg = parsePreset([
+      'name: T',
+      'pool:',
+      '  - 1d20  # the d20',
+      'reroll:',
+      '  - explode when face = max up to 5 times  # on max',
+      'pipeline:',
+      '  - total = sum rolled  # sum all',
+      'outcomes:',
+      '  - Hit when total >= 15  # threshold',
+      '  - Miss (default)  # catch-all',
+    ].join('\n'));
+    expect(cfg.pool.terms[0]?.comment).toBe('the d20');
+    expect(cfg.rerollConditions[0]?.comment).toBe('on max');
+    expect(cfg.pipeline[0]?.comment).toBe('sum all');
+    expect(cfg.outcomes[0]?.comment).toBe('threshold');
+    expect(cfg.outcomes[1]?.comment).toBe('catch-all');
+    expect(cfg.outcomes[1]?.isDefault).toBe(true);
+
+    const text = serializePreset(cfg);
+    expect(text).toMatch(/# the d20/);
+    expect(text).toMatch(/# on max/);
+    expect(text).toMatch(/# sum all/);
+    expect(text).toMatch(/# threshold/);
+    expect(text).toMatch(/# catch-all/);
+  });
+
+  it('omits comment on round-trip when none was set', () => {
+    const cfg = parsePreset([
+      'name: T',
+      'pool: 1d20',
+      'outcomes:',
+      '  - Hit when rolled >= 15',
+    ].join('\n'));
+    const text = serializePreset(cfg);
+    expect(text).not.toMatch(/#/);
   });
 });
