@@ -22,7 +22,7 @@ import type {
 } from '@/types';
 import { SweepIndicator } from '@/components/SweepIndicator';
 import { SweepPopover } from '@/components/SweepPopover';
-import { Button, IconButton, Pill, Select, TextField } from '@/components/ui';
+import { Button, IconButton, Select, TextField, BracketedNameInput } from '@/components/ui';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
 const TAG_OPERATORS: ('=' | '!=')[] = ['=', '!='];
@@ -154,18 +154,15 @@ export function PipelineEditor() {
               class={`border bg-paper-deep/30 px-3 py-2.5 ${hasError ? 'border-billiard' : 'border-rule'}`}
             >
               <div class="flex items-center gap-2 flex-wrap">
-                <TextField
+                <BracketedNameInput
                   ariaLabel="Name"
                   value={nv.name}
                   placeholder="name"
                   maxLength={30}
+                  bracketed={outputType === 'vector'}
                   onInput={(v) => updateRow(i, { name: v })}
                   className="w-32"
-                  mono
                 />
-                <Pill variant={outputType === 'scalar' ? 'accent' : 'mute'}>
-                  {outputType === 'scalar' ? 'value' : 'dice'}
-                </Pill>
                 <span class="font-mono text-[13px] text-ink-mute">=</span>
                 <Select
                   ariaLabel="Source"
@@ -187,7 +184,7 @@ export function PipelineEditor() {
                     }
                   }}
                   className="w-40"
-                  options={sources.map((s) => ({ value: s.id, label: `${s.label} (${s.type === 'scalar' ? 'value' : 'dice'})` }))}
+                  options={sources.map((s) => ({ value: s.id, label: s.type === 'vector' ? `[ ${s.label} ]` : s.label }))}
                 />
                 {sourceType === 'vector' ? (
                   <Select
