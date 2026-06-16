@@ -1,5 +1,6 @@
-import type { SavedConfig, DicePool, Outcome, Parameter, RerollCondition, NamedValue, ParameterTarget, OutcomeCondition } from '@/types';
-import { dicePool, outcomes, parameters, rerollConditions, pipeline } from './app-state';
+import type { SavedConfig, DicePool, Outcome, Parameter, RerollCondition, NamedValue, ParameterTarget, OutcomeCondition, PresetConfig } from '@/types';
+import { dicePool, outcomes, parameters, rerollConditions, pipeline, configDirty } from './app-state';
+import { exportConfigAsYaml, parsePreset, filenameForName } from '@/utils/yaml';
 
 const STORAGE_KEY = 'dice-calc-config';
 const UI_PREFS_KEY = 'dice-calc-ui';
@@ -100,6 +101,7 @@ export function saveConfig() {
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    configDirty.value = false;
   } catch {
     return;
   }
@@ -128,6 +130,42 @@ export function clearConfig() {
   } catch {
     return;
   }
+}
+
+export function exportCurrentAsYaml(name: string): { filename: string; text: string } {
+  const config: PresetConfig = {
+    id: 'current',
+    name: name || 'Untitled',
+    pool: dicePool.value,
+    rerollConditions: rerollConditions.value,
+    pipeline: pipeline.value,
+    outcomes: outcomes.value,
+    parameters: parameters.value,
+  };
+  const text = exportConfigAsYaml(name, config);
+  const filename = filenameForName(name);
+  return { filename, text };
+}
+
+export function importPresetFromYamlText(text: string): PresetConfig {
+  return parsePreset(text);
+}
+
+export function downloadYamlFile(filename: string, text: string): void {
+  if (typeof document === 'undefined') return;
+  const blob = new Blob([text], { type: 'text/yaml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export async function readYamlFile(file: File): Promise<string> {
+  return await file.text();
 }
 
 function migrateOutcomeConditions(outcomes: V1Outcome[]): V1Outcome[] {

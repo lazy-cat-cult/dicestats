@@ -1,5 +1,5 @@
 import { signal, computed, effect } from '@preact/signals';
-import type { DicePool, Outcome, Parameter, RerollCondition, NamedValue } from '@/types';
+import type { DicePool, Outcome, Parameter, PresetConfig, RerollCondition, NamedValue } from '@/types';
 import { PRESETS } from '@/domain/presets';
 import { formatSweepRange } from '@/utils/format';
 import { loadUiPrefs, saveUiPrefs } from '@/state/persistence';
@@ -19,13 +19,25 @@ export const isSimulating = signal(false);
 export const simProgress = signal({ completed: 0, total: 0 });
 
 export function resetToPreset(presetId: string) {
-  const preset = PRESETS.find((p) => p.id === presetId);
+  const preset = [...PRESETS, ...userPresets.value].find((p) => p.id === presetId);
   if (!preset) return;
-  dicePool.value = { ...preset.pool, terms: preset.pool.terms.map((t) => ({ ...t })) };
-  rerollConditions.value = preset.rerollConditions.map((r) => ({ ...r, conditions: { ...r.conditions, clauses: [...r.conditions.clauses] } }));
-  pipeline.value = preset.pipeline.map((p) => ({ ...p }));
-  outcomes.value = preset.outcomes.map((o) => ({ ...o, conditions: [...o.conditions] }));
-  parameters.value = preset.parameters?.map((p) => ({ ...p })) ?? [];
+  applyPresetConfig(preset);
+}
+
+export function mergeOrStagePreset(config: PresetConfig): 'merged' | 'staged' {
+  const idx = PRESETS.findIndex((p) => p.name === config.name);
+  if (idx >= 0) {
+    PRESETS[idx] = { ...config, id: PRESETS[idx]!.id };
+    return 'merged';
+  }
+  const userIdx = userPresets.value.findIndex((p) => p.name === config.name);
+  if (userIdx >= 0) {
+    const existing = userPresets.value[userIdx]!;
+    userPresets.value = userPresets.value.map((p) => (p === existing ? { ...config, id: existing.id } : p));
+    return 'staged';
+  }
+  userPresets.value = [...userPresets.value, config];
+  return 'staged';
 }
 
 export function resetToDefaults() {
@@ -74,6 +86,23 @@ export const confirmedHighCost = signal<boolean>(false);
 export const highlightTargetId = signal<string | null>(null);
 export const highlightTargetKind = signal<'term' | 'outcome' | 'pipeline' | null>(null);
 
+export const userPresets = signal<PresetConfig[]>([]);
+export const allPresets = computed<PresetConfig[]>(() => [...PRESETS, ...userPresets.value]);
+
+export function applyPresetConfig(preset: PresetConfig) {
+  dicePool.value = { ...preset.pool, terms: preset.pool.terms.map((t) => ({ ...t })) };
+  rerollConditions.value = preset.rerollConditions.map((r) => ({ ...r, conditions: { ...r.conditions, clauses: [...r.conditions.clauses] } }));
+  pipeline.value = preset.pipeline.map((p) => ({ ...p }));
+  outcomes.value = preset.outcomes.map((o) => ({ ...o, conditions: [...o.conditions] }));
+  parameters.value = preset.parameters?.map((p) => ({ ...p })) ?? [];
+}
+
+export function resetUiForPresetApply() {
+  confirmedHighCost.value = false;
+  highlightTargetId.value = null;
+  highlightTargetKind.value = null;
+}
+
 export const showComments = signal<boolean>(loadUiPrefs().showComments);
 
 export const existingTags = computed<string[]>(() => {
@@ -93,6 +122,23 @@ effect(() => {
 
 effect(() => {
   saveUiPrefs({ showComments: showComments.value });
+});
+
+export const configDirty = signal<boolean>(false);
+
+let lastConfigFingerprint = '';
+effect(() => {
+  const fp = JSON.stringify({
+    pool: dicePool.value,
+    reroll: rerollConditions.value,
+    pipeline: pipeline.value,
+    outcomes: outcomes.value,
+    parameters: parameters.value,
+  });
+  if (lastConfigFingerprint && lastConfigFingerprint !== fp) {
+    configDirty.value = true;
+  }
+  lastConfigFingerprint = fp;
 });
 
 export const dicePoolNotation = computed(() => {

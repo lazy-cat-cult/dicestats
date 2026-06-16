@@ -1,6 +1,6 @@
 import { signal } from '@preact/signals';
 import type { SimResult, SimJob } from '@/types';
-import { dicePool, rerollConditions, pipeline, outcomes, parameters, isSimulating, simProgress, totalIterations, confirmedHighCost, highlightTargetId, highlightTargetKind } from '@/state/app-state';
+import { dicePool, rerollConditions, pipeline, outcomes, parameters, isSimulating, simProgress, totalIterations, confirmedHighCost, highlightTargetId, highlightTargetKind, applyPresetConfig, mergeOrStagePreset, configDirty } from '@/state/app-state';
 import { currentStep } from '@/components/StepWizard';
 import { PresetSelector } from '@/components/PresetSelector';
 import { DicePoolEditor } from '@/components/DicePoolEditor';
@@ -11,14 +11,15 @@ import { ParameterEditor } from '@/components/ParameterEditor';
 import { ResultView } from '@/components/ResultView';
 import { SweepCostChip } from '@/components/SweepCostChip';
 import { OutcomeChart, ParameterChart } from '@/components/DistributionChart';
-import { saveConfig, loadConfig } from '@/state/persistence';
+import { saveConfig, loadConfig, exportCurrentAsYaml, downloadYamlFile, readYamlFile, importPresetFromYamlText } from '@/state/persistence';
 import { validateConfig, canRunSimulation } from '@/utils/validation';
 import { computed } from '@preact/signals';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 
 export const simResults = signal<SimResult[]>([]);
 export const simError = signal<string | null>(null);
 export const highCostTooltip = signal<boolean>(false);
+export const loadError = signal<string | null>(null);
 
 let worker: Worker | null = null;
 
@@ -26,6 +27,16 @@ export function cancelSimulation() {
   worker?.terminate();
   worker = null;
   isSimulating.value = false;
+}
+
+export function resetUiForPresetApply() {
+  cancelSimulation();
+  simResults.value = [];
+  simError.value = null;
+  currentStep.value = 0;
+  confirmedHighCost.value = false;
+  highlightTargetId.value = null;
+  highlightTargetKind.value = null;
 }
 
 const validationErrors = computed(() =>
@@ -36,6 +47,58 @@ const canRun = computed(() => !isSimulating.value && canRunSimulation(validation
 
 export function App() {
   useEffect(() => { loadConfig(); }, []);
+
+  useEffect(() => {
+    function flush() {
+      if (configDirty.value) {
+        saveConfig();
+        configDirty.value = false;
+      }
+    }
+    const interval = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      flush();
+    }, 2000);
+    function onVisibility() {
+      if (document.visibilityState === 'hidden') flush();
+    }
+    function onPageHide() { flush(); }
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', onPageHide);
+    };
+  }, []);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  function handleSave() {
+    loadError.value = null;
+    const nameFromParams = parameters.value[0]?.label;
+    const name = nameFromParams || 'Dice Roll';
+    const { filename, text } = exportCurrentAsYaml(name);
+    downloadYamlFile(filename, text);
+  }
+
+  async function handleLoadFile(e: Event) {
+    loadError.value = null;
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    try {
+      const text = await readYamlFile(file);
+      const config = importPresetFromYamlText(text);
+      resetUiForPresetApply();
+      mergeOrStagePreset(config);
+      applyPresetConfig(config);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load file';
+      loadError.value = message.replace(/^Preset error: /, '').replace(/^YAML error at \d+:\d+: /, 'YAML: ');
+    }
+  }
 
   function runSimulation() {
     if (!canRun.value) return;
@@ -99,12 +162,32 @@ export function App() {
       <header class="border-b border-gray-200 px-4 py-3">
         <div class="max-w-2xl mx-auto flex items-center justify-between gap-2">
           <h1 class="text-xl font-bold text-gray-800">Dice Probability</h1>
-          <button
-            class="text-sm text-gray-500 hover:text-gray-700"
-            onClick={() => saveConfig()}
-          >
-            Save
-          </button>
+          <div class="flex items-center gap-3">
+            {loadError.value && (
+              <span class="text-xs text-red-600 max-w-xs truncate" title={loadError.value}>
+                {loadError.value}
+              </span>
+            )}
+            <button
+              class="text-sm text-gray-500 hover:text-gray-700"
+              onClick={handleSave}
+            >
+              Save
+            </button>
+            <button
+              class="text-sm text-gray-500 hover:text-gray-700"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Load
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".yaml,.yml"
+              class="hidden"
+              onChange={handleLoadFile}
+            />
+          </div>
         </div>
       </header>
 
