@@ -1,9 +1,25 @@
 import { useState } from 'preact/hooks';
-import { outcomes, pipeline, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind, showComments } from '@/state/app-state';
-import type { Outcome, OutcomeCondition, ConditionOperator, DiceConditionType, NamedValue, Parameter, ScalarCondition, DiceCondition } from '@/types';
+import {
+  outcomes,
+  pipeline,
+  activeSweepsByTarget,
+  parameters,
+  showComments,
+} from '@/state/app-state';
+import type {
+  Outcome,
+  OutcomeCondition,
+  ConditionOperator,
+  DiceConditionType,
+  NamedValue,
+  Parameter,
+  ScalarCondition,
+  DiceCondition,
+} from '@/types';
 import { DICE_CONDITION_TYPES } from '@/types';
 import { SweepIndicator } from '@/components/SweepIndicator';
 import { SweepPopover } from '@/components/SweepPopover';
+import { Button, Checkbox, IconButton, Pill, Select, TextField } from '@/components/ui';
 import { inferType } from '@/utils/validation';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
@@ -120,198 +136,176 @@ export function OutcomeEditor() {
     setPopoverOutcomeId(null);
   }
 
-  function jumpToOutcome(outcomeId: string) {
-    highlightTargetId.value = outcomeId;
-    highlightTargetKind.value = 'outcome';
-    const el = document.getElementById(`outcome-row-${outcomeId}`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el?.classList.add('outline', 'outline-2', 'outline-offset-2', 'outline-blue-500', 'animate-pulse');
-    setTimeout(() => {
-      el?.classList.remove('outline', 'outline-2', 'outline-offset-2', 'outline-blue-500', 'animate-pulse');
-      highlightTargetId.value = null;
-      highlightTargetKind.value = null;
-    }, 500);
-  }
-
   return (
     <div>
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold">Outcomes</h2>
-        <label class="flex items-center gap-1 text-xs text-gray-600">
-          <input
-            type="checkbox"
-            checked={showComments.value}
-            onChange={(e) => { showComments.value = (e.target as HTMLInputElement).checked; }}
-          />
-          Show comments
-        </label>
-      </div>
+      {list.length === 0 && (
+        <div class="border border-dashed border-rule px-4 py-5 text-center">
+          <p class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">
+            No outcomes
+          </p>
+          <p class="text-[12px] text-ink-soft mt-1">
+            Add an outcome to define a probability bucket.
+          </p>
+        </div>
+      )}
 
-      {list.map((outcome, i) => {
-        const sourceOptions = getSourceOptions();
-        const sweepParam = sweeps.get(`outcome.value:${outcome.id}`);
+      <div class="space-y-2">
+        {list.map((outcome, i) => {
+          const sourceOptions = getSourceOptions();
+          const sweepParam = sweeps.get(`outcome.value:${outcome.id}`);
 
-        return (
-          <div
-            key={outcome.id}
-            id={`outcome-row-${outcome.id}`}
-            class={`border rounded p-3 mb-3 ${sweepParam ? 'border-blue-300 bg-blue-50/30' : 'bg-gray-50'}`}
-          >
-            <div class="flex items-center gap-2 mb-2">
-              <input
-                type="text"
-                value={outcome.name}
-                maxLength={40}
-                class="flex-1 px-2 py-1 border rounded text-sm"
-                onInput={(e) => updateOutcome(i, { name: (e.target as HTMLInputElement).value })}
-              />
-              <label class="flex items-center gap-1 text-xs">
-                <input
-                  type="checkbox"
+          return (
+            <div
+              key={outcome.id}
+              id={`outcome-row-${outcome.id}`}
+              class={`border bg-paper-deep/30 px-3 py-2.5 ${sweepParam ? 'border-billiard' : 'border-rule'}`}
+            >
+              <div class="flex items-center gap-2 flex-wrap">
+                <TextField
+                  ariaLabel="Outcome name"
+                  value={outcome.name}
+                  maxLength={40}
+                  onInput={(v) => updateOutcome(i, { name: v })}
+                  className="flex-1 min-w-[200px]"
+                />
+                {outcome.isDefault && <Pill variant="accent">default</Pill>}
+                <Checkbox
+                  label="Default"
                   checked={outcome.isDefault}
                   disabled={list.some((o, j) => j !== i && o.isDefault)}
-                  onChange={(e) => updateOutcome(i, { isDefault: (e.target as HTMLInputElement).checked })}
+                  onChange={(v) => updateOutcome(i, { isDefault: v })}
                 />
-                Default
-              </label>
-              {list.length > 1 && (
-                <button class="text-red-400 hover:text-red-600" onClick={() => removeOutcome(i)}>×</button>
-              )}
-            </div>
+                {list.length > 1 && (
+                  <IconButton onClick={() => removeOutcome(i)} ariaLabel="Delete outcome" variant="danger">
+                    <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" fill="none" /></svg>
+                  </IconButton>
+                )}
+              </div>
 
-            <div class="mb-2">
-              {outcome.conditions.map((cond, ci) => {
-                const condType = isScalarCondition(cond) ? 'scalar' : 'dice';
-                return (
-                  <div key={ci} class="flex items-center gap-1 mb-1 flex-wrap">
-                    <select
-                      value={cond.source}
-                      class="px-2 py-0.5 border rounded text-xs"
-                      onChange={(e) => {
-                        const newSource = (e.target as HTMLSelectElement).value;
-                        const newType = resolveSourceType(newSource);
-                        if (newType === null) {
-                          const conditions = [...outcome.conditions];
-                          conditions[ci] = { ...cond, source: newSource };
-                          updateOutcome(i, { conditions });
-                          return;
-                        }
-                        if ((newType === 'scalar') !== (condType === 'scalar')) {
-                          const conditions = [...outcome.conditions];
-                          conditions[ci] = convertCondition(cond, newSource, newType);
-                          updateOutcome(i, { conditions });
-                        } else {
-                          const conditions = [...outcome.conditions];
-                          conditions[ci] = { ...cond, source: newSource };
-                          updateOutcome(i, { conditions });
-                        }
-                      }}
-                    >
-                      {sourceOptions.map((s) => (
-                        <option key={s.id} value={s.id}>{s.label} ({s.type === 'scalar' ? 'num' : 'vec'})</option>
-                      ))}
-                    </select>
-                    {condType === 'scalar' ? (
-                      <OutcomeScalarCondition
-                        cond={cond}
-                        onChange={(newCond) => {
-                          const conditions = [...outcome.conditions];
-                          conditions[ci] = newCond;
-                          updateOutcome(i, { conditions });
+              <div class="mt-2 space-y-1.5">
+                {outcome.conditions.map((cond, ci) => {
+                  const condType = isScalarCondition(cond) ? 'scalar' : 'dice';
+                  return (
+                    <div key={ci} class="flex items-center gap-1.5 flex-wrap">
+                      <Select
+                        ariaLabel="Source"
+                        value={cond.source}
+                        onChange={(v) => {
+                          const newSource = v;
+                          const newType = resolveSourceType(newSource);
+                          if (newType === null) {
+                            const conditions = [...outcome.conditions];
+                            conditions[ci] = { ...cond, source: newSource };
+                            updateOutcome(i, { conditions });
+                            return;
+                          }
+                          if ((newType === 'scalar') !== (condType === 'scalar')) {
+                            const conditions = [...outcome.conditions];
+                            conditions[ci] = convertCondition(cond, newSource, newType);
+                            updateOutcome(i, { conditions });
+                          } else {
+                            const conditions = [...outcome.conditions];
+                            conditions[ci] = { ...cond, source: newSource };
+                            updateOutcome(i, { conditions });
+                          }
                         }}
+                        className="w-32"
+                        options={sourceOptions.map((s) => ({ value: s.id, label: `${s.label} (${s.type === 'scalar' ? 'value' : 'dice'})` }))}
                       />
-                    ) : (
-                      <OutcomeVectorCondition
-                        cond={cond}
-                        onChange={(newCond) => {
-                          const conditions = [...outcome.conditions];
-                          conditions[ci] = newCond;
-                          updateOutcome(i, { conditions });
-                        }}
-                      />
-                    )}
-                    {ci === 0 && condType === 'scalar' && (
-                      <>
-                        {sweepParam ? (
-                          <SweepIndicator
-                            parameterId={sweepParam.id}
-                            label={sweepParam.label}
-                            values={sweepParam.values}
-                            onJump={() => jumpToOutcome(outcome.id)}
-                          />
-                        ) : (
-                          paramsCount < 3 && (
-                            <button
-                              type="button"
-                              class="text-xs text-indigo-600 hover:text-indigo-800 px-1"
-                              onClick={() => setPopoverOutcomeId(outcome.id)}
-                              aria-label="Add sweep to first condition"
-                            >
-                              + Sweep
-                            </button>
-                          )
-                        )}
-                      </>
-                    )}
-                    {outcome.conditions.length > 1 && (
-                      <button
-                        class="text-red-400 hover:text-red-600 text-xs"
-                        onClick={() => {
+                      {condType === 'scalar' ? (
+                        <OutcomeScalarCondition
+                          cond={cond}
+                          onChange={(newCond) => {
+                            const conditions = [...outcome.conditions];
+                            conditions[ci] = newCond;
+                            updateOutcome(i, { conditions });
+                          }}
+                        />
+                      ) : (
+                        <OutcomeVectorCondition
+                          cond={cond}
+                          onChange={(newCond) => {
+                            const conditions = [...outcome.conditions];
+                            conditions[ci] = newCond;
+                            updateOutcome(i, { conditions });
+                          }}
+                        />
+                      )}
+                      {ci === 0 && condType === 'scalar' && (
+                        <>
+                          {sweepParam ? (
+                            <SweepIndicator
+                              parameterId={sweepParam.id}
+                              label={sweepParam.label}
+                              values={sweepParam.values}
+                            />
+                          ) : (
+                            paramsCount < 3 && (
+                              <Button variant="quiet" size="sm" onClick={() => setPopoverOutcomeId(outcome.id)} ariaLabel="Add sweep to first condition">
+                                ↻ Sweep
+                              </Button>
+                            )
+                          )}
+                        </>
+                      )}
+                      {outcome.conditions.length > 1 && (
+                        <IconButton onClick={() => {
                           const conditions = outcome.conditions.filter((_, j) => j !== ci);
                           updateOutcome(i, { conditions });
-                        }}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+                        }} ariaLabel="Remove condition" variant="danger">
+                          <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" fill="none" /></svg>
+                        </IconButton>
+                      )}
+                    </div>
+                  );
+                })}
 
-              {outcome.conditions.length > 1 && (
-                <select
-                  value={outcome.connector}
-                  class="px-2 py-0.5 border rounded text-xs mb-1"
-                  onChange={(e) => updateOutcome(i, { connector: (e.target as HTMLSelectElement).value as 'and' | 'or' })}
-                >
-                  <option value="and">AND</option>
-                  <option value="or">OR</option>
-                </select>
-              )}
+                {outcome.conditions.length > 1 && (
+                  <Select
+                    ariaLabel="Conditions connector"
+                    value={outcome.connector}
+                    onChange={(v) => updateOutcome(i, { connector: v as 'and' | 'or' })}
+                    className="w-14"
+                    mono
+                    options={[{ value: 'and', label: 'AND' }, { value: 'or', label: 'OR' }]}
+                  />
+                )}
 
-              {outcome.conditions.length < 5 && (
-                <button
-                  class="text-xs text-indigo-600 hover:text-indigo-800 ml-2"
-                  onClick={() => {
+                {outcome.conditions.length < 5 && (
+                  <Button variant="quiet" size="sm" onClick={() => {
                     const source = defaultScalarSource();
                     const t = resolveSourceType(source);
                     const newCond: OutcomeCondition = t === 'scalar' ? makeScalarCondition(source) : makeDiceCondition(source);
                     const conditions = [...outcome.conditions, newCond];
                     updateOutcome(i, { conditions });
-                  }}
-                >
-                  + condition
-                </button>
+                  }}>
+                    + condition
+                  </Button>
+                )}
+              </div>
+
+              {showComments.value && (
+                <div class="mt-2">
+                  <TextField
+                    ariaLabel="Comment"
+                    value={outcome.comment}
+                    placeholder="Comment (optional)"
+                    onInput={(v) => updateOutcome(i, { comment: v })}
+                    className="w-full"
+                  />
+                </div>
               )}
             </div>
-
-            {showComments.value && (
-              <input
-                type="text"
-                value={outcome.comment}
-                placeholder="Comment (optional)"
-                class="w-full px-2 py-1 border rounded text-sm"
-                onInput={(e) => updateOutcome(i, { comment: (e.target as HTMLInputElement).value })}
-              />
-            )}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       {list.length < 10 && (
-        <button class="text-sm text-indigo-600 hover:text-indigo-800" onClick={addOutcome}>
-          + Add outcome
-        </button>
+        <div class="mt-3">
+          <Button variant="ghost" size="sm" onClick={addOutcome}>
+            + Add outcome
+          </Button>
+        </div>
       )}
 
       {popoverOutcomeId && (
@@ -332,28 +326,28 @@ function OutcomeScalarCondition({ cond, onChange }: { cond: OutcomeCondition; on
   const scalar = isScalarCondition(cond) ? cond : null;
   if (!scalar) {
     return (
-      <button
-        class="px-2 py-0.5 border rounded text-xs bg-gray-100"
-        onClick={() => onChange({ source: cond.source, op: '>=', value: 0 })}
-      >
-        Reset condition
-      </button>
+      <Button variant="ghost" size="sm" onClick={() => onChange({ source: cond.source, op: '>=', value: 0 })}>
+        Reset
+      </Button>
     );
   }
   return (
     <div class="flex items-center gap-1">
-      <select
+      <Select
+        ariaLabel="Operator"
         value={scalar.op}
-        class="px-1 py-0.5 border rounded text-xs"
-        onChange={(e) => onChange({ source: scalar.source, op: (e.target as HTMLSelectElement).value as ConditionOperator, value: scalar.value })}
-      >
-        {CONDITION_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
-      </select>
-      <input
+        onChange={(v) => onChange({ source: scalar.source, op: v as ConditionOperator, value: scalar.value })}
+        className="w-14"
+        mono
+        options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
+      />
+      <TextField
+        ariaLabel="Value"
         type="number"
         value={scalar.value}
-        class="w-16 px-1 py-0.5 border rounded text-xs text-center"
-        onInput={(e) => onChange({ source: scalar.source, op: scalar.op, value: Number((e.target as HTMLInputElement).value) || 0 })}
+        onInput={(v) => onChange({ source: scalar.source, op: scalar.op, value: Number(v) || 0 })}
+        className="w-20"
+        mono
       />
     </div>
   );
@@ -363,35 +357,36 @@ function OutcomeVectorCondition({ cond, onChange }: { cond: OutcomeCondition; on
   const dice = isDiceCondition(cond) ? cond : null;
   if (!dice) {
     return (
-      <button
-        class="px-2 py-0.5 border rounded text-xs bg-gray-100"
-        onClick={() => onChange({ source: cond.source, op: 'any', subCondition: '>=', value: 0 })}
-      >
-        Reset condition
-      </button>
+      <Button variant="ghost" size="sm" onClick={() => onChange({ source: cond.source, op: 'any', subCondition: '>=', value: 0 })}>
+        Reset
+      </Button>
     );
   }
   return (
     <div class="flex items-center gap-1">
-      <select
+      <Select
+        ariaLabel="Type"
         value={dice.op}
-        class="px-1 py-0.5 border rounded text-xs"
-        onChange={(e) => onChange({ source: dice.source, op: (e.target as HTMLSelectElement).value as DiceConditionType, subCondition: dice.subCondition, value: dice.value })}
-      >
-        {DICE_CONDITION_TYPES.map((t) => (<option key={t} value={t}>{t} dice</option>))}
-      </select>
-      <select
+        onChange={(v) => onChange({ source: dice.source, op: v as DiceConditionType, subCondition: dice.subCondition, value: dice.value })}
+        className="w-20"
+        mono
+        options={DICE_CONDITION_TYPES.map((t) => ({ value: t, label: `${t} dice` }))}
+      />
+      <Select
+        ariaLabel="Sub-operator"
         value={dice.subCondition}
-        class="px-1 py-0.5 border rounded text-xs"
-        onChange={(e) => onChange({ source: dice.source, op: dice.op, subCondition: (e.target as HTMLSelectElement).value as ConditionOperator, value: dice.value })}
-      >
-        {CONDITION_OPERATORS.map((op) => (<option key={op} value={op}>{op}</option>))}
-      </select>
-      <input
+        onChange={(v) => onChange({ source: dice.source, op: dice.op, subCondition: v as ConditionOperator, value: dice.value })}
+        className="w-14"
+        mono
+        options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
+      />
+      <TextField
+        ariaLabel="Value"
         type="number"
         value={dice.value}
-        class="w-14 px-1 py-0.5 border rounded text-xs text-center"
-        onInput={(e) => onChange({ source: dice.source, op: dice.op, subCondition: dice.subCondition, value: Number((e.target as HTMLInputElement).value) || 0 })}
+        onInput={(v) => onChange({ source: dice.source, op: dice.op, subCondition: dice.subCondition, value: Number(v) || 0 })}
+        className="w-16"
+        mono
       />
     </div>
   );

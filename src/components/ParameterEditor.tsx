@@ -1,7 +1,13 @@
 import { useState } from 'preact/hooks';
-import { parameters, dicePool, outcomes, pipeline, highlightTargetId, highlightTargetKind } from '@/state/app-state';
+import {
+  parameters,
+  dicePool,
+  outcomes,
+  pipeline,
+} from '@/state/app-state';
 import { isScalarCondition as isScalarCond, isBinaryMathLiteral as isBML } from '@/utils/validation';
 import type { Parameter, ParameterTarget, NamedValue } from '@/types';
+import { Button, IconButton, Pill, Select, TextField } from '@/components/ui';
 
 const TARGET_OPTIONS: { value: ParameterTarget; label: string }[] = [
   { value: 'pool.count', label: 'Dice count' },
@@ -88,30 +94,6 @@ export function ParameterEditor() {
     parameters.value = params.map((p, i) => (i === index ? { ...p, ...partial } : p));
   }
 
-  function jumpToTarget(param: Parameter) {
-    let el: HTMLElement | null = null;
-    if ((param.target === 'pool.count' || param.target === 'pool.sides') && param.targetTermId) {
-      el = document.getElementById(`dice-term-row-${param.targetTermId}`);
-    } else if (param.target === 'outcome.value' && param.targetOutcomeId) {
-      el = document.getElementById(`outcome-row-${param.targetOutcomeId}`);
-    } else if (param.target === 'pipeline.literal' && param.targetPipelineId) {
-      el = document.getElementById(`pipeline-row-${param.targetPipelineId}`);
-    }
-    if (!el) return;
-    const kind: 'term' | 'outcome' | 'pipeline' =
-      param.target === 'outcome.value' ? 'outcome' : param.target === 'pipeline.literal' ? 'pipeline' : 'term';
-    const id = (param.targetTermId || param.targetOutcomeId || param.targetPipelineId) ?? '';
-    highlightTargetKind.value = kind;
-    highlightTargetId.value = id;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el.classList.add('outline', 'outline-2', 'outline-offset-2', 'outline-blue-500', 'animate-pulse');
-    setTimeout(() => {
-      el?.classList.remove('outline', 'outline-2', 'outline-offset-2', 'outline-blue-500', 'animate-pulse');
-      highlightTargetId.value = null;
-      highlightTargetKind.value = null;
-    }, 500);
-  }
-
   function retargetOptions(param: Parameter): { id: string; label: string }[] {
     if (param.target === 'pool.count' || param.target === 'pool.sides') {
       return dicePool.value.terms.map((t) => ({ id: t.id, label: `${t.count}d${t.sides}${t.tag ? ' ' + t.tag : ''}` }));
@@ -135,165 +117,115 @@ export function ParameterEditor() {
   }
 
   return (
-    <div class="mb-4">
-      <h2 class="text-lg font-semibold mb-4">Parameters</h2>
-      <p class="text-sm text-gray-500 mb-4">
-        Specify a parameter and values — a separate simulation will run for each value.
-      </p>
+    <div>
+      {params.length === 0 && (
+        <div class="border border-dashed border-rule px-4 py-5 text-center">
+          <p class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">
+            No sweeps
+          </p>
+          <p class="text-[12px] text-ink-soft mt-1">
+            Add a parameter to run the same setup across a range of values.
+          </p>
+        </div>
+      )}
 
-      {params.map((param, i) => {
-        const stale = getStaleInfo(param);
-        return (
-          <div
-            key={param.id}
-            class={`border rounded p-3 mb-3 ${stale ? 'border-red-500 bg-red-50' : 'bg-gray-50'}`}
-          >
-            <div class="flex items-center gap-2 mb-2">
-              {stale && (
-                <span
-                  class="text-red-600"
-                  title={stale.message}
-                  aria-label={stale.message}
-                >
-                  {'\u26A0'}
-                </span>
-              )}
-              <span class="font-mono text-sm">{param.label}</span>
-              <span class="text-xs text-gray-500">({TARGET_OPTIONS.find((o) => o.value === param.target)?.label})</span>
-            </div>
-
-            <div class="grid grid-cols-4 gap-2">
-              <div>
-                <label class="block text-xs text-gray-500">Label</label>
-                <input
-                  type="text"
+      <div class="space-y-2">
+        {params.map((param, i) => {
+          const stale = getStaleInfo(param);
+          return (
+            <div
+              key={param.id}
+              class={`border bg-paper-deep/30 px-3 py-2.5 ${stale ? 'border-billiard' : 'border-rule'}`}
+            >
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                <TextField
+                  label="Label"
                   value={param.label}
-                  class="w-full px-2 py-1 border rounded text-sm"
-                  onInput={(e) => updateParameter(i, { label: (e.target as HTMLInputElement).value })}
+                  onInput={(v) => updateParameter(i, { label: v })}
+                  mono
+                />
+                <Select
+                  label="Target"
+                  value={param.target}
+                  onChange={(v) => updateParameter(i, { target: v as ParameterTarget })}
+                  options={TARGET_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                />
+                {(param.target === 'pool.count' || param.target === 'pool.sides') && (
+                  <Select
+                    label="Dice Term"
+                    value={param.targetTermId || ''}
+                    onChange={(v) => updateParameter(i, { targetTermId: v })}
+                    options={dicePool.value.terms.map((t) => ({
+                      value: t.id,
+                      label: `${t.count}d${t.sides}${t.tag ? ` ${t.tag}` : ''}`,
+                    }))}
+                  />
+                )}
+                {param.target === 'outcome.value' && (
+                  <Select
+                    label="Outcome"
+                    value={param.targetOutcomeId || ''}
+                    onChange={(v) => updateParameter(i, { targetOutcomeId: v })}
+                    options={outcomes.value.map((o) => ({ value: o.id, label: o.name }))}
+                  />
+                )}
+                {param.target === 'pipeline.literal' && (
+                  <Select
+                    label="Pipeline Step"
+                    value={param.targetPipelineId || ''}
+                    onChange={(v) => updateParameter(i, { targetPipelineId: v })}
+                    options={scalarLiterals.map((sl) => ({ value: sl.id, label: sl.label }))}
+                  />
+                )}
+                <div class="flex items-end gap-1">
+                  {stale && <Pill variant="accent">⚠ {stale.message}</Pill>}
+                  <IconButton onClick={() => removeParameter(i)} ariaLabel="Delete parameter" variant="danger" className="ml-auto">
+                    <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" fill="none" /></svg>
+                  </IconButton>
+                </div>
+              </div>
+              <div class="mt-2">
+                <TextField
+                  label="Values (comma-separated, or range like 1..5)"
+                  value={param.values.join(', ')}
+                  onInput={(v) => {
+                    const values = parseValues(v);
+                    updateParameter(i, { values });
+                  }}
+                  mono
                 />
               </div>
-              <div>
-                <label class="block text-xs text-gray-500">Target</label>
-                <select
-                  value={param.target}
-                  class="w-full px-2 py-1 border rounded text-sm"
-                  onChange={(e) => {
-                    const target = (e.target as HTMLSelectElement).value as ParameterTarget;
-                    updateParameter(i, { target });
-                  }}
-                >
-                  {TARGET_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-              {(param.target === 'pool.count' || param.target === 'pool.sides') && (
-                <div>
-                  <label class="block text-xs text-gray-500">Dice Term</label>
-                  <select
-                    value={param.targetTermId || ''}
-                    class="w-full px-2 py-1 border rounded text-sm"
-                    onChange={(e) => updateParameter(i, { targetTermId: (e.target as HTMLSelectElement).value })}
-                  >
-                    {dicePool.value.terms.map((t) => (
-                      <option key={t.id} value={t.id}>{t.count}d{t.sides}{t.tag ? ` ${t.tag}` : ''}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              {param.target === 'outcome.value' && (
-                <div>
-                  <label class="block text-xs text-gray-500">Outcome</label>
-                  <select
-                    value={param.targetOutcomeId || ''}
-                    class="w-full px-2 py-1 border rounded text-sm"
-                    onChange={(e) => updateParameter(i, { targetOutcomeId: (e.target as HTMLSelectElement).value })}
-                  >
-                    {outcomes.value.map((o) => (
-                      <option key={o.id} value={o.id}>{o.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              {param.target === 'pipeline.literal' && (
-                <div>
-                  <label class="block text-xs text-gray-500">Pipeline Step</label>
-                  <select
-                    value={param.targetPipelineId || ''}
-                    class="w-full px-2 py-1 border rounded text-sm"
-                    onChange={(e) => updateParameter(i, { targetPipelineId: (e.target as HTMLSelectElement).value })}
-                  >
-                    {scalarLiterals.map((sl) => (
-                      <option key={sl.id} value={sl.id}>{sl.label}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div class="flex items-end">
-                <button class="text-red-400 hover:text-red-600 text-sm" onClick={() => removeParameter(i)}>
-                  Delete
-                </button>
-              </div>
-            </div>
-            <div class="mt-2">
-              <label class="block text-xs text-gray-500">Values (comma-separated, or range like 1..5)</label>
-              <input
-                type="text"
-                value={param.values.join(', ')}
-                class="w-full px-2 py-1 border rounded text-sm"
-                onInput={(e) => {
-                  const raw = (e.target as HTMLInputElement).value;
-                  const values = parseValues(raw);
-                  updateParameter(i, { values });
-                }}
-              />
-            </div>
-            <div class="mt-2 flex items-center gap-2">
-              {stale ? (
-                retargetIndex === i ? (
-                  <select
-                    class="text-xs border rounded px-1 py-0.5"
-                    value=""
-                    onChange={(e) => {
-                      const v = (e.target as HTMLSelectElement).value;
-                      if (v) applyRetarget(i, v);
-                    }}
-                  >
-                    <option value="">Retarget to…</option>
-                    {retargetOptions(param).map((o) => (
-                      <option key={o.id} value={o.id}>{o.label}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <button
-                    type="button"
-                    class="text-xs text-indigo-600 hover:text-indigo-800"
-                    onClick={() => setRetargetIndex(i)}
-                  >
-                    Retarget
-                  </button>
-                )
-              ) : (
-                <button
-                  type="button"
-                  class="text-xs text-indigo-600 hover:text-indigo-800"
-                  onClick={() => jumpToTarget(param)}
-                >
-                  Jump to target
-                </button>
-              )}
               {stale && (
-                <span class="text-xs text-red-600">{stale.message}</span>
+                <div class="mt-2 flex items-center gap-2">
+                  {retargetIndex === i ? (
+                    <Select
+                      ariaLabel="Retarget to"
+                      value=""
+                      onChange={(v) => { if (v) applyRetarget(i, v); }}
+                      className="w-48"
+                      options={[
+                        { value: '', label: 'Retarget to…' },
+                        ...retargetOptions(param).map((o) => ({ value: o.id, label: o.label })),
+                      ]}
+                    />
+                  ) : (
+                    <Button variant="ghost" size="sm" onClick={() => setRetargetIndex(i)}>
+                      Retarget
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       {params.length < 3 && (
-        <button class="text-sm text-indigo-600 hover:text-indigo-800" onClick={addParameter}>
-          + Add parameter
-        </button>
+        <div class="mt-3">
+          <Button variant="ghost" size="sm" onClick={addParameter}>
+            + Add parameter
+          </Button>
+        </div>
       )}
     </div>
   );

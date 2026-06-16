@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
+import { Button } from '@/components/ui';
 
 export interface SweepPopoverProps {
   open: boolean;
@@ -101,57 +102,65 @@ export function SweepPopover({ open, defaultLabel, defaultValues, maxSimulations
   }
 
   return createPortal(
-    <div class="fixed inset-0 z-50 bg-black/30" onClick={onCancel}>
+    <div class="fixed inset-0 z-50 bg-paper-deep/40 backdrop-blur-[2px]" onClick={onCancel}>
       <div
         ref={dialogRef}
         role="dialog"
         aria-label="Add sweep"
-        class="bg-white rounded-lg shadow-lg p-4 w-full max-w-sm"
+        class="bg-paper border border-ink shadow-[6px_6px_0_0_var(--color-gold)] w-full max-w-sm"
         style={positionStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <form onSubmit={handleSubmit} class="space-y-3">
+        <header class="px-4 py-3 border-b border-rule flex items-center justify-between">
+          <p class="font-display text-[14px] text-ink">Add Sweep</p>
+          <button
+            type="button"
+            onClick={onCancel}
+            class="text-ink-mute hover:text-ink"
+            aria-label="Close"
+          >
+            <svg viewBox="0 0 12 12" class="w-3.5 h-3.5" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" fill="none" /></svg>
+          </button>
+        </header>
+        <form onSubmit={handleSubmit} class="px-4 py-3 space-y-3">
           <div>
-            <label class="block text-xs text-gray-500 mb-1" for="sweep-popover-label">Label</label>
+            <label for="sweep-popover-label" class="block font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute mb-1">
+              Label
+            </label>
             <input
               id="sweep-popover-label"
-              ref={firstInputRef}
               type="text"
               value={label}
-              class="w-full px-2 py-2 border rounded text-sm min-h-[44px]"
+              class="w-full px-2.5 py-1.5 border border-rule bg-paper text-[13px] font-mono outline-none focus:border-billiard focus:shadow-[0_0_0_1px_var(--color-billiard)] transition-all min-h-[36px]"
               onInput={(e) => setLabel((e.target as HTMLInputElement).value)}
             />
           </div>
           <div>
-            <label class="block text-xs text-gray-500 mb-1" for="sweep-popover-values">Values (comma-separated, or range like 1..5)</label>
+            <label for="sweep-popover-values" class="block font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute mb-1">
+              Values
+            </label>
             <input
               id="sweep-popover-values"
+              ref={firstInputRef}
               type="text"
               value={valuesRaw}
-              class="w-full px-2 py-2 border rounded text-sm min-h-[44px]"
+              placeholder="1, 2, 3 or 1..5"
+              class="w-full px-2.5 py-1.5 border border-rule bg-paper text-[13px] font-mono tabular outline-none focus:border-billiard focus:shadow-[0_0_0_1px_var(--color-gold)] transition-all min-h-[36px]"
               onInput={(e) => setValuesRaw((e.target as HTMLInputElement).value)}
             />
-            <p class="text-xs text-gray-500 mt-1">
+            <p class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute mt-1.5">
               {simCount > 0
-                ? `\u2192 ${simCount} simulation${simCount === 1 ? '' : 's'} \u00B7 ${rolls.toLocaleString()} rolls`
+                ? `→ ${simCount} simulation${simCount === 1 ? '' : 's'} · ${rolls.toLocaleString()} rolls`
                 : 'Enter at least one value'}
             </p>
           </div>
           <div class="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              class="px-3 py-2 text-sm border rounded min-h-[44px] min-w-[44px]"
-              onClick={onCancel}
-            >
+            <Button type="button" variant="ghost" size="md" onClick={onCancel}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              class="px-3 py-2 text-sm bg-indigo-600 text-white rounded disabled:opacity-40 min-h-[44px] min-w-[44px]"
-              disabled={simCount === 0 || maxSimulationsReached}
-            >
+            </Button>
+            <Button type="submit" variant="primary" size="md" disabled={simCount === 0 || maxSimulationsReached}>
               Create
-            </button>
+            </Button>
           </div>
         </form>
       </div>

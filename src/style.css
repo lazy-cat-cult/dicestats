@@ -1,1 +1,113 @@
 @import "tailwindcss";
+
+@theme {
+  --color-paper: #faf8f2;
+  --color-paper-soft: #f0ebda;
+  --color-paper-deep: #e6dfc8;
+  --color-ink: #16241c;
+  --color-ink-soft: #5a6b5e;
+  --color-ink-mute: #8a978d;
+  --color-rule: #d6cfb6;
+  --color-rule-soft: #e8e2cc;
+  --color-billiard: #2f7a4d;
+  --color-billiard-deep: #1f5836;
+  --color-billiard-soft: #c6dccd;
+  --color-gold: #c9a646;
+  --color-gold-deep: #9c7f30;
+  --color-gold-soft: #e8d99a;
+
+  --font-display: "Bebas Neue", "Oswald", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+@font-face {
+  font-family: "Bebas Neue";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/bebasneue/v14/JTUSjIg69CK48gW7PXoo9WdhDV546Vy0jzOg.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 400 500 600 700;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/spacegrotesk/v16/V8mDoQDjQSkFtoMM3T6r8E7mF71Q-gOoraIAEj7aUUM.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 500 600;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/jetbrainsmono/v25/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPVmUsaaDhw.woff2") format("woff2");
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0 80px, rgba(201, 166, 70, 0.025) 80px 81px);
+}
+
+::selection {
+  background: var(--color-billiard);
+  color: var(--color-paper);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@keyframes tape-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes roll-pop {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.roll-in {
+  animation: roll-pop 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}

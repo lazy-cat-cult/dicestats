@@ -1,7 +1,20 @@
 import { signal } from '@preact/signals';
 import type { SimResult, SimJob } from '@/types';
-import { dicePool, rerollConditions, pipeline, outcomes, parameters, isSimulating, simProgress, totalIterations, confirmedHighCost, highlightTargetId, highlightTargetKind, applyPresetConfig, mergeOrStagePreset, configDirty } from '@/state/app-state';
-import { currentStep } from '@/components/StepWizard';
+import {
+  dicePool,
+  rerollConditions,
+  pipeline,
+  outcomes,
+  parameters,
+  isSimulating,
+  simProgress,
+  totalIterations,
+  confirmedHighCost,
+  applyPresetConfig,
+  mergeOrStagePreset,
+  configDirty,
+  showComments,
+} from '@/state/app-state';
 import { PresetSelector } from '@/components/PresetSelector';
 import { DicePoolEditor } from '@/components/DicePoolEditor';
 import { RerollEditor } from '@/components/RerollEditor';
@@ -11,10 +24,12 @@ import { ParameterEditor } from '@/components/ParameterEditor';
 import { ResultView } from '@/components/ResultView';
 import { SweepCostChip } from '@/components/SweepCostChip';
 import { OutcomeChart, ParameterChart } from '@/components/DistributionChart';
+import { OddsTape } from '@/components/OddsTape';
 import { saveConfig, loadConfig, exportCurrentAsYaml, downloadYamlFile, readYamlFile, importPresetFromYamlText } from '@/state/persistence';
 import { validateConfig, canRunSimulation } from '@/utils/validation';
 import { computed } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
+import { Section, Button, Checkbox } from '@/components/ui';
 
 export const simResults = signal<SimResult[]>([]);
 export const simError = signal<string | null>(null);
@@ -33,10 +48,7 @@ export function resetUiForPresetApply() {
   cancelSimulation();
   simResults.value = [];
   simError.value = null;
-  currentStep.value = 0;
   confirmedHighCost.value = false;
-  highlightTargetId.value = null;
-  highlightTargetKind.value = null;
 }
 
 const validationErrors = computed(() =>
@@ -113,7 +125,6 @@ export function App() {
     isSimulating.value = true;
     simError.value = null;
     simResults.value = [];
-    currentStep.value = 2;
 
     const job: SimJob = {
       pool: { ...dicePool.value, terms: dicePool.value.terms.map((t) => ({ ...t })) },
@@ -156,30 +167,46 @@ export function App() {
   }
 
   const blockingErrors = validationErrors.value.filter((e) => e.blocking);
+  const hasResults = !isSimulating.value && simResults.value.length > 0;
+  const singleResult = simResults.value.length === 1 ? simResults.value[0] : null;
+  const sweepCount = parameters.value.reduce((a, p) => a * p.values.length, 1);
 
   return (
-    <div class="min-h-screen bg-white text-gray-900">
-      <header class="border-b border-gray-200 px-4 py-3">
-        <div class="max-w-2xl mx-auto flex items-center justify-between gap-2">
-          <h1 class="text-xl font-bold text-gray-800">Dice Probability</h1>
-          <div class="flex items-center gap-3">
+    <div class="min-h-screen flex flex-col">
+      <header class="bg-billiard text-paper">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          <a href="#" class="flex items-center gap-3 group" aria-label="Oddsboard home">
+            <span class="inline-flex items-center justify-center w-12 h-12 border-2 border-gold bg-billiard-deep shadow-[0_2px_0_0_var(--color-gold)]">
+              <svg viewBox="0 0 100 100" class="w-9 h-9" aria-hidden="true">
+                <path d="M50 22 L78 36 L68 70 L32 70 L22 36 Z"
+                      fill="none" stroke="#faf8f2" stroke-width="4" stroke-linejoin="round"/>
+                <circle cx="50" cy="36" r="4" fill="#faf8f2"/>
+                <circle cx="38" cy="50" r="4" fill="#faf8f2"/>
+                <circle cx="62" cy="50" r="4" fill="#faf8f2"/>
+                <circle cx="44" cy="62" r="4" fill="#faf8f2"/>
+                <circle cx="56" cy="62" r="4" fill="#c9a646"/>
+              </svg>
+            </span>
+            <span class="flex flex-col leading-none">
+              <span class="font-display text-[30px] tracking-[0.06em] text-paper leading-none">ODDSBOARD</span>
+              <span class="font-mono text-[9px] uppercase tracking-[0.28em] text-gold mt-1.5">
+                Dice Probability · v1
+              </span>
+            </span>
+          </a>
+
+          <div class="flex items-center gap-2 sm:gap-3">
             {loadError.value && (
-              <span class="text-xs text-red-600 max-w-xs truncate" title={loadError.value}>
+              <span class="hidden sm:inline font-mono text-[11px] text-gold-soft max-w-xs truncate" title={loadError.value}>
                 {loadError.value}
               </span>
             )}
-            <button
-              class="text-sm text-gray-500 hover:text-gray-700"
-              onClick={handleSave}
-            >
+            <Button variant="ghost" size="sm" onClick={handleSave} ariaLabel="Save current configuration as YAML" className="border-gold/50 text-paper hover:border-gold hover:text-gold">
               Save
-            </button>
-            <button
-              class="text-sm text-gray-500 hover:text-gray-700"
-              onClick={() => fileInputRef.current?.click()}
-            >
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} ariaLabel="Load configuration from YAML file" className="border-gold/50 text-paper hover:border-gold hover:text-gold">
               Load
-            </button>
+            </Button>
             <input
               ref={fileInputRef}
               type="file"
@@ -191,165 +218,203 @@ export function App() {
         </div>
       </header>
 
-      <main class="max-w-2xl mx-auto px-4 py-6">
-        {currentStep.value < 3 && <PresetSelector />}
+      <PresetSelector />
 
-        <div class="mb-4">
-          {blockingErrors.length > 0 && (
-            <div class="bg-red-50 border border-red-200 rounded p-3 mb-3">
-              {blockingErrors.map((e) => (
-                <p key={e.id} class="text-red-700 text-sm">{e.message}</p>
-              ))}
+      <main class="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-10">
+        <div class="space-y-0">
+          <Section
+            eyebrow="Step 01"
+            title="Dice Pool"
+            description="Which dice are rolled and how many of each. Tag a die set to refer to it by name in later steps."
+          >
+            <DicePoolEditor />
+          </Section>
+          <Section
+            eyebrow="Step 02"
+            title="Reroll Conditions"
+            description="Re-roll or explode any die whose face matches a value or whose tag matches a name. Optional — leave empty for a plain roll."
+          >
+            <RerollEditor />
+          </Section>
+          <Section
+            eyebrow="Step 03"
+            title="Resolution Pipeline"
+            description="Transform the rolled dice into named values: keep the best, count sixes, sum, filter by tag, or add a modifier."
+            actions={
+              <Checkbox
+                label="Comments"
+                checked={showComments.value}
+                onChange={(v) => { showComments.value = v; }}
+              />
+            }
+          >
+            <PipelineEditor />
+          </Section>
+          <Section
+            eyebrow="Step 04"
+            title="Outcomes"
+            description="The buckets the roll is sorted into. The probability of each one is what the simulation estimates."
+          >
+            <OutcomeEditor />
+          </Section>
+          <Section
+            eyebrow="Step 05"
+            title="Sweep Parameters"
+            description="Re-run the whole simulation for each value of a chosen input. One number becomes a curve."
+          >
+            <ParameterEditor />
+            <div class="mt-4">
+              <SweepCostChip
+                onConfirmHighCost={() => {
+                  confirmedHighCost.value = true;
+                  highCostTooltip.value = true;
+                  setTimeout(() => { highCostTooltip.value = false; }, 4000);
+                }}
+              />
             </div>
-          )}
+          </Section>
+
+          <div class="sticky bottom-0 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mt-2 bg-paper/95 backdrop-blur border-t-2 border-gold">
+            <div class="flex items-center gap-3">
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={runSimulation}
+                disabled={!canRun.value}
+                className="flex-1 sm:flex-none sm:min-w-[280px]"
+                ariaLabel="Run simulation with 1,000,000 rolls per sweep value"
+              >
+                {isSimulating.value ? 'Running…' : hasResults ? 'Roll the Dice Again' : 'Roll the Dice'}
+                <span class="font-mono text-[10px] opacity-90 ml-1 normal-case tracking-[0.08em]">
+                  1M × {Math.max(1, sweepCount)}
+                </span>
+              </Button>
+              {isSimulating.value && (
+                <Button variant="ghost" size="md" onClick={cancelSimulation} ariaLabel="Cancel running simulation">
+                  Cancel
+                </Button>
+              )}
+            </div>
+            {blockingErrors.length > 0 && (
+              <ul class="mt-3 space-y-1">
+                {blockingErrors.map((e) => (
+                  <li key={e.id} class="font-mono text-[11px] text-billiard-deep">— {e.message}</li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
-        <div class="flex gap-2 mb-6">
-          {['Dice Pool & Reroll', 'Resolve & Outcomes', 'Results'].map((label, i) => (
-            <button
-              key={i}
-              class={`flex-1 text-center text-sm py-2 border-b-2 transition-colors ${
-                i === currentStep.value
-                  ? 'border-indigo-500 text-indigo-600 font-semibold'
-                  : 'border-gray-200 text-gray-400'
-              }`}
-              onClick={() => { currentStep.value = i; }}
+        <aside class="lg:sticky lg:top-6 lg:self-start space-y-6">
+          {hasResults && singleResult && <OddsTape result={singleResult} progress={null} />}
+          {isSimulating.value && <RunningPanel progress={simProgress.value} />}
+          {simError.value && <ErrorPanel message={simError.value} />}
+
+          {hasResults && (
+            <Section
+              eyebrow="Detail"
+              title={simResults.value.length > 1 ? 'Probability Table' : 'Roll Count'}
             >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div class="min-h-[400px]">
-          {currentStep.value === 0 && (
-            <div class="space-y-6">
-              <DicePoolEditor />
-              <RerollEditor />
-            </div>
+              <ResultView results={simResults.value} />
+              {simResults.value.length === 1 && (
+                <div class="mt-5">
+                  <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-gold-deep mb-2">
+                    Distribution
+                  </p>
+                  <OutcomeChart result={simResults.value[0]} />
+                </div>
+              )}
+              {simResults.value.length > 1 && (
+                <div class="mt-5">
+                  <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-gold-deep mb-2">
+                    Probability by Sweep
+                  </p>
+                  <ParameterChart results={simResults.value} />
+                </div>
+              )}
+            </Section>
           )}
-          {currentStep.value === 1 && (
-            <div class="space-y-6">
-              <PipelineEditor />
-              <OutcomeEditor />
-            </div>
+
+          {!isSimulating.value && !hasResults && !simError.value && (
+            <EmptyPanel />
           )}
-          {currentStep.value === 2 && (
-            <div>
-              <div>
-                {!isSimulating.value && simResults.value.length === 0 && (
-                  <div class="space-y-4">
-                    <ParameterEditor />
-                    <SweepCostChip onConfirmHighCost={() => { confirmedHighCost.value = true; highCostTooltip.value = true; setTimeout(() => { highCostTooltip.value = false; }, 4000); }} />
-                    <div class="text-center py-12">
-                      <p class="text-gray-500 mb-4">Configure dice pool and outcomes, then run simulation.</p>
-                      <div class="relative inline-block">
-                        <button
-                          class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-lg font-semibold disabled:opacity-40"
-                          onClick={runSimulation}
-                          disabled={!canRun.value}
-                        >
-                          Run Simulation (1,000,000 rolls)
-                        </button>
-                        {highCostTooltip.value && (
-                          <div class="absolute left-1/2 -translate-x-1/2 -top-12 w-64 bg-gray-900 text-white text-xs rounded px-2 py-2 shadow-lg z-10">
-                            This will run &gt;50M simulations. Click Run again to proceed.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {isSimulating.value && (
-                  <div class="space-y-4">
-                    <ParameterEditor />
-                    <div class="text-center py-12">
-                      <p class="text-gray-600 mb-2">Simulation running...</p>
-                      <p class="text-sm text-gray-400">
-                        {simProgress.value.completed} / {simProgress.value.total || '\u2026'}
-                      </p>
-                      <div class="w-full bg-gray-200 rounded-full h-2 mt-3">
-                        <div
-                          class="bg-indigo-600 h-2 rounded-full transition-all"
-                          style={{ width: simProgress.value.total > 0 ? `${(simProgress.value.completed / simProgress.value.total) * 100}%` : '0%' }}
-                        />
-                      </div>
-                      <button
-                        class="mt-4 px-4 py-2 border border-red-300 text-red-600 rounded hover:bg-red-50"
-                        onClick={cancelSimulation}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {simError.value && (
-                  <div class="space-y-4">
-                    <ParameterEditor />
-                    <div class="bg-red-50 border border-red-200 rounded p-4 mb-4">
-                      <p class="text-red-700">{simError.value}</p>
-                    </div>
-                  </div>
-                )}
-
-                {!isSimulating.value && simResults.value.length > 0 && (
-                  <div class="space-y-4">
-                    <ParameterEditor />
-                    <ResultView results={simResults.value} />
-
-                    {simResults.value.length === 1 && (
-                      <div>
-                        <h3 class="text-sm font-semibold text-gray-600 mb-2">Outcome Probabilities</h3>
-                        <OutcomeChart result={simResults.value[0]} />
-                      </div>
-                    )}
-
-                    {simResults.value.length > 1 && (
-                      <div>
-                        <h3 class="text-sm font-semibold text-gray-600 mb-2">Outcome Probabilities</h3>
-                        <ParameterChart results={simResults.value} />
-                      </div>
-                    )}
-
-                    <div class="text-center">
-                      <button
-                        class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold"
-                        onClick={runSimulation}
-                      >
-                        Re-run
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div class="flex justify-between mt-6">
-          <button
-            class="px-4 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-            disabled={currentStep.value === 0}
-            onClick={() => { currentStep.value = Math.max(0, currentStep.value - 1); }}
-          >
-            Back
-          </button>
-          <button
-            class="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40"
-            disabled={currentStep.value === 2}
-            onClick={() => { currentStep.value = Math.min(2, currentStep.value + 1); }}
-          >
-            Next
-          </button>
-        </div>
+        </aside>
       </main>
 
+      <footer class="border-t border-rule mt-auto">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
+          <span>Monte Carlo · 1,000,000 iterations per value</span>
+          <span>Web Worker · No analytics · No tracking</span>
+        </div>
+      </footer>
+
       <div class="sr-only" role="status" aria-live="polite">
-        {highlightTargetId.value && highlightTargetKind.value
-          ? `Jumped to ${highlightTargetId.value}`
-          : ''}
+        {isSimulating.value ? 'Simulation running.' : ''}
+        {hasResults ? 'Simulation complete.' : ''}
+        {simError.value ? `Simulation error: ${simError.value}` : ''}
       </div>
+    </div>
+  );
+}
+
+function RunningPanel({ progress }: { progress: { completed: number; total: number } }) {
+  const pct = progress.total > 0 ? (progress.completed / progress.total) * 100 : 0;
+  return (
+    <div class="border-2 border-billiard bg-paper p-5 shadow-[0_3px_0_0_var(--color-billiard)]">
+      <div class="flex items-center justify-between mb-3">
+        <span class="font-display text-billiard text-[15px] tracking-[0.18em] inline-flex items-center gap-2">
+          <span class="inline-block w-2 h-2 bg-billiard rounded-full" />
+          ROLLING
+        </span>
+        <span class="font-mono tabular text-[11px] text-ink">
+          {progress.completed.toLocaleString()} / {progress.total > 0 ? progress.total.toLocaleString() : '…'}
+        </span>
+      </div>
+      <div class="font-display text-[3.5rem] text-ink tabular leading-none mb-4">
+        {pct.toFixed(1)}<span class="text-ink-soft text-[1.25rem]">%</span>
+      </div>
+      <div class="h-1.5 bg-paper-soft border border-rule">
+        <div
+          class="h-full bg-billiard"
+          style={{ width: `${pct}%`, transformOrigin: 'left center' }}
+        />
+      </div>
+      <p class="mt-3 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft">
+        Shaking 1,000,000 outcomes in worker…
+      </p>
+    </div>
+  );
+}
+
+function ErrorPanel({ message }: { message: string }) {
+  return (
+    <div class="border-2 border-billiard bg-billiard-soft/40 p-5">
+      <p class="font-display text-billiard-deep text-[15px] tracking-[0.18em] mb-2">
+        Snake Eyes — Simulation Failed
+      </p>
+      <p class="font-mono text-[12px] text-ink">{message}</p>
+    </div>
+  );
+}
+
+function EmptyPanel() {
+  return (
+    <div class="border-2 border-dashed border-gold bg-paper p-5">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="h-px w-6 bg-gold" aria-hidden="true" />
+        <p class="font-mono text-[10px] uppercase tracking-[0.24em] text-gold-deep">
+          Result Canvas
+        </p>
+      </div>
+      <p class="font-display text-[2.25rem] text-ink leading-[0.95] tracking-wide mb-3">
+        No roll yet.
+      </p>
+      <p class="text-[13px] text-ink-soft leading-relaxed">
+        Define at least one die set and one outcome, then press
+        <span class="font-mono text-billiard"> Roll the Dice</span>. The simulation
+        runs 1,000,000 rolls in a background worker and reports each outcome's
+        probability here.
+      </p>
     </div>
   );
 }

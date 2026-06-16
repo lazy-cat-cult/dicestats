@@ -7,43 +7,38 @@ interface ResultViewProps {
 
 export function ResultView({ results }: ResultViewProps) {
   if (!results || results.length === 0) {
-    return <div class="text-gray-500 text-center py-8">No results. Run simulation.</div>;
+    return <div class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute py-3">No results.</div>;
   }
 
   const hasParams = results.length > 1 || (results.length === 1 && results[0].label);
 
   return (
     <div>
-      <h2 class="text-lg font-semibold mb-4">Results</h2>
-      <p class="text-sm text-gray-500 mb-4">
-        Simulation: {(results[0]?.totalRolls ?? 0).toLocaleString()} rolls
+      <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-mute mb-2">
+        Simulation · {(results[0]?.totalRolls ?? 0).toLocaleString()} rolls
       </p>
 
-      {hasParams ? (
-        <ParamResults results={results} />
-      ) : (
-        <SingleResult result={results[0]} />
-      )}
+      {hasParams ? <ParamResults results={results} /> : <SingleResult result={results[0]} />}
     </div>
   );
 }
 
 function SingleResult({ result }: { result: SimResult }) {
   return (
-    <table class="w-full border-collapse mb-4">
+    <table class="w-full border-collapse">
       <thead>
-        <tr class="border-b border-gray-300">
-          <th class="text-left py-2 text-sm text-gray-600">Outcome</th>
-          <th class="text-right py-2 text-sm text-gray-600">Probability</th>
-          <th class="text-right py-2 text-sm text-gray-600">Count</th>
+        <tr class="border-b border-rule">
+          <th class="text-left py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">Outcome</th>
+          <th class="text-right py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">Probability</th>
+          <th class="text-right py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">Count</th>
         </tr>
       </thead>
       <tbody>
         {result.outcomes.map((o) => (
-          <tr key={o.label} class="border-b border-gray-100">
-            <td class="py-2 text-sm">{o.label}</td>
-            <td class="py-2 text-sm text-right font-mono">{formatPercent(o.probability)}</td>
-            <td class="py-2 text-sm text-right text-gray-500 font-mono">{o.count.toLocaleString()}</td>
+          <tr key={o.label} class="border-b border-rule/60">
+            <td class="py-2 font-mono text-[12px] text-ink uppercase tracking-[0.06em]">{o.label}</td>
+            <td class="py-2 font-mono tabular text-[13px] text-ink text-right">{formatPercent(o.probability)}</td>
+            <td class="py-2 font-mono tabular text-[12px] text-ink-mute text-right">{o.count.toLocaleString()}</td>
           </tr>
         ))}
       </tbody>
@@ -69,26 +64,26 @@ function ParamResults({ results }: { results: SimResult[] }) {
   return (
     <div>
       {headers.length > 0 && (
-        <p class="text-sm text-gray-600 mb-2">
-          {headers.map((h) => `Sweep: ${h} \u2208 {${results.filter((r) => r.label.startsWith(h + '=')).map((r) => r.label.slice(h.length + 1)).join(', ')}}`).join('; ')}
+        <p class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute mb-2">
+          {headers.map((h) => `Sweep ${h} ∈ {${results.filter((r) => r.label.startsWith(h + '=')).map((r) => r.label.slice(h.length + 1)).join(', ')}}`).join('; ')}
         </p>
       )}
       <div class="overflow-x-auto">
-        <table class="w-full border-collapse mb-4">
+        <table class="w-full border-collapse">
           <thead>
-            <tr class="border-b border-gray-300">
-              <th class="text-left py-2 text-sm text-gray-600">Parameter</th>
+            <tr class="border-b border-rule">
+              <th class="text-left py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">Parameter</th>
               {outcomeLabels.map((label) => (
-                <th key={label} class="text-right py-2 text-sm text-gray-600">{label}</th>
+                <th key={label} class="text-right py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">{label}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {results.map((r) => (
-              <tr key={r.label} class="border-b border-gray-100">
-                <td class="py-2 text-sm font-mono">{r.label}</td>
+              <tr key={r.label} class="border-b border-rule/60">
+                <td class="py-2 font-mono tabular text-[12px] text-ink">{r.label}</td>
                 {r.outcomes.map((o) => (
-                  <td key={o.label} class="py-2 text-sm text-right font-mono">{formatPercent(o.probability)}</td>
+                  <td key={o.label} class="py-2 font-mono tabular text-[12px] text-ink text-right">{formatPercent(o.probability)}</td>
                 ))}
               </tr>
             ))}

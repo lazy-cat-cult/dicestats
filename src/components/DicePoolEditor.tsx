@@ -1,8 +1,15 @@
-import { useState, useRef } from 'preact/hooks';
-import { dicePool, dicePoolNotation, getTagColor, activeSweepsByTarget, parameters, highlightTargetId, highlightTargetKind } from '@/state/app-state';
+import { useState } from 'preact/hooks';
+import {
+  dicePool,
+  dicePoolNotation,
+  getTagColor,
+  activeSweepsByTarget,
+  parameters,
+} from '@/state/app-state';
 import type { DiceTerm, Parameter } from '@/types';
 import { SweepIndicator } from '@/components/SweepIndicator';
 import { SweepPopover } from '@/components/SweepPopover';
+import { Button, IconButton, Select, TextField } from '@/components/ui';
 
 const DIE_SIDES = [4, 6, 8, 10, 12, 20, 100];
 
@@ -16,7 +23,6 @@ export function DicePoolEditor() {
   const sweeps = activeSweepsByTarget.value;
   const paramsCount = parameters.value.length;
   const [popover, setPopover] = useState<PopoverState | null>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
 
   function updateTerm(index: number, partial: Partial<DiceTerm>) {
     const terms = dicePool.value.terms.map((t, i) => (i === index ? { ...t, ...partial } : { ...t }));
@@ -50,133 +56,121 @@ export function DicePoolEditor() {
     setPopover(null);
   }
 
-  function jumpToTerm(termId: string) {
-    highlightTargetId.value = termId;
-    highlightTargetKind.value = 'term';
-    const el = document.getElementById(`dice-term-row-${termId}`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el?.classList.add('outline', 'outline-2', 'outline-offset-2', 'outline-blue-500', 'animate-pulse');
-    setTimeout(() => {
-      el?.classList.remove('outline', 'outline-2', 'outline-offset-2', 'outline-blue-500', 'animate-pulse');
-      highlightTargetId.value = null;
-      highlightTargetKind.value = null;
-    }, 500);
-  }
-
   return (
     <div>
-      <h2 class="text-lg font-semibold mb-4">Dice Pool</h2>
-
-      <div class="mb-2 px-3 py-2 bg-gray-100 rounded text-sm font-mono text-gray-600">
-        {dicePoolNotation.value}
+      <div class="flex items-center gap-2 mb-3">
+        <span class="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-mute">
+          Notation
+        </span>
+        <code class="font-mono tabular text-[13px] text-ink px-2 py-1 border border-rule bg-paper-deep/40">
+          {dicePoolNotation.value}
+        </code>
       </div>
 
-      {pool.terms.map((term, i) => {
-        const countParam = sweeps.get(`pool.count:${term.id}`);
-        const sidesParam = sweeps.get(`pool.sides:${term.id}`);
-
-        return (
-          <div key={term.id} id={`dice-term-row-${term.id}`} class="flex items-center gap-2 mb-3 flex-wrap">
-            <input
-              type="number"
-              min={1}
-              max={99}
-              value={term.count}
-              class="w-16 px-2 py-1 border rounded text-center"
-              onInput={(e) => updateTerm(i, { count: Math.max(1, Number((e.target as HTMLInputElement).value) || 1) })}
-            />
-            {!countParam && paramsCount < 3 && (
-              <button
-                ref={i === 0 ? buttonRef : undefined}
-                type="button"
-                class="text-xs text-indigo-600 hover:text-indigo-800 px-1"
-                onClick={() => setPopover({ field: 'count', termId: term.id })}
-                aria-label="Add sweep to dice count"
-              >
-                + Sweep
-              </button>
-            )}
-            {countParam && (
-              <SweepIndicator
-                parameterId={countParam.id}
-                label={countParam.label}
-                values={countParam.values}
-                onJump={() => jumpToTerm(term.id)}
-              />
-            )}
-
-            <span class="text-gray-600">d</span>
-            <select
-              value={DIE_SIDES.includes(term.sides) ? term.sides : 'custom'}
-              class="px-2 py-1 border rounded"
-              onChange={(e) => {
-                const val = (e.target as HTMLSelectElement).value;
-                if (val !== 'custom') {
-                  updateTerm(i, { sides: Number(val) });
-                }
-              }}
+      <div class="space-y-2">
+        {pool.terms.map((term, i) => {
+          const countParam = sweeps.get(`pool.count:${term.id}`);
+          const sidesParam = sweeps.get(`pool.sides:${term.id}`);
+          const tagColor = term.tag ? getTagColor(term.tag) : null;
+          return (
+            <div
+              key={term.id}
+              id={`dice-term-row-${term.id}`}
+              class="group relative border border-rule bg-paper-deep/30 px-3 py-2.5 flex flex-wrap items-center gap-2"
+              style={tagColor ? { borderLeftWidth: '3px', borderLeftColor: tagColor } : undefined}
             >
-              {DIE_SIDES.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-              <option value="custom">custom</option>
-            </select>
-            {!DIE_SIDES.includes(term.sides) && (
-              <input
+              <TextField
+                ariaLabel="Dice count"
                 type="number"
                 min={1}
-                max={999}
-                value={term.sides}
-                class="w-16 px-2 py-1 border rounded text-center"
-                onInput={(e) => updateTerm(i, { sides: Math.max(1, Number((e.target as HTMLInputElement).value) || 1) })}
+                max={99}
+                value={term.count}
+                onInput={(v) => updateTerm(i, { count: Math.max(1, Number(v) || 1) })}
+                className="w-16"
+                mono
               />
-            )}
-            {!sidesParam && paramsCount < 3 && (
-              <button
-                type="button"
-                class="text-xs text-indigo-600 hover:text-indigo-800 px-1"
-                onClick={() => setPopover({ field: 'sides', termId: term.id })}
-                aria-label="Add sweep to dice sides"
-              >
-                + Sweep
-              </button>
-            )}
-            {sidesParam && (
-              <SweepIndicator
-                parameterId={sidesParam.id}
-                label={sidesParam.label}
-                values={sidesParam.values}
-                onJump={() => jumpToTerm(term.id)}
+              {!countParam && paramsCount < 3 && (
+                <Button variant="quiet" size="sm" onClick={() => setPopover({ field: 'count', termId: term.id })} ariaLabel="Add sweep to dice count">
+                  ↻ Sweep
+                </Button>
+              )}
+              {countParam && (
+                <SweepIndicator
+                  parameterId={countParam.id}
+                  label={countParam.label}
+                  values={countParam.values}
+                />
+              )}
+
+              <span class="font-mono text-[12px] text-ink-mute">d</span>
+
+              <Select
+                ariaLabel="Dice sides"
+                value={DIE_SIDES.includes(term.sides) ? String(term.sides) : 'custom'}
+                onChange={(v) => {
+                  if (v !== 'custom') updateTerm(i, { sides: Number(v) });
+                }}
+                className="w-20"
+                mono
+                options={[
+                  ...DIE_SIDES.map((s) => ({ value: String(s), label: String(s) })),
+                  { value: 'custom', label: '…' },
+                ]}
               />
-            )}
+              {!DIE_SIDES.includes(term.sides) && (
+                <TextField
+                  ariaLabel="Custom dice sides"
+                  type="number"
+                  min={1}
+                  max={999}
+                  value={term.sides}
+                  onInput={(v) => updateTerm(i, { sides: Math.max(1, Number(v) || 1) })}
+                  className="w-16"
+                  mono
+                />
+              )}
+              {!sidesParam && paramsCount < 3 && (
+                <Button variant="quiet" size="sm" onClick={() => setPopover({ field: 'sides', termId: term.id })} ariaLabel="Add sweep to dice sides">
+                  ↻ Sweep
+                </Button>
+              )}
+              {sidesParam && (
+                <SweepIndicator
+                  parameterId={sidesParam.id}
+                  label={sidesParam.label}
+                  values={sidesParam.values}
+                />
+              )}
 
-            <input
-              type="text"
-              value={term.tag}
-              placeholder="tag"
-              maxLength={30}
-              class="w-20 px-2 py-1 border rounded text-sm"
-              style={term.tag ? { borderColor: getTagColor(term.tag) } : {}}
-              onInput={(e) => updateTerm(i, { tag: (e.target as HTMLInputElement).value })}
-            />
-            {pool.terms.length > 1 && (
-              <button
-                class="text-red-400 hover:text-red-600 text-lg px-1"
-                onClick={() => removeTerm(i)}
-              >
-                ×
-              </button>
-            )}
-          </div>
-        );
-      })}
+              <TextField
+                ariaLabel="Tag for grouping"
+                type="text"
+                value={term.tag}
+                placeholder="tag"
+                maxLength={30}
+                onInput={(v) => updateTerm(i, { tag: v })}
+                className="w-24"
+              />
 
-      <button
-        class="text-sm text-indigo-600 hover:text-indigo-800 mb-4"
-        onClick={addTerm}
-      >
-        + Add die
-      </button>
+              {pool.terms.length > 1 && (
+                <div class="ml-auto">
+                  <IconButton onClick={() => removeTerm(i)} ariaLabel="Remove this die" variant="danger">
+                    <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true">
+                      <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" fill="none" />
+                    </svg>
+                  </IconButton>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div class="mt-3">
+        <Button variant="ghost" size="sm" onClick={addTerm}>
+          + Add die
+        </Button>
+      </div>
 
       {popover && (
         <SweepPopover

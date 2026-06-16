@@ -1,6 +1,15 @@
 import type { SimResult } from '@/types';
 import { useEffect, useRef } from 'preact/hooks';
 
+const INK = '#16241C';
+const INK_SOFT = '#5A6B5E';
+const BILLIARD = '#2F7A4D';
+const GOLD = '#C9A646';
+const RULE = '#D6CFB6';
+const PAPER = '#FAF8F2';
+
+const PALETTE = [BILLIARD, GOLD, INK, '#A86A3D', '#3F6FA0', '#7A4A8B', '#B86A4D', '#3D7A6F'];
+
 interface OutcomeChartProps {
   result: SimResult;
 }
@@ -20,19 +29,6 @@ export function OutcomeChart({ result }: OutcomeChartProps) {
       const labels = result.outcomes.map((o) => o.label);
       const probabilities = result.outcomes.map((o) => o.probability);
 
-      const colors = [
-        'rgba(99, 102, 241, 0.7)',
-        'rgba(234, 179, 8, 0.7)',
-        'rgba(239, 68, 68, 0.7)',
-        'rgba(34, 197, 94, 0.7)',
-        'rgba(168, 85, 247, 0.7)',
-        'rgba(14, 165, 233, 0.7)',
-        'rgba(249, 115, 22, 0.7)',
-        'rgba(236, 72, 153, 0.7)',
-        'rgba(20, 184, 166, 0.7)',
-        'rgba(107, 114, 128, 0.7)',
-      ];
-
       const existingChart = Chart.getChart(canvas);
       if (existingChart) existingChart.destroy();
 
@@ -44,29 +40,54 @@ export function OutcomeChart({ result }: OutcomeChartProps) {
             {
               label: 'Probability',
               data: probabilities,
-              backgroundColor: labels.map((_, i) => colors[i % colors.length]),
-              borderColor: labels.map((_, i) => colors[i % colors.length].replace('0.7', '1')),
-              borderWidth: 1,
+              backgroundColor: labels.map((_, i) => PALETTE[i % PALETTE.length] ?? BILLIARD),
+              borderColor: PAPER,
+              borderWidth: 0,
+              borderRadius: 0,
+              barPercentage: 0.7,
+              categoryPercentage: 0.85,
             },
           ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: { duration: 320, easing: 'easeOutCubic' },
           plugins: {
             legend: { display: false },
             tooltip: {
+              backgroundColor: PAPER,
+              titleColor: INK,
+              bodyColor: INK,
+              borderColor: GOLD,
+              borderWidth: 1,
+              titleFont: { family: 'JetBrains Mono', size: 11, weight: 500 },
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
+              padding: 8,
+              displayColors: false,
               callbacks: {
-                label: (ctx) => `${((ctx.parsed.y ?? 0) * 100).toFixed(2)}%`,
+                label: (ctx) => ` ${((ctx.parsed.y ?? 0) * 100).toFixed(2)}%`,
               },
             },
           },
           scales: {
+            x: {
+              grid: { display: false, color: RULE },
+              ticks: {
+                color: INK_SOFT,
+                font: { family: 'JetBrains Mono', size: 10 },
+              },
+              border: { color: RULE },
+            },
             y: {
-              title: { display: true, text: 'Probability' },
+              title: { display: false },
               beginAtZero: true,
               max: 1,
+              grid: { color: RULE },
+              border: { display: false },
               ticks: {
+                color: INK_SOFT,
+                font: { family: 'JetBrains Mono', size: 10 },
                 callback: (v: number | string) => `${(Number(v) * 100).toFixed(0)}%`,
               },
             },
@@ -79,7 +100,7 @@ export function OutcomeChart({ result }: OutcomeChartProps) {
   }, [result]);
 
   return (
-    <div class="relative" style={{ height: '300px' }}>
+    <div class="relative" style={{ height: '260px' }}>
       <canvas ref={canvasRef} />
     </div>
   );
@@ -104,26 +125,25 @@ export function ParameterChart({ results }: ParameterChartProps) {
       const outcomeLabels = results[0].outcomes.map((o) => o.label);
       const paramLabels = results.map((r) => r.label);
 
-      const colors = [
-        'rgba(99, 102, 241, 0.8)',
-        'rgba(234, 179, 8, 0.8)',
-        'rgba(239, 68, 68, 0.8)',
-        'rgba(34, 197, 94, 0.8)',
-        'rgba(168, 85, 247, 0.8)',
-      ];
-
-      const datasets = outcomeLabels.map((label, i) => ({
-        label,
-        data: results.map((r) => {
-          const outcome = r.outcomes.find((o) => o.label === label);
-          return outcome ? outcome.probability : 0;
-        }),
-        borderColor: colors[i % colors.length],
-        backgroundColor: colors[i % colors.length].replace('0.8', '0.2'),
-        borderWidth: 2,
-        fill: false,
-        tension: 0.2,
-      }));
+      const datasets = outcomeLabels.map((label, i) => {
+        const color = PALETTE[i % PALETTE.length] ?? BILLIARD;
+        return {
+          label,
+          data: results.map((r) => {
+            const outcome = r.outcomes.find((o) => o.label === label);
+            return outcome ? outcome.probability : 0;
+          }),
+          borderColor: color,
+          backgroundColor: color + '22',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.15,
+          pointRadius: 2.5,
+          pointHoverRadius: 4,
+          pointBackgroundColor: INK,
+          pointBorderWidth: 1.5,
+        };
+      });
 
       const existingChart = Chart.getChart(canvas);
       if (existingChart) existingChart.destroy();
@@ -134,17 +154,50 @@ export function ParameterChart({ results }: ParameterChartProps) {
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: { duration: 320, easing: 'easeOutCubic' },
+          interaction: { mode: 'index', intersect: false },
           plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: INK_SOFT,
+                font: { family: 'JetBrains Mono', size: 10 },
+                boxWidth: 10,
+                boxHeight: 10,
+                padding: 12,
+              },
+            },
             tooltip: {
+              backgroundColor: PAPER,
+              titleColor: INK,
+              bodyColor: INK,
+              borderColor: GOLD,
+              borderWidth: 1,
+              titleFont: { family: 'JetBrains Mono', size: 11, weight: 500 },
+              bodyFont: { family: 'JetBrains Mono', size: 11 },
+              padding: 8,
               callbacks: {
-                label: (ctx) => `${ctx.dataset.label}: ${((ctx.parsed?.y ?? 0) * 100).toFixed(2)}%`,
+                label: (ctx) => ` ${ctx.dataset.label}: ${((ctx.parsed?.y ?? 0) * 100).toFixed(2)}%`,
               },
             },
           },
           scales: {
-            y: {
-              title: { display: true, text: 'Probability' },
+            x: {
+              grid: { display: false, color: RULE },
               ticks: {
+                color: INK_SOFT,
+                font: { family: 'JetBrains Mono', size: 10 },
+              },
+              border: { color: RULE },
+            },
+            y: {
+              title: { display: false },
+              beginAtZero: true,
+              grid: { color: RULE },
+              border: { display: false },
+              ticks: {
+                color: INK_SOFT,
+                font: { family: 'JetBrains Mono', size: 10 },
                 callback: (v: number | string) => `${(Number(v) * 100).toFixed(0)}%`,
               },
             },
