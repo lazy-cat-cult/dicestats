@@ -39,11 +39,11 @@ dev/dice/
 ├── doc/
 │   ├── spec.md             # Historical spec (superseded by OpenSpec specs)
 │   ├── spec_draft.md       # Original draft (historical)
-│   └── architecture.md     # Architecture (partially outdated)
+│   └── architecture.md     # Architecture diagram
 ├── src/
 │   ├── main.tsx            # Entry point
 │   ├── app.tsx             # Root component + Worker management
-│   ├── style.css            # Tailwind imports
+│   ├── style.css            # Tailwind imports + theme + fonts
 │   ├── vite-env.d.ts        # Vite type declarations
 │   ├── types/
 │   │   └── index.ts        # Domain types + compare()
@@ -58,9 +58,9 @@ dev/dice/
 │   │   └── sim.worker.ts    # Web Worker simulation (imports from matching, resolve, classify)
 │   ├── state/
 │   │   ├── app-state.ts    # Preact Signals (global state)
-│   │   └── persistence.ts  # localStorage save/load/migrate (v1→v3 migration)
+│   │   └── persistence.ts  # localStorage save/load/migrate (v1→v6 migration)
 │   ├── components/
-│   │   ├── StepWizard.tsx
+│   │   ├── ui.tsx                # Shared UI primitives (Section, Button, TextField, Select, Pill, etc.)
 │   │   ├── DicePoolEditor.tsx
 │   │   ├── RerollEditor.tsx
 │   │   ├── PipelineEditor.tsx
@@ -68,10 +68,16 @@ dev/dice/
 │   │   ├── ParameterEditor.tsx
 │   │   ├── ResultView.tsx
 │   │   ├── PresetSelector.tsx
-│   │   └── DistributionChart.tsx
+│   │   ├── PresetLibraryModal.tsx
+│   │   ├── DistributionChart.tsx  # OutcomeChart + ParameterChart
+│   │   ├── OddsTape.tsx
+│   │   ├── SweepCostChip.tsx
+│   │   ├── SweepIndicator.tsx
+│   │   └── SweepPopover.tsx
 │   └── utils/
 │       ├── format.ts       # Number formatting
-│       └── validation.ts   # validateConfig(), canRunSimulation()
+│       ├── validation.ts   # validateConfig(), canRunSimulation(), inferType()
+│       └── yaml.ts         # YAML parse/serialize for presets
 ├── tests/
 │   ├── roller.test.ts
 │   ├── reroll.test.ts
@@ -80,7 +86,10 @@ dev/dice/
 │   ├── matching.test.ts
 │   ├── presets.test.ts
 │   ├── integration.test.ts
-│   └── validation.test.ts
+│   ├── validation.test.ts
+│   ├── app-state.test.ts
+│   ├── format.test.ts
+│   └── yaml.test.ts
 └── public/
     └── favicon.svg
 ```
