@@ -698,7 +698,7 @@ dev/dice/
 │   │   ├── app-state.ts          # Preact Signals
 │   │   └── persistence.ts        # localStorage save/load/migrate
 │   ├── components/
-│   │   ├── StepWizard.tsx
+│   │   ├── ui.tsx                # Shared UI primitives
 │   │   ├── DicePoolEditor.tsx
 │   │   ├── RerollEditor.tsx       # Reroll conditions UI
 │   │   ├── PipelineEditor.tsx    # Resolution pipeline UI
@@ -706,18 +706,28 @@ dev/dice/
 │   │   ├── ParameterEditor.tsx
 │   │   ├── ResultView.tsx
 │   │   ├── PresetSelector.tsx
-│   │   └── DistributionChart.tsx
+│   │   ├── PresetLibraryModal.tsx
+│   │   ├── DistributionChart.tsx  # OutcomeChart + ParameterChart
+│   │   ├── OddsTape.tsx
+│   │   ├── SweepCostChip.tsx
+│   │   ├── SweepIndicator.tsx
+│   │   └── SweepPopover.tsx
 │   └── utils/
 │       ├── format.ts             # formatPercent, formatNumber, formatRatio
-│       └── validation.ts         # validateConfig()
+│       ├── validation.ts         # validateConfig()
+│       └── yaml.ts               # YAML parse/serialize for presets
 ├── tests/
 │   ├── roller.test.ts
 │   ├── reroll.test.ts
 │   ├── resolve.test.ts
 │   ├── classify.test.ts
+│   ├── matching.test.ts
 │   ├── presets.test.ts
+│   ├── integration.test.ts
 │   ├── validation.test.ts
-│   └── integration.test.ts
+│   ├── app-state.test.ts
+│   ├── format.test.ts
+│   └── yaml.test.ts
 └── public/
     └── favicon.svg
 ```

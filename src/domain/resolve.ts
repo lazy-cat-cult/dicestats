@@ -87,33 +87,3 @@ export function evaluatePipeline(
   return env;
 }
 
-export function getPipelineType(nv: NamedValue, pipeline: NamedValue[]): 'vector' | 'scalar' | null {
-  if (nv.source === 'rolled') {
-    const op = nv.op;
-    if (op === 'count' || op === 'sum' || op === 'max' || op === 'min') return 'scalar';
-    if (typeof op === 'object' && op !== null) {
-      if (op.fn === 'filter' || op.fn === 'remove') return 'vector';
-      return 'scalar';
-    }
-    return 'vector';
-  }
-
-  const source = pipeline.find((p) => p.name === nv.source);
-  if (!source) return null;
-  const sourceType = getPipelineType(source, pipeline);
-  if (sourceType === null) return null;
-
-  let nextType: 'vector' | 'scalar' = sourceType;
-  if (sourceType === 'vector' && (source.op === 'count' || source.op === 'sum')) {
-    nextType = 'scalar';
-  }
-
-  const op = nv.op;
-  if (op === 'count' || op === 'sum' || op === 'max' || op === 'min') return 'scalar';
-  if (typeof op === 'object' && op !== null) {
-    if (op.fn === 'filter' || op.fn === 'remove') return 'vector';
-    return 'scalar';
-  }
-
-  return nextType;
-}

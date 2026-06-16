@@ -1,30 +1,31 @@
-# Dice Probability Calculator
+# Oddsboard — Dice Probability Calculator
 
-Калькулятор вероятностей исходов бросков костей для настольных ролевых игр. Метод Монте-Карло — 1 000 000 симуляций за запуск.
+A Monte Carlo dice probability calculator for tabletop RPGs. Runs 1,000,000 simulations per sweep in a Web Worker.
 
-## Возможности
+## Features
 
-- **Пул костей**: произвольные комбинации NdN (d4, d6, d8, d10, d12, d20, d100) с модификаторами
-- **KeepRule**: преимущество (keep highest), недостаток (keep lowest), произвольное keep N
-- **Взрыв костей**: одинарный (once) и рекурсивный (recursive) — для WoD, Savage Worlds
-- **Исходы**: пороговые (>= DC) и пул успехов (>= X костей >= Y)
-- **Параметры перебора**: вариация модификатора, количества костей, порога — с графиками зависимости
-- **Пресеты**: D&D 5e (d20, преимущество), PbtA (2d6), Shadowrun (Xd6)
-- **Сохранение**: конфигурация сохраняется в localStorage
+- **Dice pool**: arbitrary NdN combinations (d4, d6, d8, d10, d12, d20, d100) with tags
+- **Reroll conditions**: reroll or explode on face value or tag match, with configurable repeat count
+- **Resolution pipeline**: named-value pipeline with filter, remove, count, sum, max, min, binary math, ceil, floor
+- **Outcomes**: scalar comparisons and dice conditions (any/all/none), AND/OR connectors, default fallback
+- **Parameter sweep**: vary modifier, dice count, dice sides, or threshold — with dependency charts
+- **Presets**: D&D 5e, PbtA, Shadowrun, Vampire V5, Daggerheart, Cyberpunk RED, Blades in the Dark, Savage Worlds, WoD
+- **YAML import/export**: save and share presets as human-readable YAML files
+- **Persistence**: configuration auto-saved to localStorage
 
-## Стек
+## Tech Stack
 
-| Слой | Технология |
+| Layer | Technology |
 |---|---|
-| Сборка | Vite 8 |
+| Build | Vite 8 |
 | UI | Preact 10 + Signals |
-| Стили | Tailwind CSS 4 |
-| Графики | Chart.js 4 |
-| Симуляция | Web Worker |
-| Тесты | Vitest |
-| Язык | TypeScript 6 |
+| Styles | Tailwind CSS 4 |
+| Charts | Chart.js 4 |
+| Simulation | Web Worker |
+| Tests | Vitest |
+| Language | TypeScript 6 |
 
-## Установка и запуск
+## Setup
 
 ```bash
 cd dev/dice
@@ -32,47 +33,48 @@ npm install
 npm run dev
 ```
 
-Открыть http://localhost:5173
+Open http://localhost:5173
 
-## Скрипты
+## Scripts
 
-| Команда | Описание |
+| Command | Description |
 |---|---|
-| `npm run dev` | Dev-сервер с HMR |
-| `npm run build` | Production-сборка (tsc + vite build) |
-| `npm run preview` | Превью production-сборки |
-| `npm run test` | Запуск тестов |
-| `npm run test:watch` | Тесты в режиме watch |
-| `npm run typecheck` | Проверка типов |
+| `npm run dev` | Dev server with HMR |
+| `npm run build` | Production build (tsc + vite build) |
+| `npm run preview` | Preview production build |
+| `npm run test` | Run tests |
+| `npm run test:watch` | Tests in watch mode |
+| `npm run typecheck` | Type checking |
+| `npm run lint` | ESLint |
 
-## Сценарии использования
+## Usage Scenarios
 
-### D&D 5e: бросок d20 против сложности
+### D&D 5e: d20 vs difficulty class
 
-1. Выбрать пресет «D&D 5e — d20 + модификатор»
-2. Настроить модификатор и порог DC
-3. Запустить симуляцию → получить вероятность успеха
+1. Select "D&D 5e — d20" preset
+2. Adjust modifier and DC threshold
+3. Run simulation → get success probability
 
-### D&D 5e: преимущество с модификатором
+### D&D 5e: advantage with modifier
 
-1. Выбрать пресет «Преимущество 2d20kh1»
-2. Добавить параметр «Модификатор» со значениями 0–5
-3. Запустить → получить график вероятности успеха от модификатора
+1. Select "D&D 5e — Advantage 2d20 best" preset
+2. Add "DC" parameter with values 5–20
+3. Run → get probability curve by DC
 
-### PbtA: 2d6 провал /partial / full success
+### PbtA: 2d6 miss / partial / full success
 
-1. Выбрать пресет «PbtA — 2d6»
-2. Запустить → три порога вероятностей
+1. Select "PbtA — 2d6" preset
+2. Run → three outcome probabilities
 
-### Shadowrun: пул Xd6
+### Shadowrun: Xd6 pool
 
-1. Выбрать пресет «Shadowrun — Xd6»
-2. Параметр «Количество костей» со значениями 1–8
-3. Запустить → вероятность хотя бы 1 успеха для каждого размера пула
+1. Select "Shadowrun — Xd6" preset
+2. "Dice count" parameter with values 1–10
+3. Run → probability of at least 1 hit per pool size
 
-## Архитектура
+## Architecture
 
-Подробное описание: [doc/architecture.md](doc/architecture.md)
+See [doc/architecture.md](doc/architecture.md) for the full architecture diagram.
 
 ```
 UI (Preact Signals) → SimJob → Web Worker → SimResult[] → UI
@@ -80,16 +82,21 @@ UI (Preact Signals) → SimJob → Web Worker → SimResult[] → UI
   localStorage ← persistence ← simResults
 ```
 
-Доменные типы: `src/types/index.ts`
-Броски и классификация: `src/domain/`
+Domain types: `src/types/index.ts`
+Rolling & classification: `src/domain/`
 Web Worker: `src/worker/sim.worker.ts`
-Компоненты: `src/components/`
+Components: `src/components/`
 
-## Тесты
+## Tests
 
-37 тестов покрывают:
+183 tests across 11 test files covering:
 
-- Броски костей (1d20, 2d6, модификаторы, KeepRule, взрыв)
-- Классификацию исходов (threshold, pool_success)
-- Пресеты (валидация, применение параметров)
-- Интеграционные сценарии (D&D, PbtA, Shadowrun — вероятности в ожидаемых диапазонах)
+- Dice rolling (1d20, 2d6, modifiers, explode, reroll)
+- Condition matching (face, tag, compound clauses)
+- Pipeline resolution (filter, remove, count, sum, max, min, binary math)
+- Outcome classification (scalar, dice conditions, AND/OR, default)
+- Presets (validation, application, YAML round-trip)
+- Integration scenarios (D&D, PbtA, Shadowrun, Vampire V5 — probabilities within expected ranges)
+- Validation rules
+- Format utilities
+- App state management

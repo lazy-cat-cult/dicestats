@@ -1,325 +1,347 @@
-# Dice Probability Calculator — Архитектура
+# Oddsboard — Architecture
 
-## 1. Обзор
+## 1. Overview
 
-Одностраничное веб-приложение для расчёта вероятностей исходов бросков костей в НРИ методом Монте-Карло (1 000 000 итераций). Пользователь задаёт пул костей, условия отбора и параметры перебора, получает вероятности в виде таблиц и графиков.
+Single-page web application for calculating dice roll outcome probabilities in tabletop RPGs using Monte Carlo simulation (1,000,000 iterations). The user configures a dice pool with tags, reroll/explode conditions, a resolution pipeline of named values, and outcome conditions — then receives probabilities as tables and charts.
 
-## 2. Стек технологий
+## 2. Technology Stack
 
-| Слой | Технология | Версия | Назначение |
+| Layer | Technology | Version | Purpose |
 |---|---|---|---|
-| Сборка | Vite | 8.x | Dev-server, bundler, HMR |
-| UI | Preact | 10.x | Компонентный рендеринг (~3 КБ) |
-| Реактивность | Preact Signals | 2.x | Состояние без провайдеров |
-| Стили | Tailwind CSS | 4.x | Utility-first CSS |
-| Графики | Chart.js | 4.x | Гистограммы, линейные графики |
-| Симуляция | Web Worker | — | Фоновый расчёт без блокировки UI |
-| Тесты | Vitest | 4.x |Unit- и интеграционные тесты |
-| Язык | TypeScript | 6.x | Статическая типизация |
+| Build | Vite | 8.x | Dev server, bundler, HMR |
+| UI | Preact | 10.x | Component rendering (~3 KB) |
+| Reactivity | Preact Signals | 2.x | State management without providers |
+| Styles | Tailwind CSS | 4.x | Utility-first CSS |
+| Charts | Chart.js | 4.x | Histograms, line charts |
+| Simulation | Web Worker | — | Background computation without blocking UI |
+| Testing | Vitest | 4.x | Unit and integration tests |
+| Language | TypeScript | 6.x | Static typing |
 
-## 3. Архитектурная диаграмма
-
-```
-┌─────────────────────────────────────────────────────┐
-│                    UI (Preact)                      │
-│                                                      │
-│  App ─── StepWizard                                 │
-│         ├── DicePoolEditor                          │
-│         ├── OutcomeEditor                           │
-│         ├── ParameterEditor                          │
-│         └── ResultView ─── DistributionChart         │
-│                              ParameterChart          │
-│         PresetSelector                              │
-├─────────────────────────────────────────────────────┤
-│              Слой состояния (Signals)                │
-│                                                      │
-│  dicePool ──────────── DicePool                     │
-│  outcomes ──────────── Outcome[]                    │
-│  parameters ────────── Parameter[]                  │
-│  simResults ────────── SimResult[]                  │
-│  isSimulating ──────── boolean                      │
-│  simProgress ───────── { completed, total }        │
-│  dicePoolNotation ──── computed string              │
-├─────────────────────────────────────────────────────┤
-│               Доменный слой                          │
-│                                                      │
-│  types/index.ts ── все типы + compare()             │
-│  domain/roller.ts ─ rollPool(), rollPoolForSimulation│
-│  domain/classify.ts ─ evaluateOutcome()              │
-│  domain/presets.ts ─ PRESETS, getPreset(), apply*   │
-├─────────────────────────────────────────────────────┤
-│             Engine (Web Worker)                      │
-│                                                      │
-│  worker/sim.worker.ts                                │
-│  ├── rollDie(), rollTermForSim()                    │
-│  ├── keepHighest/keepLowest()                       │
-│  ├── simulateOnce() → RollResult                    │
-│  ├── runSimulation() → SimResult                    │
-│  └── onmessage: run | progress | result             │
-├─────────────────────────────────────────────────────┤
-│              Persistence                             │
-│  state/persistence.ts ─ localStorage                │
-│  saveConfig() / loadConfig() / clearConfig()        │
-└─────────────────────────────────────────────────────┘
-```
-
-## 4. Доменная модель
-
-### 4.1. Пул костей
+## 3. Architecture Diagram
 
 ```
-DiceTerm {
-  count: number       // количество костей (1–100)
-  sides: number       // граней (4, 6, 8, 10, 12, 20, 100 или произвольное)
-  modifier?: number    // статичный бонус/штраф
+┌─────────────────────────────────────────────────────────────┐
+│                        UI (Preact)                          │
+│                                                              │
+│  App                                                         │
+│   ├── PresetSelector ─── PresetLibraryModal                 │
+│   ├── DicePoolEditor ─── SweepIndicator ─── SweepPopover    │
+│   ├── RerollEditor                                           │
+│   ├── PipelineEditor ─── SweepIndicator                     │
+│   ├── OutcomeEditor ─── SweepIndicator                      │
+│   ├── ParameterEditor ─── SweepPopover                      │
+│   ├── SweepCostChip                                          │
+│   ├── ResultView                                             │
+│   ├── OddsTape                                               │
+│   ├── OutcomeChart / ParameterChart (DistributionChart)     │
+│   └── ui.tsx (Section, Button, TextField, Select, Pill,     │
+│               Checkbox, IconButton, BracketedNameInput,      │
+│               Hairline, Stat)                                │
+├─────────────────────────────────────────────────────────────┤
+│                   State Layer (Signals)                      │
+│                                                              │
+│  dicePool ──────────── DicePool                             │
+│  rerollConditions ──── RerollCondition[]                    │
+│  pipeline ──────────── NamedValue[]                         │
+│  outcomes ──────────── Outcome[]                            │
+│  parameters ────────── Parameter[]                          │
+│  simResults ────────── SimResult[]                          │
+│  isSimulating ──────── boolean                              │
+│  simProgress ───────── { completed, total }                 │
+│  dicePoolNotation ──── computed string                      │
+│  userPresets ───────── PresetConfig[]                       │
+│  allPresets ────────── computed PresetConfig[]              │
+│  showComments ──────── boolean                              │
+│  configDirty ───────── boolean                              │
+├─────────────────────────────────────────────────────────────┤
+│                     Domain Layer                             │
+│                                                              │
+│  types/index.ts ──── all types + compare()                  │
+│  domain/roller.ts ── rollDie(), rollPool()                  │
+│  domain/matching.ts ─ matchClause(), matchConditions(),     │
+│                       findSides()                            │
+│  domain/reroll.ts ── applyRerollConditions()                │
+│  domain/resolve.ts ─ evaluatePipeline()                     │
+│  domain/classify.ts ─ evaluateOutcome(), evaluateOutcomes() │
+│  domain/presets.ts ─ PRESETS[], FEATURED_PRESET_IDS,        │
+│                       getPreset()                            │
+├─────────────────────────────────────────────────────────────┤
+│                   Engine (Web Worker)                        │
+│                                                              │
+│  worker/sim.worker.ts                                        │
+│  ├── rollDie(), rollPool() (inlined for isolation)          │
+│  ├── applyRerollConditions() (inlined)                      │
+│  ├── simulateOnce() → { distributionKey, outcomeName }      │
+│  ├── runSimulation() → SimResult                            │
+│  ├── applyParameter() → modified SimJob                     │
+│  └── onmessage: run | cancel → progress | result | error   │
+├─────────────────────────────────────────────────────────────┤
+│                      Utilities                               │
+│                                                              │
+│  utils/format.ts ─── formatPercent, formatNumber,           │
+│                      formatRatio, formatSweepRange           │
+│  utils/validation.ts ─ validateConfig(), canRunSimulation(),│
+│                        inferType(), isScalarCondition()      │
+│  utils/yaml.ts ───── parsePreset(), serializePreset(),      │
+│                      exportConfigAsYaml()                    │
+├─────────────────────────────────────────────────────────────┤
+│                     Persistence                              │
+│  state/persistence.ts ─ localStorage (v1→v6 migration)     │
+│  saveConfig() / loadConfig() / clearConfig()                │
+│  exportCurrentAsYaml() / importPresetFromYamlText()         │
+│  loadUiPrefs() / saveUiPrefs()                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 4. Domain Model
+
+### 4.1. Dice Pool
+
+```typescript
+interface DiceTerm {
+  id: string;          // crypto.randomUUID()
+  count: number;       // 1..99
+  sides: number;       // 1..999
+  tag: string;         // user-defined label for differentiation
+  comment: string;     // optional annotation
 }
 
-KeepRule {
-  kind: 'highest' | 'lowest'
-  count: number        // сколько оставить
-}
-
-ExplodeMode = 'none' | 'once' | 'recursive'
-
-DicePool {
-  terms: DiceTerm[]    // один или несколько типов костей
-  keep?: KeepRule      // преимущество/недостаток/произвольное
-  explode?: ExplodeMode // взрыв костей
-}
-```
-
-### 4.2. Исходы
-
-```
-Comparison = '>=' | '>' | '<=' | '<' | '==' | '!='
-
-ThresholdOutcome {
-  kind: 'threshold'
-  label: string
-  expression: 'sum' | 'max' | 'min' | 'count_successes' | 'individual'
-  comparison: Comparison
-  value: number
-  dieSuccessCondition?: Comparison   // для count_successes / individual
-  dieSuccessValue?: number           // для count_successes / individual
-}
-
-PoolSuccessOutcome {
-  kind: 'pool_success'
-  label: string
-  dieSuccess: Comparison     // условие успеха одной кости
-  dieValue: number           // значение для сравнения
-  threshold: number           // мин. кол-во успешных костей
-  partialThreshold?: number   // мин. для «частичного успеха»
-  partialLabel?: string
-}
-
-Outcome = ThresholdOutcome | PoolSuccessOutcome
-```
-
-### 4.3. Параметры перебора
-
-```
-Parameter {
-  id: string
-  label: string                          // «X» — отображаемая метка
-  values: number[]                       // [1, 2, 3, 4, 5]
-  applyTo: 'modifier' | 'count' | 'threshold_value'
-  targetTermIndex?: number               // к какому DiceTerm
-  targetOutcomeIndex?: number            // к какому Outcome (для threshold_value)
+interface DicePool {
+  terms: DiceTerm[];
 }
 ```
 
-Для каждого значения из `values` Worker запускает полную симуляцию (1 млн бросков), подставляя значение в целевой термин или исход.
+### 4.2. Reroll Conditions
 
-### 4.4. Результаты
+```typescript
+type RerollAction = 'reroll' | 'explode';
 
-```
-OutcomeResult {
-  label: string
-  probability: number
-  count: number
-}
+type ConditionClause =
+  | { field: 'face'; operator: ConditionOperator; value: number | FaceValueSpecial }
+  | { field: 'tag'; operator: '=' | '!='; value: string };
 
-SimResult {
-  label: string               // «X=3» при переборе параметра
-  outcomes: OutcomeResult[]
-  totalRolls: number
-  distribution: Record<number, number>  // сумма → частота
-}
-```
+type ConditionChain = {
+  clauses: ConditionClause[];
+  connector: 'and' | 'or';
+};
 
-### 4.5. Сообщение Worker
-
-```
-WorkerMessage = { type: 'run', job: SimJob } | { type: 'cancel' }
-WorkerResponse = { type: 'progress', completed, total }
-               | { type: 'result', results: SimResult[] }
-
-SimJob {
-  pool: DicePool
-  outcomes: Outcome[]
-  parameters?: Parameter[]
-  iterations: number          // фиксировано: 1 000 000
+interface RerollCondition {
+  id: string;
+  action: RerollAction;
+  conditions: ConditionChain;
+  repeat: number;       // reroll: max attempts; explode: max cascade depth
+  comment: string;
 }
 ```
 
-## 5. Ключевые алгоритмы
+### 4.3. Resolution Pipeline
 
-### 5.1. Бросок кости с взрывом
+```typescript
+type VectorFunction =
+  | { fn: 'filter'; conditions: ConditionChain }
+  | { fn: 'remove'; conditions: ConditionChain };
 
-```
-function rollDie(sides):
-  return floor(random() * sides) + 1
+type ScalarFunction =
+  | 'count' | 'sum' | 'max' | 'min'
+  | { fn: ScalarBinaryOp; operand: 'literal'; value: number }
+  | { fn: ScalarBinaryOp; operand: 'named'; source2: string }
+  | { fn: 'ceil' } | { fn: 'floor' }
+  | { fn: 'max'; operand: 'named'; source2: string }
+  | { fn: 'min'; operand: 'named'; source2: string };
 
-function rollTerm(term, explode):
-  results = []
-  for i in 0..term.count:
-    roll = rollDie(term.sides)
-    results.push(roll)
-    if explode != None:
-      safety = 100
-      while roll == term.sides AND safety-- > 0:
-        roll = rollDie(term.sides)
-        results.push(roll)
-        if explode == Once: break
-  return results
-```
-
-### 5.2. KeepRule (преимущество/недостаток)
-
-```
-function applyKeep(rolls, keep):
-  if keep.count >= rolls.length: return all rolls
-  sort rolls by value (desc for highest, asc for lowest)
-  return first keep.count elements, preserving original order stable
+interface NamedValue {
+  id: string;
+  name: string;
+  source: string;
+  op: VectorFunction | ScalarFunction;
+  comment: string;
+}
 ```
 
-Вычисление `total`: `sum(kept_rolls) + sum(all modifiers)`.
+### 4.4. Outcomes
 
-### 5.3. Классификация исходов
+```typescript
+type ScalarCondition = { source: string; op: ConditionOperator; value: number };
+type DiceCondition = { source: string; op: 'any' | 'all' | 'none'; subCondition: ConditionOperator; value: number };
+type OutcomeCondition = ScalarCondition | DiceCondition;
 
-| Выражение | Вычисление |
+interface Outcome {
+  id: string;
+  name: string;
+  conditions: OutcomeCondition[];
+  connector: 'and' | 'or';
+  comment: string;
+  isDefault: boolean;
+}
+```
+
+### 4.5. Parameters
+
+```typescript
+type ParameterTarget = 'pool.count' | 'pool.sides' | 'outcome.value' | 'pipeline.literal';
+
+interface Parameter {
+  id: string;
+  label: string;
+  values: number[];
+  target: ParameterTarget;
+  targetTermId?: string;
+  targetOutcomeId?: string;
+  targetPipelineId?: string;
+}
+```
+
+### 4.6. Results
+
+```typescript
+interface SimResult {
+  label: string;                              // "" for single, "DC=15" for parameterized
+  outcomes: OutcomeResult[];
+  totalRolls: number;
+  distribution: Record<number, number>;       // final scalar value → frequency
+}
+```
+
+## 5. Key Algorithms
+
+### 5.1. Single Simulation Iteration
+
+```
+1. Roll all dice → TaggedDie[] (face + tag)
+2. Apply reroll conditions in order (reroll or explode)
+3. Evaluate resolution pipeline → Map<name, PipelineValue>
+4. Evaluate outcomes in order → first match wins
+5. Record distribution key (last scalar pipeline value or dice sum)
+```
+
+### 5.2. Parameter Sweep
+
+```
+For each parameter value:
+  Clone job, apply parameter value to target
+  Run full simulation (1M iterations)
+  Collect SimResult with label = "ParamName=value"
+Return SimResult[]
+```
+
+### 5.3. Worker Isolation
+
+The worker inlines `rollDie`, `rollPool`, and `applyRerollConditions` because Web Workers cannot share modules with the main thread without bundling. It imports pure domain functions from `matching.ts`, `resolve.ts`, and `classify.ts` which have no Preact/DOM dependencies.
+
+## 6. UI Components
+
+| Component | Purpose |
 |---|---|
-| `sum` | `total` (сумма оставленных + модификаторы) |
-| `max` | `max(kept_rolls) + модификаторы` |
-| `min` | `min(kept_rolls) + модификаторы` |
-| `count_successes` | кол-во костей, удовлетворяющих `dieSuccessCondition dieSuccessValue` |
-| `individual` | 1 если хоть одна кость удовлетворяет условию, иначе 0 |
+| `App` | Root component, Worker management, persistence, validation |
+| `PresetSelector` | Featured preset pills + Save/Load YAML buttons |
+| `PresetLibraryModal` | Searchable modal with all presets |
+| `DicePoolEditor` | Add/remove/edit dice terms with tag colors |
+| `RerollEditor` | Reroll/explode condition rows |
+| `PipelineEditor` | Named-value pipeline rows |
+| `OutcomeEditor` | Outcome rows with condition editors |
+| `ParameterEditor` | Parameter sweep configuration |
+| `SweepCostChip` | Shows total simulation cost, confirm button for >50M |
+| `SweepIndicator` | Inline pill showing active sweep on a target |
+| `SweepPopover` | Modal for creating sweep parameters |
+| `ResultView` | Probability table |
+| `OddsTape` | Top-probability highlight with bar visualization |
+| `OutcomeChart` | Chart.js bar chart for single-result distributions |
+| `ParameterChart` | Chart.js line chart for parameter sweep probabilities |
+| `ui.tsx` | Shared primitives: Section, Button, TextField, Select, Pill, Checkbox, IconButton, etc. |
 
-Результат сравнивается с `value` через `comparison` (>=, >, <=, <, ==, !=).
-
-Для `pool_success`: подсчитывается кол-во костей, удовлетворяющих `dieSuccess dieValue`, если >= `threshold` — успех.
-
-### 5.4. Симуляция (Web Worker)
-
-1. Получить `SimJob`
-2. Если `parameters` нет — одна серия из 1 000 000 итераций
-3. Если `parameters` есть — для каждого значения параметра создать модифицированный пул/исходы, запустить отдельную серию
-4. На каждой итерации:
-   - Бросить все кости пула (с взрывом)
-   - Применить KeepRule
-   - Вычислить выражение для каждого исхода
-   - Классифицировать результат
-   - Увеличить счётчики исходов и распределения
-5. Вернуть массив `SimResult[]`
-
-## 6. Компоненты UI
-
-| Компонент | Назначение |
-|---|---|
-| `App` | Корневой компонент, создание Worker, связывание состояния |
-| `StepWizard` | Пошаговая навигация (4 шага) |
-| `DicePoolEditor` | Редактирование пула (количество, грани, модификатор, Keep, Explode) |
-| `OutcomeEditor` | Добавление/редактирование исходов (Threshold, PoolSuccess) |
-| `ParameterEditor` | Параметры перебора значений |
-| `ResultView` | Таблица вероятностей, простая гистограмма |
-| `PresetSelector` | Шорткаты для пресетов D&D, PbtA, Shadowrun |
-| `DistributionChart` | Chart.js bar chart распределения сумм |
-| `ParameterChart` | Chart.js line chart зависимости вероятности от параметра |
-
-## 7. Поток данных
+## 7. Data Flow
 
 ```
-┌─────────────────────────────────────────────┐
-│ User → DicePoolEditor → dicePool (signal)   │
-│ User → OutcomeEditor → outcomes (signal)    │
-│ User → ParameterEditor → parameters (signal)│
-│ User → PresetSelector → resetToPreset()    │
-│                                              │
-│ User → «Запустить» → App.runSimulation()    │
-│   ├ construct SimJob from signals           │
-│   ├ new Worker(sim.worker.ts)               │
-│   ├ worker.postMessage({type:'run', job})   │
-│   ├ on progress → simProgress signal        │
-│   └ on result → simResults signal           │
-│                                              │
-│ simResults → ResultView (table)             │
-│ simResults → DistributionChart (bar)        │
-│ simResults → ParameterChart (line)          │
-│                                              │
-│ User → «Сохранить» → persistence.saveConfig()│
-│ App mount → persistence.loadConfig()        │
-└─────────────────────────────────────────────┘
+User → DicePoolEditor → dicePool (signal)
+User → RerollEditor → rerollConditions (signal)
+User → PipelineEditor → pipeline (signal)
+User → OutcomeEditor → outcomes (signal)
+User → ParameterEditor → parameters (signal)
+User → PresetSelector → applyPresetConfig()
+
+User → "Roll the Dice" → App.runSimulation()
+  ├ construct SimJob from signals
+  ├ new Worker(sim.worker.ts)
+  ├ worker.postMessage({type:'run', job})
+  ├ on progress → simProgress signal
+  └ on result → simResults signal
+
+simResults → OddsTape (top probability)
+simResults → ResultView (table)
+simResults → OutcomeChart (bar) or ParameterChart (line)
+
+Auto-save: configDirty signal → 2s interval → saveConfig()
+App mount → loadConfig() → migrate if needed
 ```
 
-## 8. Структура файлов
+## 8. File Structure
 
 ```
 dev/dice/
-├── index.html                    # Точка входа HTML
-├── package.json                  # Зависимости и скрипты
-├── tsconfig.json                 # Настройки TypeScript
-├── vite.config.ts                # Vite + Preact + Tailwind
-├── vitest.config.ts              # Vitest (jsdom, aliases)
+├── index.html
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── vitest.config.ts
+├── eslint.config.js
 ├── src/
-│   ├── main.tsx                  # Рендер App в #app
-│   ├── app.tsx                   # Корневой компонент + Worker
-│   ├── style.css                 # @import "tailwindcss"
-│   ├── vite-env.d.ts             # CSS module declarations
+│   ├── main.tsx                  # Entry point
+│   ├── app.tsx                   # Root component + Worker management
+│   ├── style.css                 # Tailwind imports + theme + fonts
+│   ├── vite-env.d.ts             # Vite type declarations
 │   ├── types/
-│   │   └── index.ts              # Все доменные типы + compare()
+│   │   └── index.ts              # All domain types + compare()
 │   ├── domain/
-│   │   ├── roller.ts             # rollPool(), rollPoolForSim()
-│   │   ├── classify.ts           # evaluateOutcome(), evaluateOutcomeSimple()
-│   │   └── presets.ts            # PRESETS[], getPreset(), applyParameter()
+│   │   ├── roller.ts             # rollDie(), rollPool()
+│   │   ├── matching.ts           # matchClause(), matchConditions(), findSides()
+│   │   ├── reroll.ts             # applyRerollConditions()
+│   │   ├── resolve.ts            # evaluatePipeline()
+│   │   ├── classify.ts           # evaluateOutcome(), evaluateOutcomes()
+│   │   └── presets.ts            # PRESETS[], FEATURED_PRESET_IDS, getPreset()
 │   ├── worker/
-│   │   └── sim.worker.ts         # Web Worker: simulateOnce, runSimulation, onmessage
+│   │   └── sim.worker.ts         # Web Worker simulation
 │   ├── state/
-│   │   ├── app-state.ts          # Preact Signals (dicePool, outcomes, etc.)
-│   │   └── persistence.ts       # localStorage save/load/clear
+│   │   ├── app-state.ts          # Preact Signals (global state)
+│   │   └── persistence.ts        # localStorage save/load/migrate (v1→v6)
 │   ├── components/
-│   │   ├── StepWizard.tsx         # Пошаговый мастер навигации
-│   │   ├── DicePoolEditor.tsx    # Редактор пула костей
-│   │   ├── OutcomeEditor.tsx     # Редактор исходов
-│   │   ├── ParameterEditor.tsx   # Редактор параметров
-│   │   ├── ResultView.tsx        # Таблица вероятностей + бар-чарт
-│   │   ├── PresetSelector.tsx    # Кнопки пресетов
-│   │   └── DistributionChart.tsx  # Chart.js bar + line charts
+│   │   ├── ui.tsx                # Shared UI primitives
+│   │   ├── DicePoolEditor.tsx
+│   │   ├── RerollEditor.tsx
+│   │   ├── PipelineEditor.tsx
+│   │   ├── OutcomeEditor.tsx
+│   │   ├── ParameterEditor.tsx
+│   │   ├── ResultView.tsx
+│   │   ├── PresetSelector.tsx
+│   │   ├── PresetLibraryModal.tsx
+│   │   ├── DistributionChart.tsx  # OutcomeChart + ParameterChart
+│   │   ├── OddsTape.tsx
+│   │   ├── SweepCostChip.tsx
+│   │   ├── SweepIndicator.tsx
+│   │   └── SweepPopover.tsx
 │   └── utils/
-│       └── format.ts             # formatPercent, formatNumber, formatRatio
+│       ├── format.ts             # Number formatting
+│       ├── validation.ts         # validateConfig(), inferType()
+│       └── yaml.ts               # YAML parse/serialize for presets
 ├── tests/
-│   ├── roller.test.ts            # Тесты бросков
-│   ├── classify.test.ts          # Тесты классификации
-│   ├── presets.test.ts           # Тесты пресетов
-│   └── integration.test.ts       # Интеграционные сценарии (D&D, PbtA, Shadowrun)
+│   ├── roller.test.ts
+│   ├── reroll.test.ts
+│   ├── resolve.test.ts
+│   ├── classify.test.ts
+│   ├── matching.test.ts
+│   ├── presets.test.ts
+│   ├── integration.test.ts
+│   ├── validation.test.ts
+│   ├── app-state.test.ts
+│   ├── format.test.ts
+│   └── yaml.test.ts
 └── public/
-    └── favicon.svg               # Иконка
+    └── favicon.svg
 ```
 
-## 9. Известные ограничения и технический долг
+## 9. Known Technical Debt
 
-1. **Дублирование логики бросков**: `roller.ts` и `sim.worker.ts` содержат независимые реализации броска костей. Worker не может импортировать доменный модуль без бандлинга — это ограничение Web Worker. В будущем можно вынести общую логику в shared-модуль или использовать Vite worker import.
+1. **Worker code duplication**: `rollDie`, `rollPool`, `applyRerollConditions` are inlined in `sim.worker.ts` for worker isolation. This is by design — the worker cannot import from modules that may reference Preact/DOM.
 
-2. **`rollPoolForSimulation` не используется**: в `roller.ts` есть функция для симуляции, но Worker использует свою реализацию. Удалить или унифицировать.
+2. **doc/spec.md is partially outdated**: The spec describes an older Outcome model with `source` on the Outcome itself. The code moved `source` to each `OutcomeCondition`. OpenSpec specs in `openspec/specs/` take precedence.
 
-3. **`evaluateOutcomeSimple` не используется**: в `classify.ts` есть неиспользуемая функция. Удалить или задействовать в Worker.
-
-4. **`rollResult.kept` vs `rollResult.sums`**: в `RollResult` поля `kept` и `sums` дублируют данные с разной структурой. Нужна чистка.
-
-5. **Визуальная гистограмма в ResultView**: дублирует функционал `DistributionChart`. Оставить только Chart.js.
-
-6. **Нет отмены Worker при навигации**: при переключении шагов назад Worker продолжает работать. Нужна очистка.
-
-7. **`configLoaded` в App**: флаг инициализации через замыкание вместо `useEffect` — работает, но не идиоматично для Preact.
-
-8. **Нет обработки краевых случаев в UI**: пустой пул, нулевые кости и т. д.
+3. **Persistence version**: Currently at v6. Migration chain: v1→v3→v4→v5→v6.
