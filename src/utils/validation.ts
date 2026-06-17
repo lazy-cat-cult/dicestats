@@ -259,7 +259,7 @@ export function inferType(nv: NamedValue, pipeline: NamedValue[]): 'vector' | 's
   return inferTypeFromOp(nv);
 }
 
-function inferTypeFromOp(nv: NamedValue): 'vector' | 'scalar' {
+export function inferTypeFromOp(nv: NamedValue): 'vector' | 'scalar' {
   const op = nv.op;
   if (op === 'count' || op === 'sum' || op === 'max' || op === 'min') return 'scalar';
   if (typeof op === 'object' && op !== null && 'fn' in op) {

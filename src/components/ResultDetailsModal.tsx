@@ -52,9 +52,24 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
     document.body.style.top = `-${scrollY}px`;
     document.body.style.width = '100%';
 
-    const onKey = (e: KeyboardEvent) => {
+    function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose();
-    };
+      if (e.key === 'Tab' && cardRef.current) {
+        const focusables = cardRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0]!;
+        const last = focusables[focusables.length - 1]!;
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
     window.addEventListener('keydown', onKey);
 
     closeRef.current?.focus();

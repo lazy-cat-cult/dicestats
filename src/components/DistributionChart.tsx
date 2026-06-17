@@ -18,6 +18,7 @@ interface OutcomeChartProps {
 
 export function OutcomeChart({ result, height = 260 }: OutcomeChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const chartRef = useRef<InstanceType<typeof import('chart.js/auto').Chart> | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,7 +36,7 @@ export function OutcomeChart({ result, height = 260 }: OutcomeChartProps) {
       const existingChart = Chart.getChart(canvas);
       if (existingChart) existingChart.destroy();
 
-      new Chart(canvas, {
+      chartRef.current = new Chart(canvas, {
         type: 'bar',
         data: {
           labels,
@@ -99,7 +100,13 @@ export function OutcomeChart({ result, height = 260 }: OutcomeChartProps) {
       });
     });
 
-    return () => { destroyed = true; };
+    return () => {
+      destroyed = true;
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+    };
   }, [result]);
 
   return (
@@ -115,6 +122,7 @@ interface ParameterChartProps {
 
 export function ParameterChart({ results }: ParameterChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const chartRef = useRef<InstanceType<typeof import('chart.js/auto').Chart> | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -152,7 +160,7 @@ export function ParameterChart({ results }: ParameterChartProps) {
       const existingChart = Chart.getChart(canvas);
       if (existingChart) existingChart.destroy();
 
-      new Chart(canvas, {
+      chartRef.current = new Chart(canvas, {
         type: 'line',
         data: { labels: paramLabels, datasets },
         options: {
@@ -210,7 +218,13 @@ export function ParameterChart({ results }: ParameterChartProps) {
       });
     });
 
-    return () => { destroyed = true; };
+    return () => {
+      destroyed = true;
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+    };
   }, [results]);
 
   return (
