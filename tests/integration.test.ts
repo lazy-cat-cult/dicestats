@@ -96,7 +96,7 @@ describe('dice mechanics: outcomes with pipeline', () => {
       const dice = rollPool(pool);
       const env = evaluatePipeline(dice, pipeline);
       env.set('rolled', dice);
-      if (evaluateOutcomes(outcomes, env)) successCount++;
+      if (evaluateOutcomes(outcomes, env).includes('1+ hits')) successCount++;
     }
     const prob = successCount / N;
     expect(prob).toBeGreaterThan(0.83);
@@ -118,7 +118,7 @@ describe('dice mechanics: outcomes with pipeline', () => {
       const dice = rollPool(pool);
       env.set('rolled', dice);
       const result = evaluateOutcomes(outcomes, env);
-      if (result === 'Hit') hitCount++;
+      if (result.includes('Hit')) hitCount++;
     }
     expect(hitCount / N).toBeGreaterThan(0.99);
   });
@@ -144,7 +144,7 @@ describe('dice mechanics: compound outcomes (per-condition source)', () => {
       const dice = rollPool(pool);
       const env = evaluatePipeline(dice, pipeline);
       env.set('delta', 3);
-      if (evaluateOutcomes(outcomes, env)) matched++;
+      if (evaluateOutcomes(outcomes, env).length > 0) matched++;
     }
     expect(matched).toBeGreaterThan(0);
   });
@@ -166,5 +166,71 @@ describe('dice mechanics: tagged dice', () => {
     expect(hungerDice.length).toBe(2);
     expect(normalDice.every((d) => d.face >= 1 && d.face <= 10)).toBe(true);
     expect(hungerDice.every((d) => d.face >= 1 && d.face <= 10)).toBe(true);
+  });
+});
+
+describe('outcome overlap counting', () => {
+  it('counts pairwise co-occurrences for overlapping outcomes', () => {
+    const pool: DicePool = {
+      terms: [{ id: '1', count: 1, sides: 6, tag: '', comment: '' }],
+    };
+    const outcomes: Outcome[] = [
+      { id: 'o1', name: 'High', conditions: [{ source: 'face', op: '>=', value: 4 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o2', name: 'Even', conditions: [{ source: 'face', op: '=', value: 4 }, { source: 'face', op: '=', value: 6 }], connector: 'or', comment: '', isDefault: false },
+    ];
+
+    const overlapCounts = new Map<string, number>();
+    const N = 6000;
+    for (let i = 0; i < N; i++) {
+      const dice = rollPool(pool);
+      const env = new Map<string, PipelineValue>();
+      env.set('rolled', dice);
+      env.set('face', dice[0]!.face);
+      const matched = evaluateOutcomes(outcomes, env);
+      if (matched.length > 1) {
+        const sorted = [...matched].sort();
+        for (let a = 0; a < sorted.length; a++) {
+          for (let b = a + 1; b < sorted.length; b++) {
+            const key = `${sorted[a]}||${sorted[b]}`;
+            overlapCounts.set(key, (overlapCounts.get(key) ?? 0) + 1);
+          }
+        }
+      }
+    }
+
+    expect(overlapCounts.size).toBeGreaterThan(0);
+    expect(overlapCounts.get('Even||High')).toBeDefined();
+    expect(overlapCounts.get('Even||High')!).toBeGreaterThan(0);
+    expect(overlapCounts.get('Even||High')!).toBeLessThan(N);
+  });
+
+  it('produces empty overlap map for mutually exclusive outcomes', () => {
+    const pool: DicePool = {
+      terms: [{ id: '1', count: 1, sides: 6, tag: '', comment: '' }],
+    };
+    const outcomes: Outcome[] = [
+      { id: 'o1', name: 'Low', conditions: [{ source: 'face', op: '<=', value: 3 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o2', name: 'High', conditions: [{ source: 'face', op: '>=', value: 4 }], connector: 'and', comment: '', isDefault: false },
+    ];
+
+    const overlapCounts = new Map<string, number>();
+    for (let i = 0; i < 2000; i++) {
+      const dice = rollPool(pool);
+      const env = new Map<string, PipelineValue>();
+      env.set('rolled', dice);
+      env.set('face', dice[0]!.face);
+      const matched = evaluateOutcomes(outcomes, env);
+      if (matched.length > 1) {
+        const sorted = [...matched].sort();
+        for (let a = 0; a < sorted.length; a++) {
+          for (let b = a + 1; b < sorted.length; b++) {
+            const key = `${sorted[a]}||${sorted[b]}`;
+            overlapCounts.set(key, (overlapCounts.get(key) ?? 0) + 1);
+          }
+        }
+      }
+    }
+
+    expect(overlapCounts.size).toBe(0);
   });
 });

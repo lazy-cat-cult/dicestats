@@ -12,11 +12,11 @@ pipeline:
   - total_mod = total + 0
 outcomes:
   - Critical Success when delta = 0
-  - Success when total_mod >= 15 or delta = 0
-  - Failure when total_mod < 15
+  - Success when total_mod >= 15 and delta = 0
+  - Failure when total_mod < 15 and delta != 0
   - Success with Hope when delta > 0 and total_mod >= 15
   - Success with Fear when delta < 0 and total_mod >= 15
-  - Failure with Hope when delta >= 0 and total_mod < 15
+  - Failure with Hope when delta > 0 and total_mod < 15
   - Failure with Fear when delta < 0 and total_mod < 15
 parameters:
   - Modifier = [-2, -1, 0, 1, 2, 3, 4, 5] over pipeline.literal

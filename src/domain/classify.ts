@@ -38,12 +38,17 @@ export function evaluateOutcome(
 export function evaluateOutcomes(
   outcomes: Outcome[],
   env: Map<string, PipelineValue>
-): string | null {
+): string[] {
+  const matched: string[] = [];
   for (const outcome of outcomes) {
     if (evaluateOutcome(outcome, env)) {
-      return outcome.name;
+      matched.push(outcome.name);
     }
   }
-  const defaultOutcome = outcomes.find((o) => o.isDefault);
-  return defaultOutcome?.name ?? null;
+  for (const outcome of outcomes) {
+    if (outcome.isDefault && !matched.includes(outcome.name)) {
+      matched.push(outcome.name);
+    }
+  }
+  return matched;
 }

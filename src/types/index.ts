@@ -111,9 +111,16 @@ export interface OutcomeResult {
   count: number;
 }
 
+export interface OutcomeOverlap {
+  outcomes: [string, string];
+  count: number;
+  probability: number;
+}
+
 export interface SimResult {
   label: string;
   outcomes: OutcomeResult[];
+  overlaps: OutcomeOverlap[];
   totalRolls: number;
   distribution: Record<number, number>;
 }

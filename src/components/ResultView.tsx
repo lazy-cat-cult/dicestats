@@ -24,25 +24,34 @@ export function ResultView({ results }: ResultViewProps) {
 }
 
 function SingleResult({ result }: { result: SimResult }) {
+  const sumProb = result.outcomes.reduce((s, o) => s + o.probability, 0);
+  const hasOverlaps = result.overlaps.length > 0;
   return (
-    <table class="w-full border-collapse">
-      <thead>
-        <tr class="border-b border-rule">
-          <th class="text-left py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">Outcome</th>
-          <th class="text-right py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">Probability</th>
-          <th class="text-right py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">Count</th>
-        </tr>
-      </thead>
-      <tbody>
-        {result.outcomes.map((o) => (
-          <tr key={o.label} class="border-b border-rule/60">
-            <td class="py-2 font-mono text-[12px] text-ink uppercase tracking-[0.06em]">{o.label}</td>
-            <td class="py-2 font-mono tabular text-[13px] text-ink text-right">{formatPercent(o.probability)}</td>
-            <td class="py-2 font-mono tabular text-[12px] text-ink-mute text-right">{o.count.toLocaleString()}</td>
+    <div>
+      <table class="w-full border-collapse">
+        <thead>
+          <tr class="border-b border-rule">
+            <th class="text-left py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">Outcome</th>
+            <th class="text-right py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">Probability</th>
+            <th class="text-right py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">Count</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {result.outcomes.map((o) => (
+            <tr key={o.label} class="border-b border-rule/60">
+              <td class="py-2 font-mono text-[12px] text-ink uppercase tracking-[0.06em]">{o.label}</td>
+              <td class="py-2 font-mono tabular text-[13px] text-ink text-right">{formatPercent(o.probability)}</td>
+              <td class="py-2 font-mono tabular text-[12px] text-ink-mute text-right">{o.count.toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {hasOverlaps && (
+        <p class="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-gold">
+          Overlapping — probabilities sum to {formatPercent(sumProb)}: {result.overlaps.map((ov) => `${ov.outcomes[0]} & ${ov.outcomes[1]} (${formatPercent(ov.probability)})`).join('; ')}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -60,6 +69,9 @@ function ParamResults({ results }: { results: SimResult[] }) {
       headers.push(head);
     }
   }
+
+  const anyOverlaps = results.some((r) => r.overlaps.length > 0);
+  const firstWithOverlaps = results.find((r) => r.overlaps.length > 0);
 
   return (
     <div>
@@ -90,6 +102,11 @@ function ParamResults({ results }: { results: SimResult[] }) {
           </tbody>
         </table>
       </div>
+      {anyOverlaps && firstWithOverlaps && (
+        <p class="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-gold">
+          Overlapping — sum {formatPercent(firstWithOverlaps.outcomes.reduce((s, o) => s + o.probability, 0))}: {firstWithOverlaps.overlaps.map((ov) => `${ov.outcomes[0]} & ${ov.outcomes[1]} (${formatPercent(ov.probability)})`).join('; ')}
+        </p>
+      )}
     </div>
   );
 }

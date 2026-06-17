@@ -72,13 +72,13 @@ describe('validateConfig', () => {
       expect(errors.some((e) => e.blocking && e.message.includes('At least one outcome'))).toBe(true);
     });
 
-    it('reports error when more than one default outcome', () => {
+    it('allows multiple default outcomes (multi-label mode)', () => {
       const outcomes = [
         makeOutcome({ id: 'o1', name: 'A', isDefault: true }),
         makeOutcome({ id: 'o2', name: 'B', isDefault: true }),
       ];
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, outcomes, validParameters);
-      expect(errors.some((e) => e.blocking && e.message.includes('Only one outcome can be default'))).toBe(true);
+      expect(errors.some((e) => e.message.includes('Only one outcome can be default'))).toBe(false);
     });
 
     it('reports error for outcome with no conditions and not default', () => {

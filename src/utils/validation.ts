@@ -64,10 +64,7 @@ export function validateConfig(
     errors.push({ id: nextId(), message: 'At least one outcome is required', blocking: true });
   }
 
-  const defaultCount = outcomes.filter((o) => o.isDefault).length;
-  if (defaultCount > 1) {
-    errors.push({ id: nextId(), message: 'Only one outcome can be default', blocking: true });
-  }
+
 
   const pipelineNames = new Set<string>();
   for (const nv of pipeline) {

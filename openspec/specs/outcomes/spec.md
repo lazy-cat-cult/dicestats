@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Outcomes define what constitutes success, failure, or any named result. Outcomes are evaluated in order — the first matching outcome wins (exclusive by default). A default outcome acts as a fallback when no other outcome matches.
+Outcomes define what constitutes success, failure, or any named result. Outcomes are evaluated independently per roll — every outcome whose conditions match is recorded in the roll's match-set. A single roll can match zero, one, or multiple outcomes. A default outcome is automatically added to every roll's match-set regardless of whether its conditions are satisfied.
 
 ## Requirements
 
@@ -14,7 +14,7 @@ Each outcome SHALL have:
 - `conditions`: array of `OutcomeCondition`, maximum 5 conditions per outcome
 - `connector`: `and` or `or` — how multiple conditions combine
 - `comment`: optional description, maximum 100 characters
-- `isDefault`: boolean, at most one outcome MAY be marked as default
+- `isDefault`: boolean. If `true`, the outcome is automatically added to every roll's match-set in addition to any outcomes whose conditions match.
 
 ```typescript
 type DiceConditionType = 'any' | 'all' | 'none';
@@ -26,21 +26,37 @@ type OutcomeCondition =
 
 #### Scenario: Default outcome
 - GIVEN outcomes with one marked `isDefault: true`
-- WHEN no other outcome matches in a simulation iteration
-- THEN the default outcome is recorded as the match
+- WHEN a simulation iteration runs
+- THEN the default outcome is added to the match-set in addition to any outcomes whose conditions match
 
-#### Scenario: Multiple defaults rejected
+#### Scenario: Multiple defaults allowed
 - GIVEN two outcomes both marked `isDefault: true`
 - WHEN validation runs
-- THEN the second default outcome is flagged as invalid
+- THEN both defaults are accepted and both are added to every roll's match-set
 
-### Requirement: Exclusive Evaluation Order
-Outcomes SHALL be evaluated in order. The first matching outcome wins — subsequent outcomes are not checked for that iteration.
+### Requirement: Independent Multi-Label Evaluation
+Outcomes SHALL be evaluated independently per roll. Every outcome whose conditions match SHALL be recorded in the roll's match-set. The probability of an outcome is the fraction of rolls whose match-set contains that outcome; the sum of outcome probabilities is NOT constrained to 100% and can exceed 100% when match-sets overlap.
 
-#### Scenario: First match wins
-- GIVEN outcomes: ["Critical" when total >= 15, "Success" when total >= 10, "Failure" (default)]
-- WHEN a simulation iteration produces total = 17
-- THEN "Critical" is recorded (even though total >= 10 would also match "Success")
+#### Scenario: All matching outcomes recorded
+- GIVEN outcomes: ["A" when x >= 10, "B" when x >= 5, "C" when x <= 5]
+- WHEN a simulation iteration produces x = 12
+- THEN the match-set is ["A", "B"] (both "A" and "B" match; "C" does not)
+
+#### Scenario: Roll matching no outcomes
+- GIVEN outcomes: ["A" when x >= 10, "B" when x <= 3] with no default
+- WHEN a simulation iteration produces x = 7
+- THEN the match-set is empty
+
+#### Scenario: Default outcome matches every roll
+- GIVEN outcomes: ["A" when x >= 10, "Catch" (default)]
+- WHEN a simulation iteration produces x = 3
+- THEN the match-set is ["Catch"]
+- WHEN a simulation iteration produces x = 12
+- THEN the match-set is ["A", "Catch"]
+
+
+### Requirement: Scalar Outcome Conditions
+For scalar sources (numeric values like `sum`, `count`, `max`, `min`), conditions SHALL use `ConditionOperator` comparisons (`>`, `>=`, `<`, `<=`, `=`, `!=`) with a numeric `value`. Dice conditions (`any`, `all`, `none`) MUST NOT be used with scalar sources — they are meaningless on a single number.
 
 ### Requirement: Scalar Outcome Conditions
 For scalar sources (numeric values like `sum`, `count`, `max`, `min`), conditions SHALL use `ConditionOperator` comparisons (`>`, `>=`, `<`, `<=`, `=`, `!=`) with a numeric `value`. Dice conditions (`any`, `all`, `none`) MUST NOT be used with scalar sources — they are meaningless on a single number.

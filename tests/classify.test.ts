@@ -126,7 +126,7 @@ describe('evaluateOutcome', () => {
       { id: '2', name: 'Miss', conditions: [], connector: 'and', comment: '', isDefault: true },
     ];
     const env = makeEnv([{ face: 10, tag: '' }], pipeline);
-    expect(evaluateOutcomes(outcomes, env)).toBe('Miss');
+    expect(evaluateOutcomes(outcomes, env)).toEqual(['Miss']);
   });
 
   it('evaluates PbtA 2d6 outcomes via pipeline sum', () => {
@@ -140,16 +140,16 @@ describe('evaluateOutcome', () => {
     ];
 
     const env1 = makeEnv([{ face: 3, tag: '' }, { face: 2, tag: '' }], pipeline);
-    expect(evaluateOutcomes(outcomes, env1)).toBe('Miss');
+    expect(evaluateOutcomes(outcomes, env1)).toEqual(['Miss']);
 
     const env2 = makeEnv([{ face: 5, tag: '' }, { face: 3, tag: '' }], pipeline);
-    expect(evaluateOutcomes(outcomes, env2)).toBe('Partial');
+    expect(evaluateOutcomes(outcomes, env2)).toEqual(['Partial']);
 
     const env3 = makeEnv([{ face: 6, tag: '' }, { face: 5, tag: '' }], pipeline);
-    expect(evaluateOutcomes(outcomes, env3)).toBe('Full Success');
+    expect(evaluateOutcomes(outcomes, env3)).toEqual(['Full Success']);
   });
 
-  it('first matching outcome wins', () => {
+  it('records all matching outcomes independently', () => {
     const pipeline: NamedValue[] = [
       { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
     ];
@@ -158,7 +158,57 @@ describe('evaluateOutcome', () => {
       { id: '2', name: 'Hit', conditions: [{ source: 'total', op: '>=', value: 10 }], connector: 'and', comment: '', isDefault: false },
     ];
     const env = makeEnv([{ face: 20, tag: '' }], pipeline);
-    expect(evaluateOutcomes(outcomes, env)).toBe('Crit');
+    expect(evaluateOutcomes(outcomes, env)).toEqual(['Crit', 'Hit']);
+  });
+
+  it('returns empty array when no outcome matches', () => {
+    const pipeline: NamedValue[] = [
+      { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
+    ];
+    const outcomes: Outcome[] = [
+      { id: '1', name: 'Hit', conditions: [{ source: 'total', op: '>=', value: 20 }], connector: 'and', comment: '', isDefault: false },
+    ];
+    const env = makeEnv([{ face: 10, tag: '' }], pipeline);
+    expect(evaluateOutcomes(outcomes, env)).toEqual([]);
+  });
+
+  it('default outcome is added to match-set unconditionally', () => {
+    const pipeline: NamedValue[] = [
+      { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
+    ];
+    const outcomes: Outcome[] = [
+      { id: '1', name: 'Big', conditions: [{ source: 'total', op: '>=', value: 15 }], connector: 'and', comment: '', isDefault: false },
+      { id: '2', name: 'Catch', conditions: [], connector: 'and', comment: '', isDefault: true },
+    ];
+    const envSmall = makeEnv([{ face: 5, tag: '' }], pipeline);
+    expect(evaluateOutcomes(outcomes, envSmall)).toEqual(['Catch']);
+
+    const envBig = makeEnv([{ face: 18, tag: '' }], pipeline);
+    expect(evaluateOutcomes(outcomes, envBig)).toEqual(['Big', 'Catch']);
+  });
+
+  it('Daggerheart compound outcomes evaluate independently', () => {
+    const pipeline: NamedValue[] = [
+      { id: 'p1', name: 'delta', source: 'rolled', op: { fn: 'add', operand: 'literal', value: 2 }, comment: '' },
+      { id: 'p2', name: 'total_mod', source: 'rolled', op: { fn: 'add', operand: 'literal', value: 17 }, comment: '' },
+    ];
+    const outcomes: Outcome[] = [
+      { id: 'o1', name: 'Critical Success', conditions: [{ source: 'delta', op: '=', value: 0 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o2', name: 'Success with Hope', conditions: [{ source: 'delta', op: '>', value: 0 }, { source: 'total_mod', op: '>=', value: 15 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o3', name: 'Success with Fear', conditions: [{ source: 'delta', op: '<', value: 0 }, { source: 'total_mod', op: '>=', value: 15 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o4', name: 'Failure with Hope', conditions: [{ source: 'delta', op: '>=', value: 0 }, { source: 'total_mod', op: '<', value: 15 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o5', name: 'Failure with Fear', conditions: [{ source: 'delta', op: '<', value: 0 }, { source: 'total_mod', op: '<', value: 15 }], connector: 'and', comment: '', isDefault: false },
+    ];
+
+    const envHopeHigh = makeEnv([{ face: 10, tag: '' }], pipeline);
+    envHopeHigh.set('delta', 2);
+    envHopeHigh.set('total_mod', 17);
+    expect(evaluateOutcomes(outcomes, envHopeHigh)).toEqual(['Success with Hope']);
+
+    const envFearHigh = makeEnv([{ face: 5, tag: '' }], pipeline);
+    envFearHigh.set('delta', -3);
+    envFearHigh.set('total_mod', 17);
+    expect(evaluateOutcomes(outcomes, envFearHigh)).toEqual(['Success with Fear']);
   });
 
   it('AND connector across two different sources', () => {
