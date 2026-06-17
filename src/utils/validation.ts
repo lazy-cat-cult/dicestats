@@ -1,5 +1,6 @@
-import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter, OutcomeCondition, DiceConditionType, ScalarLiteralOp, ScalarCondition } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeCondition, DiceConditionType, ScalarLiteralOp, ScalarCondition, SweepParameters, Expr } from '@/types';
 import { DICE_CONDITION_TYPES } from '@/types';
+import { evalExpr } from '@/utils/expression';
 
 export interface ValidationError {
   id: string;
@@ -13,10 +14,10 @@ export function isScalarCondition(cond: OutcomeCondition): cond is ScalarConditi
   return !DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
 }
 
-function asScalarObjectOp(op: unknown): { fn: string; operand?: string; value?: number; source2?: string } | null {
+function asScalarObjectOp(op: unknown): { fn: string; operand?: string; value?: number | Expr; source2?: string } | null {
   if (typeof op !== 'object' || op === null) return null;
   if (!('fn' in op)) return null;
-  return op as { fn: string; operand?: string; value?: number; source2?: string };
+  return op as { fn: string; operand?: string; value?: number | Expr; source2?: string };
 }
 
 export function isBinaryMathLiteral(nv: NamedValue): boolean {
@@ -32,8 +33,30 @@ export function asScalarLiteral(nv: NamedValue): ScalarLiteralOp | null {
   if (!op) return null;
   if (op.operand !== 'literal') return null;
   if (op.fn !== 'add' && op.fn !== 'subtract' && op.fn !== 'multiply' && op.fn !== 'divide') return null;
-  if (typeof op.value !== 'number') return null;
+  if (typeof op.value !== 'object') return null;
   return { fn: op.fn, operand: 'literal', value: op.value };
+}
+
+function validateExprInContext(expr: Expr, prefix: string, errors: ValidationError[], nextId: () => string): void {
+  const testVars = { x: 1, y: 1 };
+  const value = evalExpr(expr, testVars);
+  if (!Number.isFinite(value)) {
+    errors.push({ id: nextId(), message: `${prefix}: expression evaluates to non-finite value`, blocking: true });
+  }
+}
+
+function validateDiceTermExpr(expr: Expr, field: 'count' | 'sides', prefix: string, errors: ValidationError[], nextId: () => string): void {
+  validateExprInContext(expr, prefix, errors, nextId);
+  const testVars = { x: 1, y: 1 };
+  const value = evalExpr(expr, testVars);
+  if (Number.isFinite(value)) {
+    if (field === 'count' && (value < 1 || value > 99)) {
+      errors.push({ id: nextId(), message: `${prefix} must be 1-99`, blocking: true });
+    }
+    if (field === 'sides' && (value < 1 || value > 999)) {
+      errors.push({ id: nextId(), message: `${prefix} must be 1-999`, blocking: true });
+    }
+  }
 }
 
 export function validateConfig(
@@ -41,7 +64,7 @@ export function validateConfig(
   rerollConditions: RerollCondition[],
   pipeline: NamedValue[],
   outcomes: Outcome[],
-  parameters: Parameter[]
+  sweep: SweepParameters
 ): ValidationError[] {
   const errors: ValidationError[] = [];
   let id = 0;
@@ -52,19 +75,13 @@ export function validateConfig(
   }
 
   for (const term of pool.terms) {
-    if (term.count < 1 || term.count > 99) {
-      errors.push({ id: nextId(), message: `Term "${term.tag || `d${term.sides}`}" count must be 1-99`, blocking: true });
-    }
-    if (term.sides < 1 || term.sides > 999) {
-      errors.push({ id: nextId(), message: `Term "${term.tag || `d${term.sides}`}" sides must be 1-999`, blocking: true });
-    }
+    validateDiceTermExpr(term.count, 'count', `Term "${term.tag || 'unnamed'}" count`, errors, nextId);
+    validateDiceTermExpr(term.sides, 'sides', `Term "${term.tag || 'unnamed'}" sides`, errors, nextId);
   }
 
   if (outcomes.length === 0) {
     errors.push({ id: nextId(), message: 'At least one outcome is required', blocking: true });
   }
-
-
 
   const pipelineNames = new Set<string>();
   for (const nv of pipeline) {
@@ -106,8 +123,19 @@ export function validateConfig(
           if (obj.operand === 'named' && obj.source2 === nv.name) {
             errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" cannot reference itself`, blocking: true });
           }
-          if (fn === 'divide' && obj.operand === 'literal' && obj.value === 0) {
-            errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" divides by zero`, blocking: false });
+          if (fn === 'divide' && obj.operand === 'literal' && typeof obj.value === 'object') {
+            const litVal = (obj.value as Expr).kind === 'literal' ? (obj.value as { value: number }).value : null;
+            if (litVal === 0) {
+              errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" divides by zero`, blocking: false });
+            }
+          }
+          if (obj.operand === 'literal' && typeof obj.value === 'object') {
+            const expr = obj.value as Expr;
+            const testVars = { x: 1, y: 1 };
+            const v = evalExpr(expr, testVars);
+            if (!Number.isFinite(v)) {
+              errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" literal evaluates to non-finite value`, blocking: true });
+            }
           }
         }
       }
@@ -142,9 +170,10 @@ export function validateConfig(
     errors.push({ id: nextId(), message: 'Maximum 10 outcomes allowed', blocking: true });
   }
 
+  const sweepActive = sweep.x.length > 0 || (sweep.y !== null && sweep.y.length > 0);
   for (const outcome of outcomes) {
     if (outcome.conditions.length === 0) {
-      errors.push({ id: nextId(), message: `Outcome "${outcome.name}" has no conditions`, blocking: false });
+      errors.push({ id: nextId(), message: `Outcome "${outcome.name}" has no conditions`, blocking: sweepActive });
     }
     if (outcome.conditions.length > 5) {
       errors.push({ id: nextId(), message: `Outcome "${outcome.name}" has more than 5 conditions`, blocking: true });
@@ -171,46 +200,43 @@ export function validateConfig(
       } else if (!isDice) {
         errors.push({ id: nextId(), message: `Outcome "${outcome.name}" scalar comparison on vector source requires aggregation first`, blocking: true });
       }
-    }
-  }
-
-  if (parameters.length > 3) {
-    errors.push({ id: nextId(), message: 'Maximum 3 parameters allowed', blocking: true });
-  }
-
-  for (const param of parameters) {
-    if (param.target === 'pool.count' || param.target === 'pool.sides') {
-      if (param.targetTermId && !pool.terms.find((t) => t.id === param.targetTermId)) {
-        errors.push({ id: nextId(), message: `Parameter "${param.label}" references invalid dice term`, blocking: true });
-      }
-    }
-    if (param.target === 'outcome.value') {
-      if (param.targetOutcomeId) {
-        const o = outcomes.find((x) => x.id === param.targetOutcomeId);
-        if (!o) {
-          errors.push({ id: nextId(), message: `Parameter "${param.label}" references invalid outcome`, blocking: true });
-        } else {
-          if (o.conditions.length === 0) {
-            errors.push({ id: nextId(), message: `Parameter "${param.label}": target outcome has no conditions. Add a condition first.`, blocking: true });
-          } else if (!isScalarCondition(o.conditions[0])) {
-            errors.push({ id: nextId(), message: `Parameter "${param.label}": cannot sweep vector condition. Add a numeric condition first.`, blocking: true });
-          }
-        }
-      }
-    }
-    if (param.target === 'pipeline.literal') {
-      if (param.targetPipelineId) {
-        const pNv = pipeline.find((p) => p.id === param.targetPipelineId);
-        if (!pNv) {
-          errors.push({ id: nextId(), message: `Parameter "${param.label}" references invalid pipeline step`, blocking: true });
-        } else if (!isBinaryMathLiteral(pNv)) {
-          errors.push({ id: nextId(), message: `Parameter "${param.label}": target is not a binary-math-literal row. Change the function or pick a different target.`, blocking: true });
+      if ('value' in cond) {
+        const testVars = { x: 1, y: 1 };
+        const v = evalExpr(cond.value, testVars);
+        if (!Number.isFinite(v)) {
+          errors.push({ id: nextId(), message: `Outcome "${outcome.name}" condition value evaluates to non-finite value`, blocking: true });
         }
       }
     }
   }
 
-  const totalIterations = parameters.reduce((acc, p) => acc * p.values.length, 1_000_000);
+  if (sweep.x.length > 10) {
+    errors.push({ id: nextId(), message: `Sweep X has ${sweep.x.length} values (max 10)`, blocking: true });
+  }
+  if (sweep.y && sweep.y.length > 10) {
+    errors.push({ id: nextId(), message: `Sweep Y has ${sweep.y.length} values (max 10)`, blocking: true });
+  }
+  if (sweep.y && sweep.y.length > 0 && sweep.x.length === 0) {
+    errors.push({ id: nextId(), message: 'Sweep Y is set but Sweep X is empty', blocking: true });
+  }
+  for (const v of sweep.x) {
+    if (!Number.isFinite(v)) {
+      errors.push({ id: nextId(), message: `Sweep X contains non-finite value`, blocking: true });
+      break;
+    }
+  }
+  if (sweep.y) {
+    for (const v of sweep.y) {
+      if (!Number.isFinite(v)) {
+        errors.push({ id: nextId(), message: `Sweep Y contains non-finite value`, blocking: true });
+        break;
+      }
+    }
+  }
+
+  const xCount = Math.max(1, sweep.x.length);
+  const yCount = sweep.y ? Math.max(1, sweep.y.length) : 1;
+  const totalIterations = xCount * yCount * 1_000_000;
   if (totalIterations > 10_000_000) {
     errors.push({ id: nextId(), message: `Total iterations (${(totalIterations / 1_000_000).toFixed(1)}M) is high`, blocking: false });
   }

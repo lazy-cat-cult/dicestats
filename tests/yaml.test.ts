@@ -9,14 +9,14 @@ import {
   PresetError,
   YamlError,
 } from '@/utils/yaml';
-import type { PresetConfig, NamedValue, Parameter } from '@/types';
+import type { PresetConfig, NamedValue } from '@/types';
 
 function normalizeIds(config: PresetConfig): PresetConfig {
   const allOutcomeIds = config.outcomes.map(() => 'NORMALIZED');
   const allTermIds = config.pool.terms.map(() => 'NORMALIZED');
   const allPipelineIds = config.pipeline.map(() => 'NORMALIZED');
   const outcomeIdSet = new Set(config.outcomes.map((o) => o.id));
-  const termIdSet = new Set(config.pool.terms.map((t) => t.id));
+  const _termIdSet = new Set(config.pool.terms.map((t) => t.id));
   const pipelineIdSet = new Set(config.pipeline.map((p) => p.id));
 
   const newPipeline = config.pipeline.map((p, i) => {
@@ -58,33 +58,6 @@ function normalizeIds(config: PresetConfig): PresetConfig {
     }),
   }));
 
-  const newParams = config.parameters?.map((p) => {
-    const cleaned: Parameter = {
-      id: 'NORMALIZED',
-      label: p.label,
-      values: [...p.values],
-      target: p.target,
-      targetTermId: p.targetTermId,
-      targetOutcomeId: p.targetOutcomeId,
-      targetPipelineId: p.targetPipelineId,
-    };
-    delete (cleaned as unknown as { onName?: string | null }).onName;
-    delete (cleaned as unknown as { _resolvedName?: string })._resolvedName;
-    if (p.targetTermId && termIdSet.has(p.targetTermId)) {
-      const idx = config.pool.terms.findIndex((t) => t.id === p.targetTermId);
-      cleaned.targetTermId = allTermIds[idx]!;
-    }
-    if (p.targetOutcomeId && outcomeIdSet.has(p.targetOutcomeId)) {
-      const idx = config.outcomes.findIndex((o) => o.id === p.targetOutcomeId);
-      cleaned.targetOutcomeId = allOutcomeIds[idx]!;
-    }
-    if (p.targetPipelineId && pipelineIdSet.has(p.targetPipelineId)) {
-      const idx = config.pipeline.findIndex((pp) => pp.id === p.targetPipelineId);
-      cleaned.targetPipelineId = allPipelineIds[idx]!;
-    }
-    return cleaned;
-  });
-
   return {
     id: 'NORMALIZED',
     name: config.name,
@@ -94,7 +67,7 @@ function normalizeIds(config: PresetConfig): PresetConfig {
     rerollConditions: config.rerollConditions.map((r) => ({ ...r, id: 'NORMALIZED' })),
     pipeline: newPipeline,
     outcomes: newOutcomes,
-    parameters: newParams,
+    sweep: { x: [...config.sweep.x], y: config.sweep.y ? [...config.sweep.y] : null },
   };
 }
 
@@ -123,8 +96,8 @@ describe('yaml pool parser', () => {
   it('parses simple pool', () => {
     const cfg = parsePreset('name: Test\npool: 1d20\noutcomes:\n  - Hit when rolled >= 10\n');
     expect(cfg.pool.terms).toHaveLength(1);
-    expect(cfg.pool.terms[0]?.count).toBe(1);
-    expect(cfg.pool.terms[0]?.sides).toBe(20);
+    expect(cfg.pool.terms[0]?.count).toEqual({ kind: 'literal', value: 1 });
+    expect(cfg.pool.terms[0]?.sides).toEqual({ kind: 'literal', value: 20 });
     expect(cfg.pool.terms[0]?.tag).toBe('');
   });
 
@@ -147,8 +120,8 @@ describe('yaml pool parser', () => {
   it('parses inline string pool for backwards compat', () => {
     const cfg = parsePreset('name: T\npool: 1d20 + 2d6\noutcomes:\n  - F when rolled >= 0\n');
     expect(cfg.pool.terms).toHaveLength(2);
-    expect(cfg.pool.terms[0]?.sides).toBe(20);
-    expect(cfg.pool.terms[1]?.sides).toBe(6);
+    expect(cfg.pool.terms[0]?.sides).toEqual({ kind: 'literal', value: 20 });
+    expect(cfg.pool.terms[1]?.sides).toEqual({ kind: 'literal', value: 6 });
   });
 
   it('parses tagged multi-term pool', () => {
@@ -321,55 +294,54 @@ describe('yaml outcome parser', () => {
   });
 });
 
-describe('yaml parameter parser', () => {
-  it('parses pool.count default', () => {
+describe('yaml sweep parser', () => {
+  it('parses sweep x list', () => {
     const cfg = parsePreset([
       'name: T',
       'pool: 5d6',
       'outcomes:',
       '  - F when rolled >= 0',
-      'parameters:',
-      '  - Dice count = [1, 2, 3] over pool.count',
+      'sweep:',
+      '  x: [1, 2, 3]',
     ].join('\n'));
-    const p = cfg.parameters![0]!;
-    expect(p.target).toBe('pool.count');
-    expect(p.targetTermId).toBe(cfg.pool.terms[0]!.id);
+    expect(cfg.sweep.x).toEqual([1, 2, 3]);
+    expect(cfg.sweep.y).toBeNull();
   });
 
-  it('requires on for multi-term pool', () => {
-    expect(() => parsePreset([
-      'name: T',
-      'pool: 1d10<a> + 1d10<b>',
-      'outcomes:',
-      '  - F when rolled >= 0',
-      'parameters:',
-      '  - X = [1, 2] over pool.count',
-    ].join('\n'))).toThrow(/requires/);
-  });
-
-  it('resolves on by tag', () => {
+  it('parses sweep x and y lists', () => {
     const cfg = parsePreset([
       'name: T',
-      'pool: 1d10<a> + 1d10<b>',
+      'pool: 2d6',
       'outcomes:',
       '  - F when rolled >= 0',
-      'parameters:',
-      '  - X = [1, 2] over pool.count on a',
+      'sweep:',
+      '  x: [1, 2]',
+      '  y: [10, 15]',
     ].join('\n'));
-    const term = cfg.pool.terms.find((t) => t.tag === 'a')!;
-    expect(cfg.parameters![0]?.targetTermId).toBe(term.id);
+    expect(cfg.sweep.x).toEqual([1, 2]);
+    expect(cfg.sweep.y).toEqual([10, 15]);
   });
 
-  it('parses outcome.value with on', () => {
+  it('omits sweep block when not provided', () => {
     const cfg = parsePreset([
       'name: T',
       'pool: 1d20',
       'outcomes:',
-      '  - Hit when rolled >= 15',
-      'parameters:',
-      '  - DC = [5, 10] over outcome.value on Hit',
+      '  - F when rolled >= 0',
     ].join('\n'));
-    expect(cfg.parameters![0]?.targetOutcomeId).toBe(cfg.outcomes[0]!.id);
+    expect(cfg.sweep.x).toEqual([]);
+    expect(cfg.sweep.y).toBeNull();
+  });
+
+  it('rejects legacy parameters block', () => {
+    expect(() => parsePreset([
+      'name: T',
+      'pool: 1d20',
+      'outcomes:',
+      '  - F when rolled >= 0',
+      'parameters:',
+      '  - X = [1, 2] over pool.count',
+    ].join('\n'))).toThrow(PresetError);
   });
 });
 
@@ -493,8 +465,8 @@ describe('yaml daggerheart template', () => {
     '  - Success with Fear when delta < 0 and total_mod >= 15',
     '  - Failure with Hope when delta >= 0 and total_mod < 15',
     '  - Failure with Fear when delta < 0 and total_mod < 15',
-    'parameters:',
-    '  - Modifier = [-2, -1, 0, 1, 2, 3, 4, 5] over pipeline.literal',
+    'sweep:',
+    '  x: [-2, -1, 0, 1, 2, 3, 4, 5]',
   ].join('\n');
 
   it('parses without error', () => {
@@ -505,9 +477,9 @@ describe('yaml daggerheart template', () => {
     const cfg = parsePreset(daggerheartYaml);
     expect(cfg.name).toBe('Daggerheart');
     expect(cfg.pool.terms).toHaveLength(2);
-    expect(cfg.pool.terms[0]?.sides).toBe(12);
+    expect(cfg.pool.terms[0]?.sides).toEqual({ kind: 'literal', value: 12 });
     expect(cfg.pool.terms[0]?.tag).toBe('hope');
-    expect(cfg.pool.terms[1]?.sides).toBe(12);
+    expect(cfg.pool.terms[1]?.sides).toEqual({ kind: 'literal', value: 12 });
     expect(cfg.pool.terms[1]?.tag).toBe('fear');
   });
 
@@ -516,21 +488,16 @@ describe('yaml daggerheart template', () => {
     const totalMod = cfg.pipeline.find((p) => p.name === 'total_mod');
     expect(totalMod).toBeDefined();
     expect(totalMod?.source).toBe('total');
-    const op = totalMod?.op as { fn: string; operand: string; value: number };
+    const op = totalMod?.op as { fn: string; operand: string; value: { kind: string; value: number } };
     expect(op.fn).toBe('add');
     expect(op.operand).toBe('literal');
-    expect(op.value).toBe(0);
+    expect(op.value).toEqual({ kind: 'literal', value: 0 });
   });
 
-  it('parameter resolves to total_mod pipeline step', () => {
+  it('sweep x resolves to configured values', () => {
     const cfg = parsePreset(daggerheartYaml);
-    expect(cfg.parameters).toHaveLength(1);
-    const p = cfg.parameters![0]!;
-    expect(p.label).toBe('Modifier');
-    expect(p.target).toBe('pipeline.literal');
-    expect(p.values).toEqual([-2, -1, 0, 1, 2, 3, 4, 5]);
-    const totalMod = cfg.pipeline.find((pp) => pp.name === 'total_mod');
-    expect(p.targetPipelineId).toBe(totalMod?.id);
+    expect(cfg.sweep.x).toEqual([-2, -1, 0, 1, 2, 3, 4, 5]);
+    expect(cfg.sweep.y).toBeNull();
   });
 
   it('round-trips through serializer', () => {

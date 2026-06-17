@@ -6,14 +6,14 @@ describe('PRESETS', () => {
     const dnd = getPreset('dnd-d20');
     expect(dnd).toBeDefined();
     expect(dnd!.name).toContain('D&D');
-    expect(dnd!.pool.terms[0].sides).toBe(20);
+    expect(dnd!.pool.terms[0]!.sides).toEqual({ kind: 'literal', value: 20 });
   });
 
   it('has PbtA preset', () => {
     const pbta = getPreset('pbta-2d6');
     expect(pbta).toBeDefined();
-    expect(pbta!.pool.terms[0].sides).toBe(6);
-    expect(pbta!.pool.terms[0].count).toBe(2);
+    expect(pbta!.pool.terms[0]!.sides).toEqual({ kind: 'literal', value: 6 });
+    expect(pbta!.pool.terms[0]!.count).toEqual({ kind: 'literal', value: 2 });
     expect(pbta!.outcomes.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -21,7 +21,7 @@ describe('PRESETS', () => {
     const adv = getPreset('dnd-advantage');
     expect(adv).toBeDefined();
     expect(adv!.pipeline.length).toBeGreaterThan(0);
-    const maxStep = adv!.pipeline[0];
+    const maxStep = adv!.pipeline[0]!;
     expect(maxStep.name).toBe('best');
     expect(maxStep.op).toBe('max');
   });
@@ -32,7 +32,7 @@ describe('PRESETS', () => {
     expect(sr!.outcomes.length).toBeGreaterThanOrEqual(2);
     const hitOutcome = sr!.outcomes.find((o) => o.name === '1+ hits');
     expect(hitOutcome).toBeDefined();
-    expect(hitOutcome!.conditions[0]).toEqual({ source: 'rolled', op: 'any', subCondition: '>=', value: 5 });
+    expect(hitOutcome!.conditions[0]).toEqual({ source: 'rolled', op: 'any', subCondition: '>=', value: { kind: 'literal', value: 5 } });
   });
 
   it('has Vampire V5 preset', () => {
@@ -54,18 +54,18 @@ describe('PRESETS', () => {
   it('has Cyberpunk RED check preset', () => {
     const cp = getPreset('cyberpunk-red-check');
     expect(cp).toBeDefined();
-    expect(cp!.pool.terms[0].sides).toBe(10);
-    expect(cp!.pool.terms[0].count).toBe(2);
-    expect(cp!.parameters?.some((p) => p.label === 'DV')).toBe(true);
+    expect(cp!.pool.terms[0]!.sides).toEqual({ kind: 'literal', value: 10 });
+    expect(cp!.pool.terms[0]!.count).toEqual({ kind: 'literal', value: 2 });
+    expect(cp!.sweep.x.length).toBeGreaterThan(0);
   });
 
   it('has Blades in the Dark preset with critical detection', () => {
     const b = getPreset('blades-in-the-dark');
     expect(b).toBeDefined();
-    expect(b!.pool.terms[0].sides).toBe(6);
+    expect(b!.pool.terms[0]!.sides).toEqual({ kind: 'literal', value: 6 });
     const crit = b!.outcomes.find((o) => o.name === 'Critical');
     expect(crit).toBeDefined();
-    expect(b!.parameters?.some((p) => p.target === 'pool.count')).toBe(true);
+    expect(b!.sweep.x.length).toBeGreaterThan(0);
   });
 
   it('has Savage Worlds preset with trait and wild dice', () => {
@@ -74,16 +74,18 @@ describe('PRESETS', () => {
     expect(sw!.pool.terms.some((t) => t.tag === 'trait')).toBe(true);
     expect(sw!.pool.terms.some((t) => t.tag === 'wild')).toBe(true);
     expect(sw!.rerollConditions.length).toBeGreaterThan(0);
-    expect(sw!.rerollConditions[0].action).toBe('explode');
-    expect(sw!.parameters?.some((p) => p.target === 'pool.sides')).toBe(true);
+    expect(sw!.rerollConditions[0]!.action).toBe('explode');
+    expect(sw!.sweep.x.length).toBeGreaterThan(0);
   });
 
   it('all presets have valid pools', () => {
     for (const preset of PRESETS) {
       expect(preset.pool.terms.length).toBeGreaterThan(0);
       for (const term of preset.pool.terms) {
-        expect(term.sides).toBeGreaterThan(0);
-        expect(term.count).toBeGreaterThan(0);
+        const sidesVal = term.sides.kind === 'literal' ? term.sides.value : 1;
+        const countVal = term.count.kind === 'literal' ? term.count.value : 1;
+        expect(sidesVal).toBeGreaterThan(0);
+        expect(countVal).toBeGreaterThan(0);
         expect(term.id).toBeTruthy();
       }
     }
