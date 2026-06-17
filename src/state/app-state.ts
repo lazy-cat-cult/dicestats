@@ -91,6 +91,10 @@ export const userPresets = signal<PresetConfig[]>([]);
 export const allPresets = computed<PresetConfig[]>(() => [...PRESETS, ...userPresets.value]);
 export const currentPresetName = signal<string | null>(null);
 
+export function setCurrentPresetName(name: string | null): void {
+  currentPresetName.value = name === '' ? null : name;
+}
+
 export function applyPresetConfig(preset: PresetConfig) {
   dicePool.value = { ...preset.pool, terms: preset.pool.terms.map((t) => ({ ...t })) };
   rerollConditions.value = preset.rerollConditions.map((r) => ({ ...r, conditions: { ...r.conditions, clauses: [...r.conditions.clauses] } }));

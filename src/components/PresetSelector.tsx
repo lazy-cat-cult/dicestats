@@ -1,9 +1,10 @@
-import { useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   allPresets,
   applyPresetConfig,
+  currentPresetName,
   mergeOrStagePreset,
-  parameters,
+  setCurrentPresetName,
   userPresets,
 } from '@/state/app-state';
 import { resetUiForPresetApply, loadError } from '@/app';
@@ -11,15 +12,42 @@ import { FEATURED_PRESET_IDS, PRESETS } from '@/domain/presets';
 import { Pill, Button } from '@/components/ui';
 import { PresetLibraryModal } from '@/components/PresetLibraryModal';
 import {
-  exportCurrentAsYaml,
-  downloadYamlFile,
   readYamlFile,
   importPresetFromYamlText,
+  saveCurrentAsYaml,
 } from '@/state/persistence';
 
 export function PresetSelector() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const editInputRef = useRef<HTMLInputElement | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+
+  useEffect(() => {
+    if (!isEditingName) return;
+    editInputRef.current?.focus();
+    editInputRef.current?.select();
+  }, [isEditingName]);
+
+  useEffect(() => {
+    if (isEditingName) setIsEditingName(false);
+  }, [currentPresetName.value]);
+
+  function startEditingName() {
+    setNameDraft(currentPresetName.value ?? '');
+    setIsEditingName(true);
+  }
+
+  function commitName() {
+    setCurrentPresetName(nameDraft);
+    setIsEditingName(false);
+  }
+
+  function cancelNameEdit() {
+    setNameDraft(currentPresetName.value ?? '');
+    setIsEditingName(false);
+  }
 
   function applyPreset(id: string) {
     const preset = allPresets.value.find((p) => p.id === id);
@@ -30,10 +58,7 @@ export function PresetSelector() {
 
   function handleSave() {
     loadError.value = null;
-    const nameFromParams = parameters.value[0]?.label;
-    const name = nameFromParams || 'Dice Roll';
-    const { filename, text } = exportCurrentAsYaml(name);
-    downloadYamlFile(filename, text);
+    void saveCurrentAsYaml(currentPresetName.value ?? '');
   }
 
   async function handleLoadFile(e: Event) {
@@ -57,6 +82,9 @@ export function PresetSelector() {
   const featured = FEATURED_PRESET_IDS
     .map((id) => PRESETS.find((p) => p.id === id))
     .filter((p): p is NonNullable<typeof p> => p !== undefined);
+
+  const displayName = currentPresetName.value ?? '';
+  const hasName = displayName.length > 0;
 
   return (
     <div class="border-b border-rule bg-paper">
@@ -100,6 +128,64 @@ export function PresetSelector() {
             {loadError.value}
           </span>
         )}
+        <div class="flex items-center gap-1 shrink-0 min-w-0 max-w-[280px]">
+          <span class="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-mute shrink-0">
+            Name
+          </span>
+          {isEditingName ? (
+            <div class="flex items-stretch border border-rule bg-paper focus-within:border-billiard focus-within:shadow-[0_0_0_1px_var(--color-billiard)] transition-all min-w-0 flex-1">
+              <input
+                ref={editInputRef}
+                type="text"
+                value={nameDraft}
+                placeholder="Preset name"
+                aria-label="Preset name"
+                class="w-full bg-transparent px-2 py-1 text-[12px] font-mono tabular text-ink outline-none placeholder:text-ink-mute min-w-0"
+                onInput={(e) => setNameDraft((e.currentTarget as HTMLInputElement).value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    commitName();
+                  } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelNameEdit();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={commitName}
+                aria-label="Save preset name"
+                class="px-2 font-mono text-[13px] text-billiard hover:text-billiard-deep border-l border-rule shrink-0"
+                title="Save (Enter)"
+              >
+                ✓
+              </button>
+              <button
+                type="button"
+                onClick={cancelNameEdit}
+                aria-label="Cancel preset name edit"
+                class="px-2 font-mono text-[13px] text-ink-mute hover:text-billiard-deep border-l border-rule shrink-0"
+                title="Cancel (Esc)"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={startEditingName}
+              aria-label={hasName ? `Edit preset name: ${displayName}` : 'Set preset name'}
+              title={hasName ? `Edit preset name (${displayName})` : 'Set preset name'}
+              class={`group inline-flex items-center gap-1.5 px-2 py-1 border border-transparent hover:border-rule transition-colors min-w-0 max-w-full ${hasName ? 'text-ink' : 'text-ink-mute'}`}
+            >
+              <span class="font-mono tabular text-[12px] truncate">
+                {hasName ? displayName : 'Preset name'}
+              </span>
+              <span aria-hidden="true" class="font-mono text-[12px] text-ink-mute group-hover:text-billiard shrink-0">✎</span>
+            </button>
+          )}
+        </div>
         <div class="flex items-center gap-2 shrink-0">
           <Button variant="ghost" size="sm" onClick={handleSave} ariaLabel="Save current configuration as YAML" className="border-gold/50 text-ink hover:border-billiard hover:text-billiard">
             Save
