@@ -50,9 +50,6 @@ Outcomes SHALL be evaluated independently per roll. Every outcome whose conditio
 ### Requirement: Scalar Outcome Conditions
 For scalar sources (numeric values like `sum`, `count`, `max`, `min`), conditions SHALL use `ConditionOperator` comparisons (`>`, `>=`, `<`, `<=`, `=`, `!=`) with a numeric `value`. Dice conditions (`any`, `all`, `none`) MUST NOT be used with scalar sources — they are meaningless on a single number.
 
-### Requirement: Scalar Outcome Conditions
-For scalar sources (numeric values like `sum`, `count`, `max`, `min`), conditions SHALL use `ConditionOperator` comparisons (`>`, `>=`, `<`, `<=`, `=`, `!=`) with a numeric `value`. Dice conditions (`any`, `all`, `none`) MUST NOT be used with scalar sources — they are meaningless on a single number.
-
 #### Scenario: Threshold outcome
 - GIVEN an outcome "Hit" with source `total` (scalar) and condition `{ op: '>='; value: 15 }`
 - WHEN the total is 17
