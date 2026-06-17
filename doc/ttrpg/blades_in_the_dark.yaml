@@ -1,0 +1,14 @@
+name: Blades in the Dark
+pool:
+  - 2d6
+pipeline:
+  - best = max rolled
+  - sixes = filter rolled where face = max
+  - six_count = count sixes
+outcomes:
+  - Critical when six_count >= 2
+  - Success when best = 6
+  - Partial when best >= 4 and best <= 5
+  - Failure when best <= 3 (default)
+parameters:
+  - Dice count = [1, 2, 3, 4, 5, 6, 7, 8] over pool.count

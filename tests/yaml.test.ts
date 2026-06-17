@@ -493,3 +493,73 @@ describe('yaml inline comments', () => {
     expect(text).not.toMatch(/#/);
   });
 });
+
+describe('yaml daggerheart template', () => {
+  const daggerheartYaml = [
+    'name: Daggerheart',
+    'pool:',
+    '  - 1d12<hope>',
+    '  - 1d12<fear>',
+    'pipeline:',
+    '  - hope_face = filter rolled where tag = hope',
+    '  - fear_face = filter rolled where tag = fear',
+    '  - hope_value = max hope_face',
+    '  - fear_value = max fear_face',
+    '  - delta = hope_value - fear_value',
+    '  - total = sum rolled',
+    '  - total_mod = total + 0',
+    'outcomes:',
+    '  - Critical Success when delta = 0',
+    '  - Success when total_mod >= 15 and delta = 0',
+    '  - Failure when total_mod < 15',
+    '  - Success with Hope when delta > 0 and total_mod >= 15',
+    '  - Success with Fear when delta < 0 and total_mod >= 15',
+    '  - Failure with Hope when delta >= 0 and total_mod < 15',
+    '  - Failure with Fear when delta < 0 and total_mod < 15',
+    'parameters:',
+    '  - Modifier = [-2, -1, 0, 1, 2, 3, 4, 5] over pipeline.literal',
+  ].join('\n');
+
+  it('parses without error', () => {
+    expect(() => parsePreset(daggerheartYaml)).not.toThrow();
+  });
+
+  it('has correct pool (1d12<hope>, 1d12<fear>)', () => {
+    const cfg = parsePreset(daggerheartYaml);
+    expect(cfg.name).toBe('Daggerheart');
+    expect(cfg.pool.terms).toHaveLength(2);
+    expect(cfg.pool.terms[0]?.sides).toBe(12);
+    expect(cfg.pool.terms[0]?.tag).toBe('hope');
+    expect(cfg.pool.terms[1]?.sides).toBe(12);
+    expect(cfg.pool.terms[1]?.tag).toBe('fear');
+  });
+
+  it('pipeline includes total_mod with literal operand', () => {
+    const cfg = parsePreset(daggerheartYaml);
+    const totalMod = cfg.pipeline.find((p) => p.name === 'total_mod');
+    expect(totalMod).toBeDefined();
+    expect(totalMod?.source).toBe('total');
+    const op = totalMod?.op as { fn: string; operand: string; value: number };
+    expect(op.fn).toBe('add');
+    expect(op.operand).toBe('literal');
+    expect(op.value).toBe(0);
+  });
+
+  it('parameter resolves to total_mod pipeline step', () => {
+    const cfg = parsePreset(daggerheartYaml);
+    expect(cfg.parameters).toHaveLength(1);
+    const p = cfg.parameters![0]!;
+    expect(p.label).toBe('Modifier');
+    expect(p.target).toBe('pipeline.literal');
+    expect(p.values).toEqual([-2, -1, 0, 1, 2, 3, 4, 5]);
+    const totalMod = cfg.pipeline.find((pp) => pp.name === 'total_mod');
+    expect(p.targetPipelineId).toBe(totalMod?.id);
+  });
+
+  it('round-trips through serializer', () => {
+    const cfg = parsePreset(daggerheartYaml);
+    const reserialized = serializePreset(cfg);
+    const reparsed = parsePreset(reserialized);
+    expect(normalizeIds(reparsed)).toEqual(normalizeIds(cfg));
+  });
+});
