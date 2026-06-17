@@ -5,9 +5,7 @@
 The UI is a single-page web application for configuring and running dice probability simulations. It MUST work on 360px-wide viewports (mobile-first), keep the main thread responsive by running the simulation in a Web Worker, and present results in a format readable at a glance.
 
 The application uses a "billiard scoreboard" visual identity: a light paper background with billiard-green and gold accents, monospaced numerics for all probability and dice data, and a high-contrast top-probability display modelled on a craps table / sportsbook odds board.
-
 ## Requirements
-
 ### Requirement: Color Tokens
 The application SHALL use a fixed color token system defined as Tailwind v4 `@theme` values in `src/style.css`. The tokens are:
 
@@ -102,6 +100,7 @@ A horizontal pill rail pinned directly under the header SHALL show all available
 - SHALL be horizontally scrollable on narrow viewports (`overflow-x-auto` with negative horizontal margins so pills can scroll under the eyebrow).
 - A user-loaded preset (from a YAML file) is marked with a small `text-billiard` middot (`·`) appended to its name. The middot is `aria-hidden`.
 - The rail has a `border-b border-rule` hairline separator on its bottom edge.
+- SHALL expose an **editable preset name input** to the left of the Save/Load buttons, bound to `currentPresetName`. The input is described in detail in `openspec/specs/presets/spec.md` (requirement: `Editable Preset Name`). The "All Presets ▾" trigger SHALL sit between the pill list and the editable name input.
 
 #### Scenario: Apply preset
 - GIVEN the user clicks a preset pill
@@ -109,11 +108,25 @@ A horizontal pill rail pinned directly under the header SHALL show all available
 - THEN the dice pool, reroll conditions, pipeline, outcomes, parameters, and current results are replaced with the preset's configuration
 - AND the current results are cleared
 - AND any in-flight simulation is cancelled
+- AND `currentPresetName.value` is set to the applied preset's `name` (the editable name input updates to match)
 
 #### Scenario: User preset indicator
 - GIVEN a preset that was loaded from a YAML file (i.e. not a built-in)
 - WHEN the preset rail renders
 - THEN the pill shows the preset name followed by a `·` in `text-billiard`
+
+#### Scenario: Editable name input is visible in the rail
+- GIVEN the application is rendered
+- WHEN the Preset Rail is shown
+- THEN the editable name input is visible to the left of the Save/Load buttons
+- AND the input shows `currentPresetName.value` (or is empty when `currentPresetName.value` is `null`)
+- AND the input has `placeholder="Preset name"` and `aria-label="Preset name"`
+
+#### Scenario: Editable name input updates the simulation label
+- GIVEN the user typed `"My Custom Roll"` into the editable name input
+- WHEN the user runs a simulation
+- THEN the `SimJob` posted to the worker includes `taskName: "My Custom Roll"`
+- AND the result's `label` is `"My Custom Roll"`
 
 ### Requirement: Section Layout
 Each of the five configuration sections (Dice Pool, Reroll Conditions, Resolution Pipeline, Outcomes, Sweep Parameters) SHALL be rendered by the `Section` component from `src/components/ui.tsx` with:
@@ -304,26 +317,50 @@ When no simulation has been run yet, the result canvas SHALL show a dashed-borde
 - **AND** the OddsTape and any chart are not shown
 
 ### Requirement: Save and Load YAML Presets
-The application SHALL provide "Save" and "Load" buttons in the header. Save SHALL serialize the current configuration to a YAML file in the browser and trigger a download. Load SHALL open a file picker accepting `.yaml`/`.yml` files, parse them with the hand-rolled YAML parser, and apply the configuration to the editor. Loading a preset whose `name` matches a built-in preset updates the built-in; otherwise the preset is added to the user preset list.
+The application SHALL provide "Save" and "Load" buttons. Save SHALL serialize the current configuration to a YAML file. When the browser supports the File System Access API (Chromium-based), Save SHALL open the OS-native "Save As" dialog via `window.showSaveFilePicker` so the user can pick both a directory and a filename; otherwise Save SHALL fall back to the `Blob` + `<a download>` path. The suggested filename SHALL be `filenameForName(currentPresetName.value ?? 'dice-roll')`. Load SHALL open a file picker accepting `.yaml`/`.yml` files, parse them with the hand-rolled YAML parser, and apply the configuration to the editor. Loading a preset whose `name` matches a built-in preset updates the built-in; otherwise the preset is added to the user preset list. Loading a YAML file SHALL also set `currentPresetName.value` to the loaded preset's `name`.
 
-The configuration SHALL also auto-save to `localStorage` under key `dice-calc-config` on every change (debounced to every 2s while the tab is visible, and immediately on `visibilitychange: hidden` and `pagehide`). The localStorage payload includes a `version` field (currently `3`) for forward migration.
+The configuration SHALL also auto-save to `localStorage` under key `dice-calc-config` on every change (debounced to every 2s while the tab is visible, and immediately on `visibilitychange: hidden` and `pagehide`). The localStorage payload includes a `version` field (currently `7`) for forward migration.
 
-#### Scenario: Save current config
-- GIVEN the user has configured dice pool, outcomes, and a parameter
-- WHEN they click "Save" in the header
-- THEN a `.yaml` file is downloaded with a filename derived from the first parameter's label (or `Dice Roll` if no parameters)
-- AND the YAML serializes the full configuration (pool, reroll, pipeline, outcomes, parameters)
+#### Scenario: Save uses native dialog when API is available
+- **WHEN** `window.showSaveFilePicker` is available
+- **AND** the user clicks "Save"
+- **THEN** the OS-native "Save As" dialog is opened
+- **AND** the suggested filename is `<filename>.yaml` derived from `currentPresetName.value` (or `dice-roll.yaml` when the name is empty)
+- **AND** the file filter shows `YAML preset` accepting `.yaml`
+- **AND** on confirmation, the YAML text is written to the chosen path
+
+#### Scenario: Save falls back when API is unavailable
+- **WHEN** `window.showSaveFilePicker` is not available (e.g. Firefox, Safari)
+- **AND** the user clicks "Save"
+- **THEN** the `Blob` + anchor download path is used
+- **AND** a `.yaml` file is downloaded with the same `<filename>.yaml` derived from `currentPresetName.value`
+- **AND** the YAML serializes the full configuration (pool, reroll, pipeline, outcomes, parameters)
+
+#### Scenario: Save cancellation is silent
+- **WHEN** the native "Save As" dialog is open
+- **AND** the user clicks Cancel or closes the dialog
+- **THEN** no error is shown
+- **AND** the `loadError` signal is not set
+- **AND** no `console.error` is emitted
+- **AND** the application returns to its previous state
+
+#### Scenario: Save uses default name when name is empty
+- **WHEN** `currentPresetName.value` is `null` or empty
+- **AND** the user clicks "Save"
+- **THEN** the suggested filename is `dice-roll.yaml`
+- **AND** the YAML header line reads `name: Dice Roll`
 
 #### Scenario: Load existing YAML
-- GIVEN a previously saved `.yaml` file
-- WHEN the user clicks "Load" and selects the file
-- THEN the editor state is replaced with the parsed configuration
-- AND the result canvas is cleared
+- **WHEN** a previously saved `.yaml` file is loaded
+- **THEN** the editor state is replaced with the parsed configuration
+- **AND** the result canvas is cleared
+- **AND** `currentPresetName.value` is set to the loaded preset's `name`
 
 #### Scenario: Auto-save on tab hide
-- GIVEN the user has unsaved changes
-- WHEN the browser tab is hidden or closed
-- THEN the current configuration is written to `localStorage` immediately
+- **WHEN** the user has unsaved changes
+- **AND** the browser tab is hidden or closed
+- **THEN** the current configuration is written to `localStorage` immediately
+- **AND** the YAML "Save" path is NOT triggered (localStorage is the auto-save target, not the YAML file)
 
 ### Requirement: Form Controls Accessibility
 Every form control SHALL have either a visible `<label>` (for labelled fields) or an `aria-label` (for icon-only buttons and bare inputs). All inputs use `font-mono tabular` so numeric values are readable and aligned.
@@ -510,3 +547,26 @@ The following behaviors from earlier specs are NO LONGER part of the UI and SHAL
 - **WHEN** inspecting user-visible text
 - **THEN** the literal words "dice" and "value" SHALL NOT appear as type indicators
 - **AND** vector/scalar types SHALL be expressed only through brackets in the pipeline name field and in source-option dropdowns
+
+### Requirement: Form Controls Accessibility (extended — editable name input)
+The preset name control in the Preset Rail SHALL be operable via keyboard and have descriptive `aria-label`s:
+
+- The display-state button SHALL have `aria-label="Edit preset name: <name>"` when a name is set, or `aria-label="Set preset name"` when `currentPresetName.value` is `null`.
+- The edit-state `<input>` SHALL have `aria-label="Preset name"`.
+- The `✓` (save) button SHALL have `aria-label="Save preset name"`.
+- The `✕` (cancel) button SHALL have `aria-label="Cancel preset name edit"`.
+- The `All Presets ▾` trigger SHALL have `aria-label="Open all presets library"`.
+
+#### Scenario: Display button has descriptive aria-label
+- **WHEN** `currentPresetName.value` is `"My Custom Roll"`
+- **THEN** the display button has `aria-label="Edit preset name: My Custom Roll"`
+
+#### Scenario: Display button has set-preset-name aria-label
+- **WHEN** `currentPresetName.value` is `null`
+- **THEN** the display button has `aria-label="Set preset name"`
+
+#### Scenario: Save and cancel buttons have aria-labels
+- **WHEN** the control is in edit state
+- **THEN** `✓` has `aria-label="Save preset name"`
+- **AND** `✕` has `aria-label="Cancel preset name edit"`
+

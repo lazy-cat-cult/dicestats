@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 import { userPresets } from '@/state/app-state';
 import { PRESETS } from '@/domain/presets';
+import { exprToString } from '@/utils/expression';
 import type { PresetConfig } from '@/types';
 
 interface PresetLibraryModalProps {
@@ -13,7 +14,7 @@ interface PresetLibraryModalProps {
 function poolNotation(preset: PresetConfig): string {
   return preset.pool.terms
     .map((t) => {
-      let s = `${t.count}d${t.sides}`;
+      let s = `${exprToString(t.count)}d${exprToString(t.sides)}`;
       if (t.tag) s += ` <${t.tag}>`;
       return s;
     })

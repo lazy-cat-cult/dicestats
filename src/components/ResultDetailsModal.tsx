@@ -19,8 +19,25 @@ interface ResultDetailsModalProps {
   onClose: () => void;
 }
 
+function getXValues(results: SimResult[]): number[] {
+  const seen = new Set<number>();
+  for (const r of results) {
+    if (r.sweepX !== null && r.sweepX !== undefined) seen.add(r.sweepX);
+  }
+  return Array.from(seen).sort((a, b) => a - b);
+}
+
+function getYValues(results: SimResult[]): number[] {
+  const seen = new Set<number>();
+  for (const r of results) {
+    if (r.sweepY !== null && r.sweepY !== undefined) seen.add(r.sweepY);
+  }
+  return Array.from(seen).sort((a, b) => a - b);
+}
+
 export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps) {
-  const [selected, setSelected] = useState(0);
+  const [selectedY, setSelectedY] = useState(0);
+  const [selectedX, setSelectedX] = useState(0);
   const closeRef = useRef<HTMLButtonElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -54,8 +71,15 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
 
   if (!results || results.length === 0) return null;
 
-  const isSweep = results.length > 1;
-  const focused = results[Math.min(selected, results.length - 1)] ?? results[0];
+  const yValues = getYValues(results);
+  const hasY = yValues.length > 0;
+  const focusedY = hasY ? yValues[Math.min(selectedY, yValues.length - 1)] ?? yValues[0] : null;
+  const yGroup = hasY ? results.filter((r) => r.sweepY === focusedY) : results;
+  const xValues = getXValues(yGroup);
+  const focusedX = xValues[Math.min(selectedX, xValues.length - 1)] ?? xValues[0];
+  const focusedResults = hasY ? yGroup.filter((r) => r.sweepX === focusedX) : (xValues.length > 0 ? yGroup.filter((r) => r.sweepX === focusedX) : yGroup);
+  const focused = focusedResults[0] ?? results[0];
+
   const visibleOutcomes = filterOutcomes(focused.outcomes);
   const dist = distributionStats(focused.distribution);
   const probs = visibleOutcomes.map((o) => o.probability);
@@ -63,7 +87,7 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
   const effective = effectiveOutcomes(probs);
   const overlaps = focused.overlaps;
   const topSets = topMatchSets(focused.matchSets, 10);
-  const paramValues = isSweep ? results.map((r) => parseParamValue(r.label)) : [];
+  const paramValues = xValues;
 
   const onBackdrop = (e: MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
@@ -92,6 +116,8 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
             </h2>
             <p class="font-mono text-[12px] text-ink-soft mt-2">
               {focused.totalRolls.toLocaleString()} rolls · {visibleOutcomes.length} outcomes
+              {hasY ? ` · Y = ${focusedY}` : ''}
+              {xValues.length > 0 ? ` · X = ${focusedX}` : ''}
             </p>
           </div>
           <button
@@ -108,25 +134,50 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
         </header>
 
         <div class="px-7 py-6 space-y-8 max-h-[calc(90vh-9rem)] overflow-y-auto overscroll-contain">
-          {isSweep && (
+          {hasY && (
             <section>
               <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-gold-deep mb-2">
-                Sweep Value
+                Sweep Y
               </p>
               <div class="flex flex-wrap gap-1.5">
-                {results.map((r, i) => (
+                {yValues.map((y, i) => (
                   <button
-                    key={r.label}
+                    key={y}
                     type="button"
-                    onClick={() => setSelected(i)}
-                    aria-pressed={i === selected}
+                    onClick={() => { setSelectedY(i); setSelectedX(0); }}
+                    aria-pressed={i === selectedY}
                     class={`px-3 py-1.5 font-mono text-[12px] uppercase tracking-[0.12em] border transition-colors ${
-                      i === selected
+                      i === selectedY
                         ? 'border-billiard bg-billiard text-paper'
                         : 'border-rule text-ink hover:border-billiard hover:text-billiard'
                     }`}
                   >
-                    {r.label}
+                    Y = {y}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {xValues.length > 1 && (
+            <section>
+              <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-gold-deep mb-2">
+                Sweep X
+              </p>
+              <div class="flex flex-wrap gap-1.5">
+                {xValues.map((x, i) => (
+                  <button
+                    key={x}
+                    type="button"
+                    onClick={() => setSelectedX(i)}
+                    aria-pressed={i === selectedX}
+                    class={`px-3 py-1.5 font-mono text-[12px] uppercase tracking-[0.12em] border transition-colors ${
+                      i === selectedX
+                        ? 'border-billiard bg-billiard text-paper'
+                        : 'border-rule text-ink hover:border-billiard hover:text-billiard'
+                    }`}
+                  >
+                    X = {x}
                   </button>
                 ))}
               </div>
@@ -194,7 +245,7 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
             )}
           </section>
 
-          {isSweep && (
+          {xValues.length > 1 && (
             <section>
               <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-gold-deep mb-3">
                 Sensitivity per Outcome
@@ -210,8 +261,8 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
                   </thead>
                   <tbody>
                     {visibleOutcomes.map((o) => {
-                      const me = marginalEffect(results, o.label, paramValues);
-                      const be = breakEven(results, o.label, 0.5, paramValues);
+                      const me = marginalEffect(yGroup, o.label, paramValues);
+                      const be = breakEven(yGroup, o.label, 0.5, paramValues);
                       return (
                         <tr key={o.label} class="border-b border-rule/60">
                           <td class="py-2.5 font-mono text-[13px] text-ink uppercase tracking-[0.06em]">{o.label}</td>
@@ -323,7 +374,8 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
 
         <footer class="px-7 py-4 border-t border-rule font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft">
           Monte Carlo · {focused.totalRolls.toLocaleString()} iterations · {visibleOutcomes.length} outcomes
-          {isSweep && ` · ${results.length} sweep values`}
+          {hasY ? ` · ${yValues.length} Y values` : ''}
+          {xValues.length > 1 ? ` · ${xValues.length} X values` : ''}
         </footer>
       </div>
     </div>
@@ -337,13 +389,6 @@ function StatCell({ label, value }: { label: string; value: string }) {
       <p class="font-mono tabular text-[16px] text-ink mt-0.5">{value}</p>
     </div>
   );
-}
-
-function parseParamValue(label: string): number {
-  const eq = label.indexOf('=');
-  if (eq < 0) return 0;
-  const n = Number(label.slice(eq + 1));
-  return Number.isFinite(n) ? n : 0;
 }
 
 function formatNumber(value: number, decimals = 2): string {

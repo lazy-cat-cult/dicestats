@@ -1,11 +1,12 @@
 import type { PresetConfig } from '@/types';
+import { literalExpr } from '@/utils/expression';
 
 export const PRESETS: PresetConfig[] = [
   {
     id: 'dnd-d20',
     name: 'D&D 5e — d20',
     pool: {
-      terms: [{ id: 'd20-1', count: 1, sides: 20, tag: '', comment: '' }],
+      terms: [{ id: 'd20-1', count: literalExpr(1), sides: literalExpr(20), tag: '', comment: '' }],
     },
     rerollConditions: [],
     pipeline: [
@@ -21,26 +22,18 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Hit',
-        conditions: [{ source: 'total', op: '>=', value: 15 }],
+        conditions: [{ source: 'total', op: '>=', value: { kind: 'ref', name: 'X' } }],
         connector: 'and',
         comment: '',
       },
     ],
-    parameters: [
-      {
-        id: 'dc',
-        label: 'DC',
-        values: [5, 10, 15, 20],
-        target: 'outcome.value',
-        targetOutcomeId: 'o1',
-      },
-    ],
+    sweep: { x: [5, 10, 15, 20], y: null },
   },
   {
     id: 'dnd-advantage',
     name: 'D&D 5e — Advantage 2d20 best',
     pool: {
-      terms: [{ id: 'd20-1', count: 2, sides: 20, tag: '', comment: '' }],
+      terms: [{ id: 'd20-1', count: literalExpr(2), sides: literalExpr(20), tag: '', comment: '' }],
     },
     rerollConditions: [],
     pipeline: [
@@ -56,26 +49,18 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Hit',
-        conditions: [{ source: 'best', op: '>=', value: 15 }],
+        conditions: [{ source: 'best', op: '>=', value: { kind: 'ref', name: 'X' } }],
         connector: 'and',
         comment: '',
       },
     ],
-    parameters: [
-      {
-        id: 'dc',
-        label: 'DC',
-        values: [5, 10, 15, 20],
-        target: 'outcome.value',
-        targetOutcomeId: 'o1',
-      },
-    ],
+    sweep: { x: [5, 10, 15, 20], y: null },
   },
   {
     id: 'pbta-2d6',
     name: 'PbtA — 2d6',
     pool: {
-      terms: [{ id: 'd6-1', count: 2, sides: 6, tag: '', comment: '' }],
+      terms: [{ id: 'd6-1', count: literalExpr(2), sides: literalExpr(6), tag: '', comment: '' }],
     },
     rerollConditions: [],
     pipeline: [
@@ -90,7 +75,7 @@ export const PRESETS: PresetConfig[] = [
         id: 'p2',
         name: 'total_mod',
         source: 'total',
-        op: { fn: 'add', operand: 'literal', value: 0 },
+        op: { fn: 'add', operand: 'literal', value: { kind: 'ref', name: 'X' } },
         comment: '',
       },
     ],
@@ -98,40 +83,32 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Success',
-        conditions: [{ source: 'total_mod', op: '>=', value: 10 }],
+        conditions: [{ source: 'total_mod', op: '>=', value: { kind: 'ref', name: 'Y' } }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o2',
         name: 'Partial',
-        conditions: [{ source: 'total_mod', op: '>=', value: 7 }, { source: 'total_mod', op: '<=', value: 9 }],
+        conditions: [{ source: 'total_mod', op: '>=', value: literalExpr(7) }, { source: 'total_mod', op: '<=', value: literalExpr(9) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o3',
         name: 'Failure',
-        conditions: [{ source: 'total_mod', op: '<=', value: 6 }],
+        conditions: [{ source: 'total_mod', op: '<=', value: literalExpr(6) }],
         connector: 'and',
         comment: '',
       },
     ],
-    parameters: [
-      {
-        id: 'mod',
-        label: 'Modifier',
-        values: [-3, -2, -1, 0, 1, 2, 3, 4],
-        target: 'pipeline.literal',
-        targetPipelineId: 'p2',
-      },
-    ],
+    sweep: { x: [-2, -1, 0, 1, 2], y: [10, 15] },
   },
   {
     id: 'shadowrun-xd6',
     name: 'Shadowrun — Xd6',
     pool: {
-      terms: [{ id: 'd6-1', count: 5, sides: 6, tag: '', comment: '' }],
+      terms: [{ id: 'd6-1', count: { kind: 'ref', name: 'X' }, sides: literalExpr(6), tag: '', comment: '' }],
     },
     rerollConditions: [],
     pipeline: [],
@@ -139,35 +116,27 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: '1+ hits',
-        conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: 5 }],
+        conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: literalExpr(5) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o2',
         name: 'No hits',
-        conditions: [{ source: 'rolled', op: 'none', subCondition: '>=', value: 5 }],
+        conditions: [{ source: 'rolled', op: 'none', subCondition: '>=', value: literalExpr(5) }],
         connector: 'and',
         comment: '',
       },
     ],
-    parameters: [
-      {
-        id: 'cnt',
-        label: 'Dice count',
-        values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        target: 'pool.count',
-        targetTermId: 'd6-1',
-      },
-    ],
+    sweep: { x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], y: null },
   },
   {
     id: 'vampire-v5',
     name: 'Vampire V5',
     pool: {
       terms: [
-        { id: 'normal', count: 3, sides: 10, tag: 'normal', comment: '' },
-        { id: 'hunger', count: 2, sides: 10, tag: 'hunger', comment: '' },
+        { id: 'normal', count: literalExpr(3), sides: literalExpr(10), tag: 'normal', comment: '' },
+        { id: 'hunger', count: literalExpr(2), sides: literalExpr(10), tag: 'hunger', comment: '' },
       ],
     },
     rerollConditions: [],
@@ -216,7 +185,7 @@ export const PRESETS: PresetConfig[] = [
         id: 'p5',
         name: 'half_crits',
         source: 'crit_count',
-        op: { fn: 'divide', operand: 'literal', value: 2 },
+        op: { fn: 'divide', operand: 'literal', value: literalExpr(2) },
         comment: '',
       },
       {
@@ -230,7 +199,7 @@ export const PRESETS: PresetConfig[] = [
         id: 'p7',
         name: 'double_crits',
         source: 'rounded_crits',
-        op: { fn: 'multiply', operand: 'literal', value: 2 },
+        op: { fn: 'multiply', operand: 'literal', value: literalExpr(2) },
         comment: '',
       },
       {
@@ -245,26 +214,27 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Success',
-        conditions: [{ source: 'total_successes', op: '>=', value: 1 }],
+        conditions: [{ source: 'total_successes', op: '>=', value: literalExpr(1) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o2',
         name: 'Failure',
-        conditions: [{ source: 'total_successes', op: '=', value: 0 }],
+        conditions: [{ source: 'total_successes', op: '=', value: literalExpr(0) }],
         connector: 'and',
         comment: '',
       },
     ],
+    sweep: { x: [], y: null },
   },
   {
     id: 'daggerheart-duality',
     name: 'Daggerheart — Duality (2d12)',
     pool: {
       terms: [
-        { id: 'd12-hope', count: 1, sides: 12, tag: 'hope', comment: '' },
-        { id: 'd12-fear', count: 1, sides: 12, tag: 'fear', comment: '' },
+        { id: 'd12-hope', count: literalExpr(1), sides: literalExpr(12), tag: 'hope', comment: '' },
+        { id: 'd12-fear', count: literalExpr(1), sides: literalExpr(12), tag: 'fear', comment: '' },
       ],
     },
     rerollConditions: [],
@@ -327,7 +297,7 @@ export const PRESETS: PresetConfig[] = [
         id: 'p7',
         name: 'total_mod',
         source: 'total',
-        op: { fn: 'add', operand: 'literal', value: 0 },
+        op: { fn: 'add', operand: 'literal', value: { kind: 'ref', name: 'X' } },
         comment: '',
       },
     ],
@@ -335,56 +305,48 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Critical Success',
-        conditions: [{ source: 'delta', op: '=', value: 0 }],
+        conditions: [{ source: 'delta', op: '=', value: literalExpr(0) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o2',
         name: 'Success with Hope',
-        conditions: [{ source: 'delta', op: '>', value: 0 }, { source: 'total_mod', op: '>=', value: 15 }],
+        conditions: [{ source: 'delta', op: '>', value: literalExpr(0) }, { source: 'total_mod', op: '>=', value: literalExpr(15) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o3',
         name: 'Success with Fear',
-        conditions: [{ source: 'delta', op: '<', value: 0 }, { source: 'total_mod', op: '>=', value: 15 }],
+        conditions: [{ source: 'delta', op: '<', value: literalExpr(0) }, { source: 'total_mod', op: '>=', value: literalExpr(15) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o4',
         name: 'Failure with Hope',
-        conditions: [{ source: 'delta', op: '>', value: 0 }, { source: 'total_mod', op: '<', value: 15 }],
+        conditions: [{ source: 'delta', op: '>', value: literalExpr(0) }, { source: 'total_mod', op: '<', value: literalExpr(15) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o5',
         name: 'Failure with Fear',
-        conditions: [{ source: 'delta', op: '<', value: 0 }, { source: 'total_mod', op: '<', value: 15 }],
+        conditions: [{ source: 'delta', op: '<', value: literalExpr(0) }, { source: 'total_mod', op: '<', value: literalExpr(15) }],
         connector: 'and',
         comment: '',
       },
     ],
-    parameters: [
-      {
-        id: 'mod',
-        label: 'Modifier',
-        values: [-2, -1, 0, 1, 2, 3, 4, 5],
-        target: 'pipeline.literal',
-        targetPipelineId: 'p7',
-      },
-    ],
+    sweep: { x: [-2, -1, 0, 1, 2, 3, 4, 5], y: null },
   },
   {
     id: 'daggerheart-compound',
     name: 'Daggerheart — Compound Outcomes (2d12)',
     pool: {
       terms: [
-        { id: 'd12-hope', count: 1, sides: 12, tag: 'hope', comment: '' },
-        { id: 'd12-fear', count: 1, sides: 12, tag: 'fear', comment: '' },
+        { id: 'd12-hope', count: literalExpr(1), sides: literalExpr(12), tag: 'hope', comment: '' },
+        { id: 'd12-fear', count: literalExpr(1), sides: literalExpr(12), tag: 'fear', comment: '' },
       ],
     },
     rerollConditions: [],
@@ -449,8 +411,8 @@ export const PRESETS: PresetConfig[] = [
         id: 'o1',
         name: 'Critical Hit',
         conditions: [
-          { source: 'total', op: '>=', value: 15 },
-          { source: 'delta', op: '>=', value: 0 },
+          { source: 'total', op: '>=', value: literalExpr(15) },
+          { source: 'delta', op: '>=', value: literalExpr(0) },
         ],
         connector: 'and',
         comment: '',
@@ -459,8 +421,8 @@ export const PRESETS: PresetConfig[] = [
         id: 'o2',
         name: 'Critical Miss',
         conditions: [
-          { source: 'total', op: '<=', value: 5 },
-          { source: 'delta', op: '<', value: 0 },
+          { source: 'total', op: '<=', value: literalExpr(5) },
+          { source: 'delta', op: '<', value: literalExpr(0) },
         ],
         connector: 'and',
         comment: '',
@@ -468,17 +430,18 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o3',
         name: 'Hope',
-        conditions: [{ source: 'delta', op: '>', value: 0 }],
+        conditions: [{ source: 'delta', op: '>', value: literalExpr(0) }],
         connector: 'and',
         comment: '',
       },
     ],
+    sweep: { x: [], y: null },
   },
   {
     id: 'cyberpunk-red-check',
     name: 'Cyberpunk RED — d10 + Skill (2d10)',
     pool: {
-      terms: [{ id: 'd10-1', count: 2, sides: 10, tag: '', comment: '' }],
+      terms: [{ id: 'd10-1', count: literalExpr(2), sides: literalExpr(10), tag: '', comment: '' }],
     },
     rerollConditions: [],
     pipeline: [
@@ -494,26 +457,18 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Success',
-        conditions: [{ source: 'total', op: '>=', value: 13 }],
+        conditions: [{ source: 'total', op: '>=', value: { kind: 'ref', name: 'X' } }],
         connector: 'and',
         comment: '',
       },
     ],
-    parameters: [
-      {
-        id: 'dv',
-        label: 'DV',
-        values: [10, 13, 15, 17, 20, 22, 25, 28, 30],
-        target: 'outcome.value',
-        targetOutcomeId: 'o1',
-      },
-    ],
+    sweep: { x: [10, 13, 15, 17, 20, 22, 25, 28, 30], y: null },
   },
   {
     id: 'blades-in-the-dark',
     name: 'Blades in the Dark — Xd6 action',
     pool: {
-      terms: [{ id: 'd6-1', count: 2, sides: 6, tag: '', comment: '' }],
+      terms: [{ id: 'd6-1', count: { kind: 'ref', name: 'X' }, sides: literalExpr(6), tag: '', comment: '' }],
     },
     rerollConditions: [],
     pipeline: [
@@ -549,49 +504,41 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Critical',
-        conditions: [{ source: 'six_count', op: '>=', value: 2 }],
+        conditions: [{ source: 'six_count', op: '>=', value: literalExpr(2) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o2',
         name: 'Success',
-        conditions: [{ source: 'best', op: '=', value: 6 }],
+        conditions: [{ source: 'best', op: '=', value: literalExpr(6) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o3',
         name: 'Partial',
-        conditions: [{ source: 'best', op: '>=', value: 4 }, { source: 'best', op: '<=', value: 5 }],
+        conditions: [{ source: 'best', op: '>=', value: literalExpr(4) }, { source: 'best', op: '<=', value: literalExpr(5) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o4',
         name: 'Failure',
-        conditions: [{ source: 'best', op: '<=', value: 3 }],
+        conditions: [{ source: 'best', op: '<=', value: literalExpr(3) }],
         connector: 'and',
         comment: '',
       },
     ],
-    parameters: [
-      {
-        id: 'cnt',
-        label: 'Dice count',
-        values: [1, 2, 3, 4, 5, 6, 7, 8],
-        target: 'pool.count',
-        targetTermId: 'd6-1',
-      },
-    ],
+    sweep: { x: [1, 2, 3, 4, 5, 6, 7, 8], y: null },
   },
   {
     id: 'savage-worlds',
     name: 'Savage Worlds — Trait (d8) + Wild (d6)',
     pool: {
       terms: [
-        { id: 'trait-d8', count: 1, sides: 8, tag: 'trait', comment: '' },
-        { id: 'wild-d6', count: 1, sides: 6, tag: 'wild', comment: '' },
+        { id: 'trait-d8', count: literalExpr(1), sides: { kind: 'ref', name: 'X' }, tag: 'trait', comment: '' },
+        { id: 'wild-d6', count: literalExpr(1), sides: literalExpr(6), tag: 'wild', comment: '' },
       ],
     },
     rerollConditions: [
@@ -656,40 +603,32 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Raise',
-        conditions: [{ source: 'effective', op: '>=', value: 8 }],
+        conditions: [{ source: 'effective', op: '>=', value: literalExpr(8) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o2',
         name: 'Success',
-        conditions: [{ source: 'effective', op: '>=', value: 4 }, { source: 'effective', op: '<=', value: 7 }],
+        conditions: [{ source: 'effective', op: '>=', value: literalExpr(4) }, { source: 'effective', op: '<=', value: literalExpr(7) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o3',
         name: 'Failure',
-        conditions: [{ source: 'effective', op: '<', value: 4 }],
+        conditions: [{ source: 'effective', op: '<', value: literalExpr(4) }],
         connector: 'and',
         comment: '',
       },
     ],
-    parameters: [
-      {
-        id: 'sides',
-        label: 'Trait die',
-        values: [4, 6, 8, 10, 12],
-        target: 'pool.sides',
-        targetTermId: 'trait-d8',
-      },
-    ],
+    sweep: { x: [4, 6, 8, 10, 12], y: null },
   },
   {
     id: 'wod-explode',
     name: 'World of Darkness — Xd10 explode',
     pool: {
-      terms: [{ id: 'd10-1', count: 5, sides: 10, tag: '', comment: '' }],
+      terms: [{ id: 'd10-1', count: { kind: 'ref', name: 'X' }, sides: literalExpr(10), tag: '', comment: '' }],
     },
     rerollConditions: [
       {
@@ -705,27 +644,19 @@ export const PRESETS: PresetConfig[] = [
       {
         id: 'o1',
         name: 'Success',
-        conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: 8 }],
+        conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: literalExpr(8) }],
         connector: 'and',
         comment: '',
       },
       {
         id: 'o2',
         name: 'Failure',
-        conditions: [{ source: 'rolled', op: 'none', subCondition: '>=', value: 8 }],
+        conditions: [{ source: 'rolled', op: 'none', subCondition: '>=', value: literalExpr(8) }],
         connector: 'and',
         comment: '',
       },
     ],
-    parameters: [
-      {
-        id: 'cnt',
-        label: 'Dice count',
-        values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        target: 'pool.count',
-        targetTermId: 'd10-1',
-      },
-    ],
+    sweep: { x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], y: null },
   },
 ];
 
