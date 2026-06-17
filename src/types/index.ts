@@ -118,10 +118,17 @@ export interface OutcomeOverlap {
   probability: number;
 }
 
+export interface MatchSetCount {
+  outcomes: string[];
+  count: number;
+  probability: number;
+}
+
 export interface SimResult {
   label: string;
   outcomes: OutcomeResult[];
   overlaps: OutcomeOverlap[];
+  matchSets: MatchSetCount[];
   totalRolls: number;
   distribution: Record<number, number>;
 }

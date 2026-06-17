@@ -234,3 +234,40 @@ describe('outcome overlap counting', () => {
     expect(overlapCounts.size).toBe(0);
   });
 });
+
+describe('match-set frequency accumulation', () => {
+  it('tracks every match-set, including co-occurring ones', () => {
+    const pool: DicePool = {
+      terms: [{ id: '1', count: 1, sides: 6, tag: '', comment: '' }],
+    };
+    const outcomes: Outcome[] = [
+      { id: 'o1', name: 'High', conditions: [{ source: 'face', op: '>=', value: 4 }], connector: 'and', comment: '' },
+      { id: 'o2', name: 'Even', conditions: [{ source: 'face', op: '=', value: 4 }, { source: 'face', op: '=', value: 6 }], connector: 'or', comment: '' },
+    ];
+
+    const setCounts = new Map<string, number>();
+    const N = 6000;
+    for (let i = 0; i < N; i++) {
+      const dice = rollPool(pool);
+      const env = new Map<string, PipelineValue>();
+      env.set('rolled', dice);
+      env.set('face', dice[0]!.face);
+      const matched = evaluateOutcomes(outcomes, env);
+      if (matched.length > 0) {
+        const key = [...matched].sort().join('\u0001');
+        setCounts.set(key, (setCounts.get(key) ?? 0) + 1);
+      }
+    }
+
+    let total = 0;
+    for (const c of setCounts.values()) total += c;
+    expect(total).toBe(N);
+
+    let cooccurringRolls = 0;
+    for (const [key, count] of setCounts) {
+      if (key.includes('\u0001')) cooccurringRolls += count;
+    }
+    expect(cooccurringRolls).toBeGreaterThan(0);
+    expect(cooccurringRolls).toBeLessThan(N);
+  });
+});

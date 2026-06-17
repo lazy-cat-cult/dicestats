@@ -1,8 +1,11 @@
-import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeOverlap, Parameter, TaggedDie, SimJob, SimResult } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeOverlap, MatchSetCount, Parameter, TaggedDie, SimJob, SimResult } from '@/types';
 import { NOT_MATCHED_LABEL } from '@/types';
 import { matchConditions, findSides } from '@/domain/matching';
 import { evaluatePipeline } from '@/domain/resolve';
 import { evaluateOutcomes } from '@/domain/classify';
+
+const MATCH_SET_SEP = '\u0001';
+const MATCH_SET_CAP = 50;
 
 function rollDie(sides: number): number {
   return ((Math.random() * sides) | 0) + 1;
@@ -112,6 +115,7 @@ function runSimulation(
   }
   outcomeCounts.set(NOT_MATCHED_LABEL, 0);
   const overlapCounts = new Map<string, number>();
+  const matchSetCounts = new Map<string, number>();
   const distribution = new Map<number, number>();
 
   for (let i = 0; i < iterations; i++) {
@@ -137,6 +141,10 @@ function runSimulation(
           overlapCounts.set(key, (overlapCounts.get(key) ?? 0) + 1);
         }
       }
+      const setKey = sorted.join(MATCH_SET_SEP);
+      matchSetCounts.set(setKey, (matchSetCounts.get(setKey) ?? 0) + 1);
+    } else if (matchedOutcomes.length === 1) {
+      matchSetCounts.set(matchedOutcomes[0] ?? '', (matchSetCounts.get(matchedOutcomes[0] ?? '') ?? 0) + 1);
     }
   }
 
@@ -157,6 +165,18 @@ function runSimulation(
   }
   overlaps.sort((a, b) => b.count - a.count);
 
+  const matchSets: MatchSetCount[] = [];
+  for (const [key, count] of matchSetCounts) {
+    if (key === '') continue;
+    matchSets.push({
+      outcomes: key.split(MATCH_SET_SEP),
+      count,
+      probability: count / iterations,
+    });
+  }
+  matchSets.sort((a, b) => b.count - a.count);
+  const matchSetsCapped = matchSets.slice(0, MATCH_SET_CAP);
+
   return {
     label: taskName ?? '',
     outcomes: [
@@ -172,6 +192,7 @@ function runSimulation(
       },
     ],
     overlaps,
+    matchSets: matchSetsCapped,
     totalRolls: iterations,
     distribution: sortedDist,
   };

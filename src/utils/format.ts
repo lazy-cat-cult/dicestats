@@ -19,3 +19,12 @@ export function formatSweepRange(values: number[]): string {
   if (values.length <= 5) return `{${values.join(', ')}}`;
   return `{${values.slice(0, 5).join(', ')}, \u2026}`;
 }
+
+export function formatRange([lo, hi]: [number, number], decimals = 2): string {
+  return `${(lo * 100).toFixed(decimals)}% – ${(hi * 100).toFixed(decimals)}%`;
+}
+
+export function formatDelta(value: number, decimals = 2): string {
+  const sign = value > 0 ? '+' : value < 0 ? '−' : '';
+  return `${sign}${Math.abs(value * 100).toFixed(decimals)}%`;
+}
