@@ -2,6 +2,7 @@ import { Stat } from '@/components/ui';
 import { formatPercent } from '@/utils/format';
 import type { SimResult } from '@/types';
 import { currentPresetName } from '@/state/app-state';
+import { filterOutcomes } from '@/utils/outcomes';
 
 interface OddsTapeProps {
   result: SimResult;
@@ -9,10 +10,10 @@ interface OddsTapeProps {
 }
 
 export function OddsTape({ result, progress }: OddsTapeProps) {
-  const sorted = [...result.outcomes].sort((a, b) => b.probability - a.probability);
+  const sorted = filterOutcomes(result.outcomes).sort((a, b) => b.probability - a.probability);
   const head = sorted[0];
   const maxProb = head?.probability ?? 0;
-  const total = result.outcomes.length;
+  const total = sorted.length;
   const presetName = currentPresetName.value;
 
   return (

@@ -1,5 +1,5 @@
 import type { Outcome, OutcomeCondition, TaggedDie, PipelineValue, DiceConditionType, ConditionOperator } from '@/types';
-import { compare, DICE_CONDITION_TYPES } from '@/types';
+import { compare, DICE_CONDITION_TYPES, NOT_MATCHED_LABEL } from '@/types';
 
 function evaluateCondition(cond: OutcomeCondition, env: Map<string, PipelineValue>): boolean {
   const sourceValue = env.get(cond.source);
@@ -25,7 +25,7 @@ export function evaluateOutcome(
   outcome: Outcome,
   env: Map<string, PipelineValue>
 ): boolean {
-  if (outcome.conditions.length === 0) return outcome.isDefault;
+  if (outcome.conditions.length === 0) return false;
 
   const results = outcome.conditions.map((cond) => evaluateCondition(cond, env));
 
@@ -45,10 +45,8 @@ export function evaluateOutcomes(
       matched.push(outcome.name);
     }
   }
-  for (const outcome of outcomes) {
-    if (outcome.isDefault && !matched.includes(outcome.name)) {
-      matched.push(outcome.name);
-    }
+  if (matched.length === 0) {
+    matched.push(NOT_MATCHED_LABEL);
   }
   return matched;
 }

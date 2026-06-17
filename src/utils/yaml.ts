@@ -616,30 +616,8 @@ function serializePipelineEntry(nv: NamedValue): YamlNode {
 }
 
 function parseOutcomeEntry(text: string, comment: string): Outcome {
-  const isDefault = /\(default\)\s*$/i.test(text);
-  const stripped = text.replace(/\(default\)\s*$/i, '').trim();
-  const m = /^(.+?)\s+when\s+(.+)$/i.exec(stripped);
+  const m = /^(.+?)\s+when\s+(.+)$/i.exec(text);
   if (!m) {
-    if (/^#\s*default\s*$/i.test(stripped)) {
-      return {
-        id: crypto.randomUUID(),
-        name: 'default',
-        conditions: [],
-        connector: 'and',
-        comment,
-        isDefault: true,
-      };
-    }
-    if (isDefault) {
-      return {
-        id: crypto.randomUUID(),
-        name: stripped || 'default',
-        conditions: [],
-        connector: 'and',
-        comment,
-        isDefault: true,
-      };
-    }
     throw new PresetError(`Invalid outcome entry: "${text}"`);
   }
   const name = m[1]!.trim();
@@ -652,7 +630,6 @@ function parseOutcomeEntry(text: string, comment: string): Outcome {
     conditions,
     connector: 'and',
     comment,
-    isDefault,
   };
 }
 
@@ -714,13 +691,7 @@ function serializeOutcomeEntry(o: Outcome): YamlNode {
     }
     return `${c.source} ${c.op} ${c.value}`;
   }).join(' and ');
-  const suffix = o.isDefault ? ' (default)' : '';
-  let v: string;
-  if (conds === '' && o.isDefault) {
-    v = `${o.name} when (always) (default)`;
-  } else {
-    v = `${o.name} when ${conds}${suffix}`;
-  }
+  const v = `${o.name} when ${conds}`;
   return o.comment ? { _value: v, _comment: o.comment } : v;
 }
 
@@ -839,12 +810,6 @@ function astToPreset(ast: YamlNode, _existingNames?: Set<string>): PresetConfig 
       const { value } = unwrapListItem(item);
       parameters.push(parseParameterEntry(value));
     }
-  }
-
-  const defaultCount = outcomes.filter((o) => o.isDefault).length;
-  if (defaultCount > 1) {
-    const names = outcomes.filter((o) => o.isDefault).map((o) => `"${o.name}"`).join(', ');
-    throw new PresetError(`Multiple outcomes marked as default: ${names}. Only one outcome can be default.`);
   }
 
   return {

@@ -221,7 +221,6 @@ Empty state is a dashed-border card: "No pipeline steps. Outcomes will reference
 The OutcomeEditor SHALL display a list of outcome rows. Each row contains:
 
 - A name `TextField` (max 40 chars).
-- A "Default" checkbox (at most one outcome can be marked as default; the checkbox is disabled for all rows except the currently-default one).
 - A delete button when more than one outcome exists.
 - A list of conditions; each condition has a source `Select` (vector sources labelled `[ name ]`, scalar labelled `name`) and either a scalar condition (operator + value) or a dice condition (type `any`/`all`/`none` + sub-operator + value).
 - An AND/OR connector select when more than one condition exists.
@@ -230,11 +229,11 @@ The OutcomeEditor SHALL display a list of outcome rows. Each row contains:
 
 Up to 10 outcomes are allowed. Empty state is a dashed-border card: "No outcomes. Add an outcome to define a probability bucket."
 
-#### Scenario: Default outcome checkbox
-- GIVEN one outcome already marked as default
-- WHEN the user checks "Default" on another outcome
-- THEN that outcome becomes the new default
-- AND the previously-default outcome's checkbox is disabled
+#### Scenario: OutcomeEditor without default controls
+- GIVEN the OutcomeEditor is rendered
+- WHEN the user views an outcome row
+- THEN no "Default" checkbox is present
+- AND no "default" pill is shown
 
 ### Requirement: ParameterEditor
 The ParameterEditor SHALL display a list of parameter rows, each a card on `bg-paper-deep/30` with:
@@ -472,14 +471,18 @@ The application SHALL render a full-width footer with `border-t border-rule mt-a
 - WHEN the page renders
 - THEN the footer is present at the bottom of the document with the two strings described above
 
-### Requirement: Outcome Default Pill
-The currently-default outcome SHALL display a `Pill` with the `accent` variant containing the text `default` immediately to the right of its name `TextField`. The pill is purely informational; the checkbox below it is the only way to change which outcome is the default.
+### Requirement: "Not matched" Outcome Display
+The implicit "Not matched" outcome SHALL NOT appear in the OutcomeEditor UI. It SHALL appear in the results table, OddsTape, and charts only when its probability is greater than zero. When its probability is zero, it SHALL be filtered out of all result displays.
 
-#### Scenario: Default outcome indicator
-- GIVEN an outcome is marked as default
-- WHEN its row renders
-- THEN a gold `default` pill appears next to the name input
-- AND no other row shows that pill
+#### Scenario: "Not matched" hidden when zero
+- GIVEN a simulation where every roll matches at least one user-defined outcome
+- WHEN the results render
+- THEN "Not matched" does not appear in the table, OddsTape, or chart
+
+#### Scenario: "Not matched" shown when non-zero
+- GIVEN a simulation where some rolls match no user-defined outcome
+- WHEN the results render
+- THEN "Not matched" appears in the table, OddsTape, and chart with its probability
 
 ### Requirement: Stale Parameter Retarget
 A parameter whose target no longer exists (the term, outcome, or pipeline literal was deleted) or whose target is no longer the right shape (the outcome's first condition is no longer scalar, the pipeline row is no longer a binary-math-literal, or the outcome has zero conditions) SHALL be marked `stale`. The row SHALL get `border-billiard` and a `Pill` with the `accent` variant reading `⚠ <reason>`. While stale, a "Retarget" ghost button SHALL appear below the values field; clicking it SHALL reveal a `Select` populated with the valid targets of the same kind (e.g. for `pool.count`, the remaining dice terms) and choosing one SHALL update the parameter's `targetTermId` / `targetOutcomeId` / `targetPipelineId` and clear the stale state.

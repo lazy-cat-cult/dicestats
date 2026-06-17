@@ -21,7 +21,7 @@ Each simulation iteration SHALL follow this ordered process:
 3. Flatten result into the `rolled` array of `{ face, tag }` objects
 4. Calculate base sum: `Σ(all_dice.face)`
 5. Evaluate the resolution pipeline in row order, producing named values
-6. Evaluate outcomes in order, first matching outcome wins
+6. Evaluate outcomes in order; if no user-defined outcome matches, the implicit "Not matched" outcome is recorded
 7. Record: distribution key and which outcome matched
 
 #### Scenario: Simple d20 threshold

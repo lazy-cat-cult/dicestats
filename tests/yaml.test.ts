@@ -302,11 +302,10 @@ describe('yaml outcome parser', () => {
       'pool: 5d6',
       'outcomes:',
       '  - 1+ hits when any rolled >= 5',
-      '  - No hits when none rolled >= 5 (default)',
+      '  - No hits when none rolled >= 5',
     ].join('\n'));
     const c0 = cfg.outcomes[0]?.conditions[0];
     expect(c0?.op).toBe('any');
-    expect(cfg.outcomes[1]?.isDefault).toBe(true);
   });
 
   it('parses range condition with two clauses', () => {
@@ -419,29 +418,8 @@ describe('yaml bundle file', () => {
   });
 });
 
-describe('yaml multi-default validation', () => {
-  it('rejects two (default) outcomes', () => {
-    expect(() => parsePreset([
-      'name: T',
-      'pool: 1d20',
-      'outcomes:',
-      '  - A when rolled >= 10 (default)',
-      '  - B when rolled >= 15 (default)',
-    ].join('\n'))).toThrow(/Multiple outcomes marked as default/);
-  });
-
-  it('accepts exactly one (default) outcome', () => {
-    const cfg = parsePreset([
-      'name: T',
-      'pool: 1d20',
-      'outcomes:',
-      '  - A when rolled >= 10',
-      '  - B when rolled < 10 (default)',
-    ].join('\n'));
-    expect(cfg.outcomes.filter((o) => o.isDefault)).toHaveLength(1);
-  });
-
-  it('accepts no (default) outcomes', () => {
+describe('yaml outcome parsing', () => {
+  it('parses outcomes without default markers', () => {
     const cfg = parsePreset([
       'name: T',
       'pool: 1d20',
@@ -449,7 +427,7 @@ describe('yaml multi-default validation', () => {
       '  - A when rolled >= 10',
       '  - B when rolled < 10',
     ].join('\n'));
-    expect(cfg.outcomes.filter((o) => o.isDefault)).toHaveLength(0);
+    expect(cfg.outcomes).toHaveLength(2);
   });
 });
 
@@ -465,14 +443,13 @@ describe('yaml inline comments', () => {
       '  - total = sum rolled  # sum all',
       'outcomes:',
       '  - Hit when total >= 15  # threshold',
-      '  - Miss (default)  # catch-all',
+      '  - Miss when total < 15  # catch-all',
     ].join('\n'));
     expect(cfg.pool.terms[0]?.comment).toBe('the d20');
     expect(cfg.rerollConditions[0]?.comment).toBe('on max');
     expect(cfg.pipeline[0]?.comment).toBe('sum all');
     expect(cfg.outcomes[0]?.comment).toBe('threshold');
     expect(cfg.outcomes[1]?.comment).toBe('catch-all');
-    expect(cfg.outcomes[1]?.isDefault).toBe(true);
 
     const text = serializePreset(cfg);
     expect(text).toMatch(/# the d20/);

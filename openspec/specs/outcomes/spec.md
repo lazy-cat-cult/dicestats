@@ -14,7 +14,6 @@ Each outcome SHALL have:
 - `conditions`: array of `OutcomeCondition`, maximum 5 conditions per outcome
 - `connector`: `and` or `or` — how multiple conditions combine
 - `comment`: optional description, maximum 100 characters
-- `isDefault`: boolean. If `true`, the outcome is automatically added to every roll's match-set in addition to any outcomes whose conditions match.
 
 ```typescript
 type DiceConditionType = 'any' | 'all' | 'none';
@@ -24,15 +23,10 @@ type OutcomeCondition =
   | { op: DiceConditionType; subCondition: ConditionOperator; value: number };      // dice quantifier
 ```
 
-#### Scenario: Default outcome
-- GIVEN outcomes with one marked `isDefault: true`
-- WHEN a simulation iteration runs
-- THEN the default outcome is added to the match-set in addition to any outcomes whose conditions match
-
-#### Scenario: Multiple defaults allowed
-- GIVEN two outcomes both marked `isDefault: true`
-- WHEN validation runs
-- THEN both defaults are accepted and both are added to every roll's match-set
+#### Scenario: Outcome without isDefault
+- GIVEN an outcome defined in YAML or UI
+- WHEN the outcome is parsed or created
+- THEN the outcome object does NOT contain an `isDefault` field
 
 ### Requirement: Independent Multi-Label Evaluation
 Outcomes SHALL be evaluated independently per roll. Every outcome whose conditions match SHALL be recorded in the roll's match-set. The probability of an outcome is the fraction of rolls whose match-set contains that outcome; the sum of outcome probabilities is NOT constrained to 100% and can exceed 100% when match-sets overlap.
@@ -42,17 +36,15 @@ Outcomes SHALL be evaluated independently per roll. Every outcome whose conditio
 - WHEN a simulation iteration produces x = 12
 - THEN the match-set is ["A", "B"] (both "A" and "B" match; "C" does not)
 
-#### Scenario: Roll matching no outcomes
-- GIVEN outcomes: ["A" when x >= 10, "B" when x <= 3] with no default
+#### Scenario: Roll matching no outcomes gets "Not matched"
+- GIVEN outcomes: ["A" when x >= 10, "B" when x <= 3]
 - WHEN a simulation iteration produces x = 7
-- THEN the match-set is empty
+- THEN the match-set is ["Not matched"]
 
-#### Scenario: Default outcome matches every roll
-- GIVEN outcomes: ["A" when x >= 10, "Catch" (default)]
-- WHEN a simulation iteration produces x = 3
-- THEN the match-set is ["Catch"]
+#### Scenario: "Not matched" is not added when other outcomes match
+- GIVEN outcomes: ["A" when x >= 10]
 - WHEN a simulation iteration produces x = 12
-- THEN the match-set is ["A", "Catch"]
+- THEN the match-set is ["A"] (no "Not matched")
 
 
 ### Requirement: Scalar Outcome Conditions

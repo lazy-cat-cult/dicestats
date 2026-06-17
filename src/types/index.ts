@@ -69,6 +69,8 @@ export type DiceConditionType = 'any' | 'all' | 'none';
 
 export const DICE_CONDITION_TYPES: DiceConditionType[] = ['any', 'all', 'none'];
 
+export const NOT_MATCHED_LABEL = 'Not matched';
+
 export type ScalarCondition = {
   source: string;
   op: ConditionOperator;
@@ -90,7 +92,6 @@ export interface Outcome {
   conditions: OutcomeCondition[];
   connector: 'and' | 'or';
   comment: string;
-  isDefault: boolean;
 }
 
 export type ParameterTarget = 'pool.count' | 'pool.sides' | 'outcome.value' | 'pipeline.literal';

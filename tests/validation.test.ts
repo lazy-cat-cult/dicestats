@@ -21,7 +21,6 @@ function makeOutcome(overrides?: Partial<Outcome>): Outcome {
     conditions: [{ source: 'total', op: '>=', value: 10 }],
     connector: 'and',
     comment: '',
-    isDefault: false,
     ...overrides,
   };
 }
@@ -72,17 +71,8 @@ describe('validateConfig', () => {
       expect(errors.some((e) => e.blocking && e.message.includes('At least one outcome'))).toBe(true);
     });
 
-    it('allows multiple default outcomes (multi-label mode)', () => {
-      const outcomes = [
-        makeOutcome({ id: 'o1', name: 'A', isDefault: true }),
-        makeOutcome({ id: 'o2', name: 'B', isDefault: true }),
-      ];
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, outcomes, validParameters);
-      expect(errors.some((e) => e.message.includes('Only one outcome can be default'))).toBe(false);
-    });
-
-    it('reports error for outcome with no conditions and not default', () => {
-      const outcome = makeOutcome({ conditions: [], isDefault: false });
+    it('reports warning for outcome with no conditions', () => {
+      const outcome = makeOutcome({ conditions: [] });
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validParameters);
       expect(errors.some((e) => !e.blocking && e.message.includes('has no conditions'))).toBe(true);
     });
@@ -109,7 +99,7 @@ describe('validateConfig', () => {
     });
 
     it('reports error for more than 10 outcomes', () => {
-      const outcomes = Array.from({ length: 11 }, (_, i) => makeOutcome({ id: `o${i}`, name: `O${i}`, conditions: [{ source: 'total', op: '>=', value: i }], isDefault: i === 10 }));
+      const outcomes = Array.from({ length: 11 }, (_, i) => makeOutcome({ id: `o${i}`, name: `O${i}`, conditions: [{ source: 'total', op: '>=', value: i }] }));
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, outcomes, validParameters);
       expect(errors.some((e) => e.blocking && e.message.includes('Maximum 10 outcomes'))).toBe(true);
     });
@@ -411,7 +401,6 @@ describe('validateConfig', () => {
         ],
         connector: 'and',
         comment: '',
-        isDefault: false,
       };
       const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validParameters);
       expect(errors.some((e) => e.blocking)).toBe(false);
