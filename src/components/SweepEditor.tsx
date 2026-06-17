@@ -18,6 +18,8 @@ export function SweepEditor() {
 
   const [xInput, setXInput] = useState(displayX);
   const [yInput, setYInput] = useState(displayY);
+  const [xCapped, setXCapped] = useState(false);
+  const [yCapped, setYCapped] = useState(false);
 
   useEffect(() => {
     setXInput(formatValuesForDisplay(sweep.value.x));
@@ -31,6 +33,7 @@ export function SweepEditor() {
     const trimmed = raw.trim();
     if (trimmed === '') {
       sweep.value = { x: [], y: null };
+      setXCapped(false);
       return;
     }
     const parsed = parseValues(trimmed);
@@ -39,8 +42,9 @@ export function SweepEditor() {
       x: values,
       y: sweep.value.y && sweep.value.y.length > 0 ? sweep.value.y : null,
     };
+    setXCapped(capped);
     if (capped) {
-      sweep.value = { ...sweep.value };
+      setXInput(formatValuesForDisplay(values));
     }
   }
 
@@ -48,15 +52,20 @@ export function SweepEditor() {
     const trimmed = raw.trim();
     if (trimmed === '') {
       sweep.value = { x: sweep.value.x, y: null };
+      setYCapped(false);
       return;
     }
     const parsed = parseValues(trimmed);
-    const { values } = normalizeSweepValues(parsed);
+    const { values, capped } = normalizeSweepValues(parsed);
     if (sweep.value.x.length === 0) {
       sweep.value = { x: [], y: null };
       return;
     }
     sweep.value = { x: sweep.value.x, y: values.length > 0 ? values : null };
+    setYCapped(capped);
+    if (capped) {
+      setYInput(formatValuesForDisplay(values));
+    }
   }
 
   function handleXInput(raw: string) {
@@ -87,6 +96,7 @@ export function SweepEditor() {
           onBlur={handleXBlur}
           placeholder="1, 2, 3, 4, 5 or 1..5"
           ariaLabel="Sweep X values"
+          error={xCapped ? 'Capped to 10 values' : undefined}
         />
         <TextField
           label="Sweep Y values (optional)"
@@ -95,6 +105,7 @@ export function SweepEditor() {
           onBlur={handleYBlur}
           placeholder="10, 15, 20 or 10..20"
           ariaLabel="Sweep Y values"
+          error={yCapped ? 'Capped to 10 values' : undefined}
         />
         <p class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute">
           {yOuter

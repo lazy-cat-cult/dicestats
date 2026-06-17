@@ -9,14 +9,13 @@ import type {
   OutcomeCondition,
   ConditionOperator,
   DiceConditionType,
-  NamedValue,
   Expr,
   ScalarCondition,
   DiceCondition,
 } from '@/types';
 import { DICE_CONDITION_TYPES } from '@/types';
 import { literalExpr } from '@/utils/expression';
-import { inferType } from '@/utils/validation';
+import { inferType, inferTypeFromOp } from '@/utils/validation';
 import { ExprInput } from '@/components/ExprInput';
 import { Button, IconButton, Select, TextField } from '@/components/ui';
 
@@ -26,24 +25,11 @@ function getSourceOptions(): { id: string; label: string; type: 'vector' | 'scal
   const options: { id: string; label: string; type: 'vector' | 'scalar' }[] = [{ id: 'rolled', label: 'rolled', type: 'vector' }];
   for (const nv of pipeline.value) {
     if (nv.name) {
-      const t = getOutputType(nv);
+      const t = inferTypeFromOp(nv);
       options.push({ id: nv.name, label: nv.name, type: t });
     }
   }
   return options;
-}
-
-function getOutputType(nv: NamedValue): 'vector' | 'scalar' {
-  const op = nv.op;
-  if (typeof op === 'string') {
-    if (op === 'count' || op === 'sum' || op === 'max' || op === 'min') return 'scalar';
-    return 'vector';
-  }
-  if (typeof op === 'object' && 'fn' in op) {
-    if (op.fn === 'filter' || op.fn === 'remove') return 'vector';
-    return 'scalar';
-  }
-  return 'vector';
 }
 
 function resolveSourceType(source: string): 'vector' | 'scalar' | null {
@@ -63,7 +49,7 @@ function isDiceCondition(cond: OutcomeCondition): cond is DiceCondition {
 
 function defaultScalarSource(): string {
   for (const nv of pipeline.value) {
-    if (nv.name && getOutputType(nv) === 'scalar') return nv.name;
+    if (nv.name && inferTypeFromOp(nv) === 'scalar') return nv.name;
   }
   return 'rolled';
 }

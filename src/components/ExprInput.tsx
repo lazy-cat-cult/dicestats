@@ -36,7 +36,8 @@ export function ExprInput({ value, onChange, label, ariaLabel, className = '', p
     setLocalMode(newMode);
     if (newMode === 'num') {
       if (value.kind === 'ref') {
-        onChange(literalExpr(integerOnly ? Math.max(min ?? 1, 1) : 0));
+        const fallback = integerOnly ? (min ?? 1) : 0;
+        onChange(literalExpr(fallback));
       }
     } else {
       onChange({ kind: 'ref', name: 'X' });

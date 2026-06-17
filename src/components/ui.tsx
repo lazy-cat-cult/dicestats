@@ -54,6 +54,7 @@ interface TextFieldProps {
   ariaLabel?: string;
   mono?: boolean;
   suffix?: string;
+  error?: string;
 }
 
 export function TextField({
@@ -71,6 +72,7 @@ export function TextField({
   id,
   ariaLabel,
   suffix,
+  error,
 }: TextFieldProps) {
   const inputId = id ?? `f-${Math.random().toString(36).slice(2, 8)}`;
   return (
@@ -80,7 +82,7 @@ export function TextField({
           {label}
         </label>
       )}
-      <div class="flex items-stretch border border-rule bg-paper focus-within:border-billiard focus-within:shadow-[0_0_0_1px_var(--color-billiard)] transition-all">
+      <div class={`flex items-stretch border transition-all ${error ? 'border-billiard' : 'border-rule'} bg-paper focus-within:border-billiard focus-within:shadow-[0_0_0_1px_var(--color-billiard)]`}>
         <input
           id={inputId}
           type={type}
@@ -91,6 +93,7 @@ export function TextField({
           placeholder={placeholder}
           maxLength={maxLength}
           aria-label={ariaLabel ?? label}
+          aria-invalid={error ? 'true' : undefined}
           class="w-full bg-transparent px-2.5 py-1.5 text-[13px] font-mono tabular text-ink outline-none placeholder:text-ink-mute"
           onInput={(e) => onInput((e.target as HTMLInputElement).value)}
           onBlur={onBlur}
@@ -101,6 +104,11 @@ export function TextField({
           </span>
         )}
       </div>
+      {error && (
+        <p class="font-mono text-[10px] uppercase tracking-[0.14em] mt-1 text-billiard" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
