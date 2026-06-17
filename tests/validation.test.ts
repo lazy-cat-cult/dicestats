@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { validateConfig, canRunSimulation } from '@/utils/validation';
-import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, SweepParameters } from '@/types';
+import { literalExpr } from '@/utils/expression';
 
 function makePool(terms?: Partial<{ id: string; count: number; sides: number; tag: string; comment: string }>[]): DicePool {
   return {
     terms: (terms ?? [{ count: 1, sides: 20, tag: '', comment: '' }]).map((t, i) => ({
       id: t.id ?? `t${i}`,
-      count: t.count ?? 1,
-      sides: t.sides ?? 20,
+      count: literalExpr(t.count ?? 1),
+      sides: literalExpr(t.sides ?? 20),
       tag: t.tag ?? '',
       comment: t.comment ?? '',
     })),
@@ -18,7 +19,7 @@ function makeOutcome(overrides?: Partial<Outcome>): Outcome {
   return {
     id: 'o1',
     name: 'Hit',
-    conditions: [{ source: 'total', op: '>=', value: 10 }],
+    conditions: [{ source: 'total', op: '>=', value: literalExpr(10) }],
     connector: 'and',
     comment: '',
     ...overrides,
@@ -31,55 +32,55 @@ const validPipeline: NamedValue[] = [
   { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
 ];
 const validRerollConditions: RerollCondition[] = [];
-const validParameters: Parameter[] = [];
+const validSweep: SweepParameters = { x: [], y: null };
 
 describe('validateConfig', () => {
   describe('pool validation', () => {
     it('reports error when pool has no terms', () => {
-      const errors = validateConfig({ terms: [] }, validRerollConditions, validPipeline, [validOutcome], validParameters);
+      const errors = validateConfig({ terms: [] }, validRerollConditions, validPipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('At least one dice term'))).toBe(true);
     });
 
     it('reports error for count < 1', () => {
       const pool = makePool([{ count: 0, sides: 6 }]);
-      const errors = validateConfig(pool, validRerollConditions, validPipeline, [validOutcome], validParameters);
+      const errors = validateConfig(pool, validRerollConditions, validPipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('count must be 1-99'))).toBe(true);
     });
 
     it('reports error for count > 99', () => {
       const pool = makePool([{ count: 100, sides: 6 }]);
-      const errors = validateConfig(pool, validRerollConditions, validPipeline, [validOutcome], validParameters);
+      const errors = validateConfig(pool, validRerollConditions, validPipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('count must be 1-99'))).toBe(true);
     });
 
     it('reports error for sides < 1', () => {
       const pool = makePool([{ sides: 0 }]);
-      const errors = validateConfig(pool, validRerollConditions, validPipeline, [validOutcome], validParameters);
+      const errors = validateConfig(pool, validRerollConditions, validPipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('sides must be 1-999'))).toBe(true);
     });
 
     it('reports error for sides > 999', () => {
       const pool = makePool([{ sides: 1000 }]);
-      const errors = validateConfig(pool, validRerollConditions, validPipeline, [validOutcome], validParameters);
+      const errors = validateConfig(pool, validRerollConditions, validPipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('sides must be 1-999'))).toBe(true);
     });
   });
 
   describe('outcome validation', () => {
     it('reports error when no outcomes', () => {
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('At least one outcome'))).toBe(true);
     });
 
     it('reports warning for outcome with no conditions', () => {
       const outcome = makeOutcome({ conditions: [] });
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validSweep);
       expect(errors.some((e) => !e.blocking && e.message.includes('has no conditions'))).toBe(true);
     });
 
     it('reports error for outcome referencing undefined pipeline source', () => {
-      const outcome = makeOutcome({ conditions: [{ source: 'nonexistent', op: '>=', value: 10 }] });
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validParameters);
+      const outcome = makeOutcome({ conditions: [{ source: 'nonexistent', op: '>=', value: literalExpr(10) }] });
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('references undefined source'))).toBe(true);
     });
 
@@ -87,35 +88,35 @@ describe('validateConfig', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
       ];
-      const outcome = makeOutcome({ conditions: [{ source: 'total', op: 'none', subCondition: '>=', value: 1 }] });
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validParameters);
+      const outcome = makeOutcome({ conditions: [{ source: 'total', op: 'none', subCondition: '>=', value: literalExpr(1) }] });
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('cannot be used on scalar'))).toBe(true);
     });
 
     it('reports blocking error for scalar condition on vector source', () => {
-      const outcome = makeOutcome({ conditions: [{ source: 'rolled', op: '>=', value: 10 }] });
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validParameters);
+      const outcome = makeOutcome({ conditions: [{ source: 'rolled', op: '>=', value: literalExpr(10) }] });
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.toLowerCase().includes('scalar') && e.message.includes('vector'))).toBe(true);
     });
 
     it('reports error for more than 10 outcomes', () => {
-      const outcomes = Array.from({ length: 11 }, (_, i) => makeOutcome({ id: `o${i}`, name: `O${i}`, conditions: [{ source: 'total', op: '>=', value: i }] }));
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, outcomes, validParameters);
+      const outcomes = Array.from({ length: 11 }, (_, i) => makeOutcome({ id: `o${i}`, name: `O${i}`, conditions: [{ source: 'total', op: '>=', value: literalExpr(i) }] }));
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, outcomes, validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('Maximum 10 outcomes'))).toBe(true);
     });
 
     it('reports error for outcome with more than 5 conditions', () => {
       const outcome = makeOutcome({
         conditions: [
-          { source: 'total', op: '>=', value: 1 },
-          { source: 'total', op: '<=', value: 2 },
-          { source: 'total', op: '=', value: 3 },
-          { source: 'total', op: '!=', value: 4 },
-          { source: 'total', op: '>', value: 5 },
-          { source: 'total', op: '<', value: 6 },
+          { source: 'total', op: '>=', value: literalExpr(1) },
+          { source: 'total', op: '<=', value: literalExpr(2) },
+          { source: 'total', op: '=', value: literalExpr(3) },
+          { source: 'total', op: '!=', value: literalExpr(4) },
+          { source: 'total', op: '>', value: literalExpr(5) },
+          { source: 'total', op: '<', value: literalExpr(6) },
         ],
       });
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('more than 5 conditions'))).toBe(true);
     });
   });
@@ -126,7 +127,7 @@ describe('validateConfig', () => {
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
         { id: 'p2', name: 'total', source: 'rolled', op: 'max', comment: '' },
       ];
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('Duplicate pipeline name'))).toBe(true);
     });
 
@@ -134,7 +135,7 @@ describe('validateConfig', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: '123bad', source: 'rolled', op: 'sum', comment: '' },
       ];
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('must match'))).toBe(true);
     });
 
@@ -142,7 +143,7 @@ describe('validateConfig', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'result', source: 'nonexistent', op: 'sum', comment: '' },
       ];
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('references undefined source'))).toBe(true);
     });
 
@@ -151,7 +152,7 @@ describe('validateConfig', () => {
         { id: 'p1', name: 'a', source: 'b', op: 'sum', comment: '' },
         { id: 'p2', name: 'b', source: 'rolled', op: 'sum', comment: '' },
       ];
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('appears later in pipeline'))).toBe(true);
     });
 
@@ -160,16 +161,16 @@ describe('validateConfig', () => {
         { id: 'p1', name: 'a', source: 'rolled', op: 'sum' as const, comment: '' },
         { id: 'p2', name: 'b', source: 'a', op: { fn: 'add' as const, operand: 'named' as const, source2: 'b' }, comment: '' },
       ];
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('cannot reference itself'))).toBe(true);
     });
 
     it('reports non-blocking error for divide by zero', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
-        { id: 'p2', name: 'div', source: 'total', op: { fn: 'divide', operand: 'literal', value: 0 }, comment: '' },
+        { id: 'p2', name: 'div', source: 'total', op: { fn: 'divide', operand: 'literal', value: literalExpr(0) }, comment: '' },
       ];
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
       expect(errors.some((e) => !e.blocking && e.message.includes('divides by zero'))).toBe(true);
     });
 
@@ -178,7 +179,7 @@ describe('validateConfig', () => {
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
         { id: 'p2', name: 'counted', source: 'total', op: 'count', comment: '' },
       ];
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('Cannot apply count to scalar'))).toBe(true);
     });
 
@@ -190,7 +191,7 @@ describe('validateConfig', () => {
         { id: 'px', name: 'total', source: 'rolled', op: 'sum', comment: '' },
         ...pipeline.slice(0, 20),
       ];
-      const errors = validateConfig(validPool, validRerollConditions, pipeline2, [validOutcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, pipeline2, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('Maximum 20 pipeline'))).toBe(true);
     });
   });
@@ -204,7 +205,7 @@ describe('validateConfig', () => {
         repeat: 1,
         comment: '',
       }));
-      const errors = validateConfig(validPool, conditions, validPipeline, [validOutcome], validParameters);
+      const errors = validateConfig(validPool, conditions, validPipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('Maximum 10 reroll'))).toBe(true);
     });
 
@@ -216,155 +217,75 @@ describe('validateConfig', () => {
         repeat: 0,
         comment: '',
       }];
-      const errors = validateConfig(validPool, conditions, validPipeline, [validOutcome], validParameters);
+      const errors = validateConfig(validPool, conditions, validPipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('Reroll repeat must be >= 1'))).toBe(true);
     });
   });
 
-  describe('parameter validation', () => {
-    it('reports error for more than 3 parameters', () => {
-      const parameters: Parameter[] = Array.from({ length: 4 }, (_, i) => ({
-        id: `pm${i}`,
-        label: `P${i}`,
-        values: [1, 2, 3],
-        target: 'outcome.value' as const,
-        targetOutcomeId: 'o1',
-      }));
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], parameters);
-      expect(errors.some((e) => e.blocking && e.message.includes('Maximum 3 parameters'))).toBe(true);
+  describe('sweep and expression validation', () => {
+    it('reports error for sweep X exceeding 10 values', () => {
+      const sweep: SweepParameters = { x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], y: null };
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], sweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('max 10'))).toBe(true);
     });
 
-    it('reports error for parameter referencing invalid dice term', () => {
-      const parameters: Parameter[] = [{
-        id: 'pm1',
-        label: 'Count',
-        values: [1, 2],
-        target: 'pool.count',
-        targetTermId: 'nonexistent',
-      }];
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], parameters);
-      expect(errors.some((e) => e.blocking && e.message.includes('references invalid dice term'))).toBe(true);
+    it('reports blocking error for sweep Y without X', () => {
+      const sweep: SweepParameters = { x: [], y: [1, 2] };
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], sweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('Sweep Y') && e.message.includes('X is empty'))).toBe(true);
     });
 
-    it('reports error for parameter referencing invalid outcome', () => {
-      const parameters: Parameter[] = [{
-        id: 'pm1',
-        label: 'DC',
-        values: [10, 15],
-        target: 'outcome.value',
-        targetOutcomeId: 'nonexistent',
-      }];
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], parameters);
-      expect(errors.some((e) => e.blocking && e.message.includes('references invalid outcome'))).toBe(true);
+    it('reports error for sweep Y exceeding 10 values', () => {
+      const sweep: SweepParameters = { x: [1], y: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] };
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], sweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('Sweep Y') && e.message.includes('max 10'))).toBe(true);
     });
 
-    it('reports error for parameter referencing invalid pipeline step', () => {
-      const pipeline: NamedValue[] = [
-        { id: 'p1', name: 'total', source: 'rolled', op: { fn: 'add', operand: 'literal', value: 5 }, comment: '' },
-      ];
-      const parameters: Parameter[] = [{
-        id: 'pm1',
-        label: 'Mod',
-        values: [1, 2],
-        target: 'pipeline.literal',
-        targetPipelineId: 'nonexistent',
-      }];
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], parameters);
-      expect(errors.some((e) => e.blocking && e.message.includes('references invalid pipeline step'))).toBe(true);
+    it('passes validation for valid sweep', () => {
+      const sweep: SweepParameters = { x: [1, 2, 3], y: null };
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], sweep);
+      expect(errors.some((e) => e.blocking)).toBe(false);
     });
 
     it('reports warning for high total iterations', () => {
-      const parameters: Parameter[] = [{
-        id: 'pm1',
-        label: 'X',
-        values: Array.from({ length: 15 }, (_, i) => i + 1),
-        target: 'outcome.value',
-        targetOutcomeId: 'o1',
-      }];
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], parameters);
+      const sweep: SweepParameters = { x: Array.from({ length: 15 }, (_, i) => i + 1), y: null };
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], sweep);
       expect(errors.some((e) => !e.blocking && e.message.includes('high'))).toBe(true);
     });
 
-    it('reports blocking error for outcome sweep with empty conditions list', () => {
+    it('reports blocking error for outcome with empty conditions when sweep is active', () => {
       const outcome: Outcome = { ...validOutcome, id: 'o-empty', conditions: [] };
-      const parameters: Parameter[] = [{
-        id: 'pm1',
-        label: 'DC',
-        values: [5, 10, 15],
-        target: 'outcome.value',
-        targetOutcomeId: 'o-empty',
-      }];
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], parameters);
+      const sweep: SweepParameters = { x: [5, 10, 15], y: null };
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], sweep);
       expect(errors.some((e) => e.blocking && e.message.includes('no conditions'))).toBe(true);
     });
 
-    it('reports blocking error for outcome sweep targeting a vector first condition', () => {
+    it('allows dice condition with sweep', () => {
       const outcome: Outcome = {
         ...validOutcome,
-        conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: 5 }],
+        conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: literalExpr(5) }],
       };
-      const parameters: Parameter[] = [{
-        id: 'pm1',
-        label: 'DC',
-        values: [5, 10, 15],
-        target: 'outcome.value',
-        targetOutcomeId: outcome.id,
-      }];
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], parameters);
-      expect(errors.some((e) => e.blocking && e.message.includes('vector condition'))).toBe(true);
-    });
-
-    it('passes when outcome sweep targets a scalar first condition', () => {
-      const outcome: Outcome = { ...validOutcome, conditions: [{ source: 'total', op: '>=', value: 10 }] };
-      const parameters: Parameter[] = [{
-        id: 'pm1',
-        label: 'DC',
-        values: [5, 10, 15],
-        target: 'outcome.value',
-        targetOutcomeId: outcome.id,
-      }];
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], parameters);
+      const sweep: SweepParameters = { x: [5, 10, 15], y: null };
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], sweep);
       expect(errors.some((e) => e.blocking && e.message.includes('vector condition'))).toBe(false);
       expect(errors.some((e) => e.blocking && e.message.includes('no conditions'))).toBe(false);
     });
 
-    it('reports blocking error for pipeline literal sweep when function is not binary-math-literal', () => {
+    it('allows ceil/floor pipeline with sweep', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
         { id: 'p2', name: 'ceil_total', source: 'total', op: { fn: 'ceil' }, comment: '' },
       ];
-      const parameters: Parameter[] = [{
-        id: 'pm1',
-        label: 'Mod',
-        values: [1, 2],
-        target: 'pipeline.literal',
-        targetPipelineId: 'p2',
-      }];
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], parameters);
-      expect(errors.some((e) => e.blocking && e.message.includes('not a binary-math-literal row'))).toBe(true);
-    });
-
-    it('passes when pipeline literal sweep targets a binary-math-literal row', () => {
-      const pipeline: NamedValue[] = [
-        { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
-        { id: 'p2', name: 'modded', source: 'total', op: { fn: 'add', operand: 'literal', value: 5 }, comment: '' },
-      ];
-      const parameters: Parameter[] = [{
-        id: 'pm1',
-        label: 'Mod',
-        values: [1, 2],
-        target: 'pipeline.literal',
-        targetPipelineId: 'p2',
-      }];
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], parameters);
-      expect(errors.some((e) => e.blocking && e.message.includes('not a binary-math-literal row'))).toBe(false);
+      const sweep: SweepParameters = { x: [1, 2], y: null };
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], sweep);
+      expect(errors.some((e) => e.blocking)).toBe(false);
     });
   });
 
   describe('per-condition source', () => {
     it('reports error for condition referencing undefined pipeline source', () => {
-      const outcome = makeOutcome({ conditions: [{ source: 'nonexistent', op: '>=', value: 10 }] });
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validParameters);
+      const outcome = makeOutcome({ conditions: [{ source: 'nonexistent', op: '>=', value: literalExpr(10) }] });
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('condition references undefined source'))).toBe(true);
     });
 
@@ -373,8 +294,8 @@ describe('validateConfig', () => {
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
         { id: 'p2', name: 'kept', source: 'rolled', op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: 1 }], connector: 'and' } }, comment: '' },
       ];
-      const outcome = makeOutcome({ conditions: [{ source: 'kept', op: '>=', value: 10 }] });
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validParameters);
+      const outcome = makeOutcome({ conditions: [{ source: 'kept', op: '>=', value: literalExpr(10) }] });
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('vector source'))).toBe(true);
     });
 
@@ -382,39 +303,39 @@ describe('validateConfig', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
       ];
-      const outcome = makeOutcome({ conditions: [{ source: 'total', op: 'any', subCondition: '>=', value: 5 }] });
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validParameters);
+      const outcome = makeOutcome({ conditions: [{ source: 'total', op: 'any', subCondition: '>=', value: literalExpr(5) }] });
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('scalar source'))).toBe(true);
     });
 
     it('passes for compound outcome with two valid sources', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
-        { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', operand: 'literal', value: 0 }, comment: '' },
+        { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', operand: 'literal', value: literalExpr(0) }, comment: '' },
       ];
       const outcome: Outcome = {
         id: 'o1',
         name: 'Critical Hit',
         conditions: [
-          { source: 'total', op: '>=', value: 15 },
-          { source: 'delta', op: '>=', value: 0 },
+          { source: 'total', op: '>=', value: literalExpr(15) },
+          { source: 'delta', op: '>=', value: literalExpr(0) },
         ],
         connector: 'and',
         comment: '',
       };
-      const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validSweep);
       expect(errors.some((e) => e.blocking)).toBe(false);
     });
   });
 
   describe('valid configurations', () => {
     it('returns no blocking errors for valid config', () => {
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking)).toBe(false);
     });
 
     it('returns empty array for minimal valid config', () => {
-      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], validParameters);
+      const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], validSweep);
       expect(errors).toEqual([]);
     });
   });

@@ -3,11 +3,12 @@ import type { DicePool, Outcome, NamedValue, PipelineValue } from '@/types';
 import { rollPool } from '@/domain/roller';
 import { evaluateOutcomes } from '@/domain/classify';
 import { evaluatePipeline } from '@/domain/resolve';
+import { literalExpr } from '@/utils/expression';
 
 describe('dice mechanics: rollPool basics', () => {
   it('2d6 total ranges from 2 to 12', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 2, sides: 6, tag: '', comment: '' }],
+      terms: [{ id: '1', count: literalExpr(2), sides: literalExpr(6), tag: '', comment: '' }],
     };
     let min = 100, max = 0;
     for (let i = 0; i < 5000; i++) {
@@ -22,7 +23,7 @@ describe('dice mechanics: rollPool basics', () => {
 
   it('2d6 mean is approximately 7', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 2, sides: 6, tag: '', comment: '' }],
+      terms: [{ id: '1', count: literalExpr(2), sides: literalExpr(6), tag: '', comment: '' }],
     };
     let sum = 0;
     const N = 10000;
@@ -36,7 +37,7 @@ describe('dice mechanics: rollPool basics', () => {
 
   it('1d6 produces all faces with reasonable frequency', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 1, sides: 6, tag: '', comment: '' }],
+      terms: [{ id: '1', count: literalExpr(1), sides: literalExpr(6), tag: '', comment: '' }],
     };
     const counts = new Map<number, number>();
     const N = 60000;
@@ -55,7 +56,7 @@ describe('dice mechanics: rollPool basics', () => {
 describe('dice mechanics: keep via pipeline', () => {
   it('D&D advantage: 2d20 max via pipeline', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 2, sides: 20, tag: '', comment: '' }],
+      terms: [{ id: '1', count: literalExpr(2), sides: literalExpr(20), tag: '', comment: '' }],
     };
     const pipeline: NamedValue[] = [
       { id: 'p1', name: 'best', source: 'rolled', op: 'max', comment: '' },
@@ -74,7 +75,7 @@ describe('dice mechanics: keep via pipeline', () => {
 describe('dice mechanics: outcomes with pipeline', () => {
   it('Shadowrun: 5d6 at least 1 hit (>=5) via pipeline', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 5, sides: 6, tag: '', comment: '' }],
+      terms: [{ id: '1', count: literalExpr(5), sides: literalExpr(6), tag: '', comment: '' }],
     };
     const pipeline = [
       {
@@ -87,7 +88,7 @@ describe('dice mechanics: outcomes with pipeline', () => {
       { id: 'p2', name: 'hit_count', source: 'hits', op: 'count' as const, comment: '' },
     ];
     const outcomes: Outcome[] = [
-      { id: 'o1', name: '1+ hits', conditions: [{ source: 'hit_count', op: '>=' as const, value: 1 }], connector: 'and' as const, comment: '' },
+      { id: 'o1', name: '1+ hits', conditions: [{ source: 'hit_count', op: '>=' as const, value: literalExpr(1) }], connector: 'and' as const, comment: '' },
     ];
 
     let successCount = 0;
@@ -105,10 +106,10 @@ describe('dice mechanics: outcomes with pipeline', () => {
 
   it('PbtA: 2d6 sum outcomes', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 2, sides: 6, tag: '', comment: '' }],
+      terms: [{ id: '1', count: literalExpr(2), sides: literalExpr(6), tag: '', comment: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'Hit', conditions: [{ source: 'rolled', op: 'any', subCondition: '>=' as const, value: 1 }], connector: 'and', comment: '' },
+      { id: 'o1', name: 'Hit', conditions: [{ source: 'rolled', op: 'any', subCondition: '>=' as const, value: literalExpr(1) }], connector: 'and', comment: '' },
     ];
 
     const env = new Map<string, PipelineValue>();
@@ -128,16 +129,16 @@ describe('dice mechanics: compound outcomes (per-condition source)', () => {
   it('AND across two different pipeline values', () => {
     const pool: DicePool = {
       terms: [
-        { id: 'd12-hope', count: 1, sides: 12, tag: 'hope', comment: '' },
-        { id: 'd12-fear', count: 1, sides: 12, tag: 'fear', comment: '' },
+        { id: 'd12-hope', count: literalExpr(1), sides: literalExpr(12), tag: 'hope', comment: '' },
+        { id: 'd12-fear', count: literalExpr(1), sides: literalExpr(12), tag: 'fear', comment: '' },
       ],
     };
     const pipeline: NamedValue[] = [
       { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
-      { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', operand: 'literal', value: 0 }, comment: '' },
+      { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', operand: 'literal', value: literalExpr(0) }, comment: '' },
     ];
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'Critical Hit', conditions: [{ source: 'total', op: '>=', value: 15 }, { source: 'delta', op: '>=', value: 0 }], connector: 'and', comment: '' },
+      { id: 'o1', name: 'Critical Hit', conditions: [{ source: 'total', op: '>=', value: literalExpr(15) }, { source: 'delta', op: '>=', value: literalExpr(0) }], connector: 'and', comment: '' },
     ];
     let matched = 0;
     for (let i = 0; i < 20000; i++) {
@@ -154,8 +155,8 @@ describe('dice mechanics: tagged dice', () => {
   it('rolls mixed tags correctly', () => {
     const pool: DicePool = {
       terms: [
-        { id: '1', count: 3, sides: 10, tag: 'normal', comment: '' },
-        { id: '2', count: 2, sides: 10, tag: 'hunger', comment: '' },
+        { id: '1', count: literalExpr(3), sides: literalExpr(10), tag: 'normal', comment: '' },
+        { id: '2', count: literalExpr(2), sides: literalExpr(10), tag: 'hunger', comment: '' },
       ],
     };
     const dice = rollPool(pool);
@@ -172,11 +173,11 @@ describe('dice mechanics: tagged dice', () => {
 describe('outcome overlap counting', () => {
   it('counts pairwise co-occurrences for overlapping outcomes', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 1, sides: 6, tag: '', comment: '' }],
+      terms: [{ id: '1', count: literalExpr(1), sides: literalExpr(6), tag: '', comment: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'High', conditions: [{ source: 'face', op: '>=', value: 4 }], connector: 'and', comment: '' },
-      { id: 'o2', name: 'Even', conditions: [{ source: 'face', op: '=', value: 4 }, { source: 'face', op: '=', value: 6 }], connector: 'or', comment: '' },
+      { id: 'o1', name: 'High', conditions: [{ source: 'face', op: '>=', value: literalExpr(4) }], connector: 'and', comment: '' },
+      { id: 'o2', name: 'Even', conditions: [{ source: 'face', op: '=', value: literalExpr(4) }, { source: 'face', op: '=', value: literalExpr(6) }], connector: 'or', comment: '' },
     ];
 
     const overlapCounts = new Map<string, number>();
@@ -206,11 +207,11 @@ describe('outcome overlap counting', () => {
 
   it('produces empty overlap map for mutually exclusive outcomes', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 1, sides: 6, tag: '', comment: '' }],
+      terms: [{ id: '1', count: literalExpr(1), sides: literalExpr(6), tag: '', comment: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'Low', conditions: [{ source: 'face', op: '<=', value: 3 }], connector: 'and', comment: '' },
-      { id: 'o2', name: 'High', conditions: [{ source: 'face', op: '>=', value: 4 }], connector: 'and', comment: '' },
+      { id: 'o1', name: 'Low', conditions: [{ source: 'face', op: '<=', value: literalExpr(3) }], connector: 'and', comment: '' },
+      { id: 'o2', name: 'High', conditions: [{ source: 'face', op: '>=', value: literalExpr(4) }], connector: 'and', comment: '' },
     ];
 
     const overlapCounts = new Map<string, number>();
@@ -238,11 +239,11 @@ describe('outcome overlap counting', () => {
 describe('match-set frequency accumulation', () => {
   it('tracks every match-set, including co-occurring ones', () => {
     const pool: DicePool = {
-      terms: [{ id: '1', count: 1, sides: 6, tag: '', comment: '' }],
+      terms: [{ id: '1', count: literalExpr(1), sides: literalExpr(6), tag: '', comment: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'High', conditions: [{ source: 'face', op: '>=', value: 4 }], connector: 'and', comment: '' },
-      { id: 'o2', name: 'Even', conditions: [{ source: 'face', op: '=', value: 4 }, { source: 'face', op: '=', value: 6 }], connector: 'or', comment: '' },
+      { id: 'o1', name: 'High', conditions: [{ source: 'face', op: '>=', value: literalExpr(4) }], connector: 'and', comment: '' },
+      { id: 'o2', name: 'Even', conditions: [{ source: 'face', op: '=', value: literalExpr(4) }, { source: 'face', op: '=', value: literalExpr(6) }], connector: 'or', comment: '' },
     ];
 
     const setCounts = new Map<string, number>();

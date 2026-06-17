@@ -1,3 +1,16 @@
+import type { Expr } from '@/utils/expression';
+
+export type { Expr, ExprOp } from '@/utils/expression';
+export {
+  parseExpr,
+  evalExpr,
+  exprToString,
+  exprToInteger,
+  literalExpr,
+  parseValues,
+  normalizeSweepValues,
+} from '@/utils/expression';
+
 export type ConditionOperator = '>' | '>=' | '<' | '<=' | '=' | '!=';
 
 export type FaceValueSpecial = 'max_value' | 'min_value';
@@ -8,8 +21,8 @@ export type ConditionClause =
 
 export interface DiceTerm {
   id: string;
-  count: number;
-  sides: number;
+  count: Expr;
+  sides: Expr;
   tag: string;
   comment: string;
 }
@@ -44,14 +57,14 @@ export type ScalarFunction =
   | 'sum'
   | 'max'
   | 'min'
-  | { fn: ScalarBinaryOp; operand: 'literal'; value: number }
+  | { fn: ScalarBinaryOp; operand: 'literal'; value: Expr }
   | { fn: ScalarBinaryOp; operand: 'named'; source2: string }
   | { fn: 'ceil' }
   | { fn: 'floor' }
   | { fn: 'max'; operand: 'named'; source2: string }
   | { fn: 'min'; operand: 'named'; source2: string };
 
-export type ScalarLiteralOp = { fn: ScalarBinaryOp; operand: 'literal'; value: number };
+export type ScalarLiteralOp = { fn: ScalarBinaryOp; operand: 'literal'; value: Expr };
 export type ScalarNamedOp = { fn: ScalarBinaryOp; operand: 'named'; source2: string };
 export type ScalarCeilFloorOp = { fn: 'ceil' | 'floor' };
 export type ScalarMaxMinNamedOp = { fn: 'max' | 'min'; operand: 'named'; source2: string };
@@ -74,14 +87,14 @@ export const NOT_MATCHED_LABEL = 'Not matched';
 export type ScalarCondition = {
   source: string;
   op: ConditionOperator;
-  value: number;
+  value: Expr;
 };
 
 export type DiceCondition = {
   source: string;
   op: DiceConditionType;
   subCondition: ConditionOperator;
-  value: number;
+  value: Expr;
 };
 
 export type OutcomeCondition = ScalarCondition | DiceCondition;
@@ -94,16 +107,9 @@ export interface Outcome {
   comment: string;
 }
 
-export type ParameterTarget = 'pool.count' | 'pool.sides' | 'outcome.value' | 'pipeline.literal';
-
-export interface Parameter {
-  id: string;
-  label: string;
-  values: number[];
-  target: ParameterTarget;
-  targetTermId?: string;
-  targetOutcomeId?: string;
-  targetPipelineId?: string;
+export interface SweepParameters {
+  x: number[];
+  y: number[] | null;
 }
 
 export interface OutcomeResult {
@@ -131,6 +137,8 @@ export interface SimResult {
   matchSets: MatchSetCount[];
   totalRolls: number;
   distribution: Record<number, number>;
+  sweepX?: number | null;
+  sweepY?: number | null;
 }
 
 export interface SimJob {
@@ -138,7 +146,7 @@ export interface SimJob {
   rerollConditions: RerollCondition[];
   pipeline: NamedValue[];
   outcomes: Outcome[];
-  parameters?: Parameter[];
+  sweep: SweepParameters;
   iterations: number;
   taskName?: string;
 }
@@ -150,16 +158,16 @@ export interface PresetConfig {
   rerollConditions: RerollCondition[];
   pipeline: NamedValue[];
   outcomes: Outcome[];
-  parameters?: Parameter[];
+  sweep: SweepParameters;
 }
 
 export interface SavedConfig {
-  version: number;
+  version: 8;
   pool: DicePool;
   rerollConditions: RerollCondition[];
   pipeline: NamedValue[];
   outcomes: Outcome[];
-  parameters: Parameter[];
+  sweep: SweepParameters;
 }
 
 export interface TaggedDie {

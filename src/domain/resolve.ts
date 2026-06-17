@@ -1,5 +1,6 @@
-import type { NamedValue, TaggedDie, PipelineValue, VectorFunction, ScalarFunction, ScalarBinaryOp, ScalarLiteralOp, ScalarNamedOp, ScalarCeilFloorOp, ScalarMaxMinNamedOp } from '@/types';
+import type { NamedValue, TaggedDie, PipelineValue, VectorFunction, ScalarFunction, ScalarBinaryOp, ScalarLiteralOp, ScalarNamedOp, ScalarCeilFloorOp, ScalarMaxMinNamedOp, Expr } from '@/types';
 import { matchConditions } from '@/domain/matching';
+import { evalExpr } from '@/utils/expression';
 
 function applyVectorOp(source: TaggedDie[], op: VectorFunction, termsSides: { sides: number; tag: string }[]): TaggedDie[] {
   if (op.fn === 'filter') {
@@ -39,6 +40,7 @@ function isScalarMaxMinNamedOp(op: ScalarFunction): op is ScalarMaxMinNamedOp {
 export function evaluatePipeline(
   rolled: TaggedDie[],
   pipeline: NamedValue[],
+  vars: { x: number; y: number } = { x: 0, y: 0 },
   termsSides: { sides: number; tag: string }[] = []
 ): Map<string, PipelineValue> {
   const env = new Map<string, PipelineValue>();
@@ -75,7 +77,7 @@ export function evaluatePipeline(
         if (typeof rightVal !== 'number') continue;
         env.set(nv.name, op.fn === 'max' ? Math.max(sourceVal, rightVal) : Math.min(sourceVal, rightVal));
       } else if (isScalarLiteralOp(op)) {
-        env.set(nv.name, applyScalarBinary(sourceVal, op.fn, op.value));
+        env.set(nv.name, applyScalarBinary(sourceVal, op.fn, evalExpr((op as { value: Expr }).value, vars)));
       } else if (isScalarNamedOp(op)) {
         const rightVal = env.get(op.source2);
         if (typeof rightVal !== 'number') continue;
@@ -86,4 +88,3 @@ export function evaluatePipeline(
 
   return env;
 }
-

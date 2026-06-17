@@ -1,28 +1,15 @@
-import { useState } from 'preact/hooks';
-import {
-  dicePool,
-  dicePoolNotation,
-  getTagColor,
-  activeSweepsByTarget,
-  parameters,
-} from '@/state/app-state';
-import type { DiceTerm, Parameter } from '@/types';
-import { SweepIndicator } from '@/components/SweepIndicator';
-import { SweepPopover } from '@/components/SweepPopover';
+import { dicePool, dicePoolNotation, getTagColor, sweep } from '@/state/app-state';
+import { ExprInput } from '@/components/ExprInput';
 import { Button, IconButton, Select, TextField } from '@/components/ui';
+import type { DiceTerm, Expr } from '@/types';
+import { literalExpr } from '@/utils/expression';
 
 const DIE_SIDES = [4, 6, 8, 10, 12, 20, 100];
 
-interface PopoverState {
-  field: 'count' | 'sides';
-  termId: string;
-}
-
 export function DicePoolEditor() {
   const pool = dicePool.value;
-  const sweeps = activeSweepsByTarget.value;
-  const paramsCount = parameters.value.length;
-  const [popover, setPopover] = useState<PopoverState | null>(null);
+  const sw = sweep.value;
+  const availableVars = { x: sw.x.length > 0, y: sw.y !== null && sw.y.length > 0 };
 
   function updateTerm(index: number, partial: Partial<DiceTerm>) {
     const terms = dicePool.value.terms.map((t, i) => (i === index ? { ...t, ...partial } : { ...t }));
@@ -32,7 +19,7 @@ export function DicePoolEditor() {
   function addTerm() {
     dicePool.value = {
       ...dicePool.value,
-      terms: [...dicePool.value.terms, { id: crypto.randomUUID(), count: 1, sides: 6, tag: '', comment: '' }],
+      terms: [...dicePool.value.terms, { id: crypto.randomUUID(), count: literalExpr(1), sides: literalExpr(6), tag: '', comment: '' }],
     };
   }
 
@@ -42,18 +29,6 @@ export function DicePoolEditor() {
       ...dicePool.value,
       terms: dicePool.value.terms.filter((_, i) => i !== index),
     };
-  }
-
-  function createSweep(field: 'count' | 'sides', termId: string, label: string, values: number[]) {
-    const newParam: Parameter = {
-      id: crypto.randomUUID(),
-      label,
-      values,
-      target: field === 'count' ? 'pool.count' : 'pool.sides',
-      targetTermId: termId,
-    };
-    parameters.value = [...parameters.value, newParam];
-    setPopover(null);
   }
 
   return (
@@ -69,9 +44,11 @@ export function DicePoolEditor() {
 
       <div class="space-y-2">
         {pool.terms.map((term, i) => {
-          const countParam = sweeps.get(`pool.count:${term.id}`);
-          const sidesParam = sweeps.get(`pool.sides:${term.id}`);
           const tagColor = term.tag ? getTagColor(term.tag) : null;
+          const countValue = term.count;
+          const sidesValue = term.sides;
+          const sidesIsLiteral = sidesValue.kind === 'literal';
+          const sidesNum = sidesIsLiteral ? sidesValue.value : null;
           return (
             <div
               key={term.id}
@@ -79,63 +56,36 @@ export function DicePoolEditor() {
               class="group relative border border-rule bg-paper-deep/30 px-3 py-2.5 flex flex-wrap items-center gap-2"
               style={tagColor ? { borderLeftWidth: '3px', borderLeftColor: tagColor } : undefined}
             >
-              <TextField
+              <ExprInput
+                value={countValue}
+                onChange={(expr: Expr) => updateTerm(i, { count: expr })}
                 ariaLabel="Dice count"
-                type="number"
-                min={1}
-                max={99}
-                value={term.count}
-                onInput={(v) => updateTerm(i, { count: Math.max(1, Number(v) || 1) })}
-                className="w-16"
-                />
-              {!countParam && paramsCount < 3 && (
-                <Button variant="quiet" size="sm" onClick={() => setPopover({ field: 'count', termId: term.id })} ariaLabel="Add sweep to dice count">
-                  ↻ Sweep
-                </Button>
-              )}
-              {countParam && (
-                <SweepIndicator
-                  parameterId={countParam.id}
-                  label={countParam.label}
-                  values={countParam.values}
-                />
-              )}
+                availableVars={availableVars}
+                className="w-28"
+              />
 
               <span class="font-mono text-[12px] text-ink-mute">d</span>
 
-              <Select
-                ariaLabel="Dice sides"
-                value={DIE_SIDES.includes(term.sides) ? String(term.sides) : 'custom'}
-                onChange={(v) => {
-                  if (v !== 'custom') updateTerm(i, { sides: Number(v) });
-                }}
-                className="w-20"
-                options={[
-                  ...DIE_SIDES.map((s) => ({ value: String(s), label: String(s) })),
-                  { value: 'custom', label: '…' },
-                ]}
-              />
-              {!DIE_SIDES.includes(term.sides) && (
-                <TextField
-                  ariaLabel="Custom dice sides"
-                  type="number"
-                  min={1}
-                  max={999}
-                  value={term.sides}
-                  onInput={(v) => updateTerm(i, { sides: Math.max(1, Number(v) || 1) })}
-                  className="w-16"
+              {sidesIsLiteral && sidesNum !== null && DIE_SIDES.includes(sidesNum) ? (
+                <Select
+                  ariaLabel="Dice sides"
+                  value={String(sidesNum)}
+                  onChange={(v) => {
+                    if (v !== 'custom') updateTerm(i, { sides: literalExpr(Number(v)) });
+                  }}
+                  className="w-20"
+                  options={[
+                    ...DIE_SIDES.map((s) => ({ value: String(s), label: String(s) })),
+                    { value: 'custom', label: '…' },
+                  ]}
                 />
-              )}
-              {!sidesParam && paramsCount < 3 && (
-                <Button variant="quiet" size="sm" onClick={() => setPopover({ field: 'sides', termId: term.id })} ariaLabel="Add sweep to dice sides">
-                  ↻ Sweep
-                </Button>
-              )}
-              {sidesParam && (
-                <SweepIndicator
-                  parameterId={sidesParam.id}
-                  label={sidesParam.label}
-                  values={sidesParam.values}
+              ) : (
+                <ExprInput
+                  value={sidesValue}
+                  onChange={(expr: Expr) => updateTerm(i, { sides: expr })}
+                  ariaLabel="Dice sides"
+                  availableVars={availableVars}
+                  className="w-28"
                 />
               )}
 
@@ -168,17 +118,6 @@ export function DicePoolEditor() {
           + Add die
         </Button>
       </div>
-
-      {popover && (
-        <SweepPopover
-          open={true}
-          defaultLabel={popover.field === 'count' ? 'Count' : 'Sides'}
-          defaultValues={popover.field === 'count' ? '1, 2, 3, 4, 5' : '4, 6, 8, 10, 12, 20'}
-          maxSimulationsReached={paramsCount >= 3}
-          onCreate={(label, values) => createSweep(popover.field, popover.termId, label, values)}
-          onCancel={() => setPopover(null)}
-        />
-      )}
     </div>
   );
 }
