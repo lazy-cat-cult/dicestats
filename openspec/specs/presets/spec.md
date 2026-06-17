@@ -73,7 +73,6 @@ Outcomes:
   "Success" when total_successes >= TN AND total_successes > 0
   "Critical Success" when crit_count >= 2
   "Bestial Failure" when bestial_count >= 1 AND total_successes = 0
-  "Failure" (default)
 Parameters: TN sweep 1..5
 ```
 
@@ -90,7 +89,7 @@ Pipeline:
 Outcomes:
   "Hope" when delta > 0
   "Fear" when delta < 0
-  "Critical Success" (default) when delta = 0
+  "Critical Success" when delta = 0
 Parameters: (none)
 ```
 
@@ -113,7 +112,7 @@ Pipeline:
 Outcomes:
   "Critical" when six_count >= 2
   "Success" when best >= 4
-  "Partial" (default) when best in 1..3
+  "Partial" when best in 1..3
 Parameters: dice count sweep 1..8
 ```
 
@@ -130,7 +129,6 @@ Pipeline:
 Outcomes:
   "Raise" when effective >= 8
   "Success" when effective in 4..7
-  "Failure" (default) when effective < 4
 Parameters: trait die sides sweep 4, 6, 8, 10, 12
 ```
 

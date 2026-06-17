@@ -1,4 +1,5 @@
 import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeOverlap, Parameter, TaggedDie, SimJob, SimResult } from '@/types';
+import { NOT_MATCHED_LABEL } from '@/types';
 import { matchConditions, findSides } from '@/domain/matching';
 import { evaluatePipeline } from '@/domain/resolve';
 import { evaluateOutcomes } from '@/domain/classify';
@@ -109,6 +110,7 @@ function runSimulation(
   for (const o of outcomes) {
     outcomeCounts.set(o.name, 0);
   }
+  outcomeCounts.set(NOT_MATCHED_LABEL, 0);
   const overlapCounts = new Map<string, number>();
   const distribution = new Map<number, number>();
 
@@ -157,11 +159,18 @@ function runSimulation(
 
   return {
     label: taskName ?? '',
-    outcomes: outcomes.map((o) => ({
-      label: o.name,
-      probability: (outcomeCounts.get(o.name) ?? 0) / iterations,
-      count: outcomeCounts.get(o.name) ?? 0,
-    })),
+    outcomes: [
+      ...outcomes.map((o) => ({
+        label: o.name,
+        probability: (outcomeCounts.get(o.name) ?? 0) / iterations,
+        count: outcomeCounts.get(o.name) ?? 0,
+      })),
+      {
+        label: NOT_MATCHED_LABEL,
+        probability: (outcomeCounts.get(NOT_MATCHED_LABEL) ?? 0) / iterations,
+        count: outcomeCounts.get(NOT_MATCHED_LABEL) ?? 0,
+      },
+    ],
     overlaps,
     totalRolls: iterations,
     distribution: sortedDist,

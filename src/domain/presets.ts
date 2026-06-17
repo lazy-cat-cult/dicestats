@@ -24,7 +24,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'total', op: '>=', value: 15 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
     ],
     parameters: [
@@ -60,7 +59,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'best', op: '>=', value: 15 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
     ],
     parameters: [
@@ -103,7 +101,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'total_mod', op: '>=', value: 10 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o2',
@@ -111,7 +108,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'total_mod', op: '>=', value: 7 }, { source: 'total_mod', op: '<=', value: 9 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o3',
@@ -119,7 +115,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'total_mod', op: '<=', value: 6 }],
         connector: 'and',
         comment: '',
-        isDefault: true,
       },
     ],
     parameters: [
@@ -147,7 +142,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: 5 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o2',
@@ -155,7 +149,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'rolled', op: 'none', subCondition: '>=', value: 5 }],
         connector: 'and',
         comment: '',
-        isDefault: true,
       },
     ],
     parameters: [
@@ -255,7 +248,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'total_successes', op: '>=', value: 1 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o2',
@@ -263,7 +255,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'total_successes', op: '=', value: 0 }],
         connector: 'and',
         comment: '',
-        isDefault: true,
       },
     ],
   },
@@ -347,7 +338,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'delta', op: '=', value: 0 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o2',
@@ -355,7 +345,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'delta', op: '>', value: 0 }, { source: 'total_mod', op: '>=', value: 15 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o3',
@@ -363,15 +352,13 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'delta', op: '<', value: 0 }, { source: 'total_mod', op: '>=', value: 15 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o4',
         name: 'Failure with Hope',
-        conditions: [{ source: 'delta', op: '>=', value: 0 }, { source: 'total_mod', op: '<', value: 15 }],
+        conditions: [{ source: 'delta', op: '>', value: 0 }, { source: 'total_mod', op: '<', value: 15 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o5',
@@ -379,7 +366,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'delta', op: '<', value: 0 }, { source: 'total_mod', op: '<', value: 15 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
     ],
     parameters: [
@@ -468,7 +454,6 @@ export const PRESETS: PresetConfig[] = [
         ],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o2',
@@ -479,7 +464,6 @@ export const PRESETS: PresetConfig[] = [
         ],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o3',
@@ -487,7 +471,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'delta', op: '>', value: 0 }],
         connector: 'and',
         comment: '',
-        isDefault: true,
       },
     ],
   },
@@ -514,7 +497,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'total', op: '>=', value: 13 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
     ],
     parameters: [
@@ -570,7 +552,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'six_count', op: '>=', value: 2 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o2',
@@ -578,7 +559,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'best', op: '=', value: 6 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o3',
@@ -586,7 +566,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'best', op: '>=', value: 4 }, { source: 'best', op: '<=', value: 5 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o4',
@@ -594,7 +573,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'best', op: '<=', value: 3 }],
         connector: 'and',
         comment: '',
-        isDefault: true,
       },
     ],
     parameters: [
@@ -681,7 +659,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'effective', op: '>=', value: 8 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o2',
@@ -689,7 +666,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'effective', op: '>=', value: 4 }, { source: 'effective', op: '<=', value: 7 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o3',
@@ -697,7 +673,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'effective', op: '<', value: 4 }],
         connector: 'and',
         comment: '',
-        isDefault: true,
       },
     ],
     parameters: [
@@ -733,7 +708,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: 8 }],
         connector: 'and',
         comment: '',
-        isDefault: false,
       },
       {
         id: 'o2',
@@ -741,7 +715,6 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'rolled', op: 'none', subCondition: '>=', value: 8 }],
         connector: 'and',
         comment: '',
-        isDefault: true,
       },
     ],
     parameters: [

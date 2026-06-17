@@ -9,6 +9,6 @@ outcomes:
   - Critical when six_count >= 2
   - Success when best = 6
   - Partial when best >= 4 and best <= 5
-  - Failure when best <= 3 (default)
+  - Failure when best <= 3
 parameters:
   - Dice count = [1, 2, 3, 4, 5, 6, 7, 8] over pool.count

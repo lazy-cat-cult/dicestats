@@ -1,5 +1,6 @@
 import type { SimResult } from '@/types';
 import { formatPercent } from '@/utils/format';
+import { filterOutcomes } from '@/utils/outcomes';
 
 interface ResultViewProps {
   results: SimResult[];
@@ -24,7 +25,8 @@ export function ResultView({ results }: ResultViewProps) {
 }
 
 function SingleResult({ result }: { result: SimResult }) {
-  const sumProb = result.outcomes.reduce((s, o) => s + o.probability, 0);
+  const visibleOutcomes = filterOutcomes(result.outcomes);
+  const sumProb = visibleOutcomes.reduce((s, o) => s + o.probability, 0);
   const hasOverlaps = result.overlaps.length > 0;
   return (
     <div>
@@ -37,7 +39,7 @@ function SingleResult({ result }: { result: SimResult }) {
           </tr>
         </thead>
         <tbody>
-          {result.outcomes.map((o) => (
+          {visibleOutcomes.map((o) => (
             <tr key={o.label} class="border-b border-rule/60">
               <td class="py-2 font-mono text-[12px] text-ink uppercase tracking-[0.06em]">{o.label}</td>
               <td class="py-2 font-mono tabular text-[13px] text-ink text-right">{formatPercent(o.probability)}</td>
@@ -56,7 +58,7 @@ function SingleResult({ result }: { result: SimResult }) {
 }
 
 function ParamResults({ results }: { results: SimResult[] }) {
-  const outcomeLabels = results[0]?.outcomes.map((o) => o.label) ?? [];
+  const outcomeLabels = filterOutcomes(results[0]?.outcomes ?? []).map((o) => o.label);
 
   const headers: string[] = [];
   const seen = new Set<string>();
@@ -94,7 +96,7 @@ function ParamResults({ results }: { results: SimResult[] }) {
             {results.map((r) => (
               <tr key={r.label} class="border-b border-rule/60">
                 <td class="py-2 font-mono tabular text-[12px] text-ink">{r.label}</td>
-                {r.outcomes.map((o) => (
+                {filterOutcomes(r.outcomes).map((o) => (
                   <td key={o.label} class="py-2 font-mono tabular text-[12px] text-ink text-right">{formatPercent(o.probability)}</td>
                 ))}
               </tr>
@@ -104,7 +106,7 @@ function ParamResults({ results }: { results: SimResult[] }) {
       </div>
       {anyOverlaps && firstWithOverlaps && (
         <p class="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-gold">
-          Overlapping — sum {formatPercent(firstWithOverlaps.outcomes.reduce((s, o) => s + o.probability, 0))}: {firstWithOverlaps.overlaps.map((ov) => `${ov.outcomes[0]} & ${ov.outcomes[1]} (${formatPercent(ov.probability)})`).join('; ')}
+          Overlapping — sum {formatPercent(filterOutcomes(firstWithOverlaps.outcomes).reduce((s, o) => s + o.probability, 0))}: {firstWithOverlaps.overlaps.map((ov) => `${ov.outcomes[0]} & ${ov.outcomes[1]} (${formatPercent(ov.probability)})`).join('; ')}
         </p>
       )}
     </div>

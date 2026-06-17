@@ -1,5 +1,6 @@
 import type { SimResult } from '@/types';
 import { useEffect, useRef } from 'preact/hooks';
+import { filterOutcomes } from '@/utils/outcomes';
 
 const INK = '#16241C';
 const INK_SOFT = '#5A6B5E';
@@ -26,8 +27,9 @@ export function OutcomeChart({ result }: OutcomeChartProps) {
     import('chart.js/auto').then(({ Chart }) => {
       if (destroyed) return;
 
-      const labels = result.outcomes.map((o) => o.label);
-      const probabilities = result.outcomes.map((o) => o.probability);
+      const visibleOutcomes = filterOutcomes(result.outcomes);
+      const labels = visibleOutcomes.map((o) => o.label);
+      const probabilities = visibleOutcomes.map((o) => o.probability);
 
       const existingChart = Chart.getChart(canvas);
       if (existingChart) existingChart.destroy();
@@ -122,7 +124,8 @@ export function ParameterChart({ results }: ParameterChartProps) {
     import('chart.js/auto').then(({ Chart }) => {
       if (destroyed) return;
 
-      const outcomeLabels = results[0].outcomes.map((o) => o.label);
+      const visibleOutcomes = filterOutcomes(results[0].outcomes);
+      const outcomeLabels = visibleOutcomes.map((o) => o.label);
       const paramLabels = results.map((r) => r.label);
 
       const datasets = outcomeLabels.map((label, i) => {

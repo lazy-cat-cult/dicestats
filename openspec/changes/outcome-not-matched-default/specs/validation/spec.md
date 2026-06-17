@@ -1,10 +1,6 @@
-# Validation Specification
+# Validation Specification (delta)
 
-## Purpose
-
-Validation rules enforce configuration correctness before enabling the Run button. Block-level rules prevent simulation start; warning-level rules alert the user but allow running.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Block-Level Validation Rules
 The following conditions MUST be satisfied before the Run button is enabled:
@@ -23,21 +19,9 @@ The following conditions MUST be satisfied before the Run button is enabled:
 | 10 | Parameter sweep targets a valid term/outcome/pipeline literal | Block |
 | 11 | Maximum 20 pipeline rows, 10 outcomes, 10 reroll conditions, 3 parameters | Block |
 
-#### Scenario: Empty pool blocks run
-- GIVEN a configuration with no dice terms
-- WHEN the user views step 4
-- THEN the Run button is disabled with message "Add at least one die"
+Rule 9 ("At most one outcome with `isDefault = true`") is REMOVED.
 
-#### Scenario: Invalid pipeline reference blocks run
-- GIVEN a pipeline row referencing a deleted named value
-- WHEN validation runs
-- THEN the row is highlighted in red with tooltip "References undefined value 'X'"
-- AND the Run button is disabled
-
-#### Scenario: Duplicate pipeline name blocks run
-- GIVEN two pipeline rows both named "hits"
-- WHEN validation runs
-- THEN both rows are highlighted and the Run button is disabled
+## MODIFIED Requirements
 
 ### Requirement: Warning-Level Validation Rules
 The following conditions SHALL produce warnings but NOT block the simulation:
@@ -50,14 +34,10 @@ The following conditions SHALL produce warnings but NOT block the simulation:
 | 4 | `none?` or `any?` on scalar source | Warning |
 | 5 | Divide by zero in pipeline (literal value = 0) | Warning |
 
-#### Scenario: Scalar-vector misuse warning
-- GIVEN an outcome with `any?` condition on a scalar source
-- WHEN validation runs
-- THEN a warning is displayed indicating the condition is not meaningful for scalar values
-- AND the Run button remains enabled
+The warning "outcome with no conditions and not default" is REMOVED. All outcomes with no conditions now produce a warning regardless of any default flag.
 
-#### Scenario: Divide by zero warning
-- GIVEN a pipeline row: `average = divide total by 0` (literal operand)
+#### Scenario: Outcome with no conditions produces warning
+- GIVEN an outcome with zero conditions
 - WHEN validation runs
-- THEN a warning is displayed: "Division by zero will produce 0 at runtime"
-- AND the Run button remains enabled
+- THEN a warning is produced: "Outcome '<name>' has no conditions"
+- AND the simulation is NOT blocked

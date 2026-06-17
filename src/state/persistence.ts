@@ -39,7 +39,6 @@ interface V1Outcome {
   conditions?: unknown[];
   connector?: 'and' | 'or';
   comment?: string;
-  isDefault?: boolean;
 }
 
 interface V1Term {
@@ -92,7 +91,7 @@ interface V3Config {
 
 export function saveConfig() {
   const config: SavedConfig = {
-    version: 6,
+    version: 7,
     pool: dicePool.value,
     rerollConditions: rerollConditions.value,
     pipeline: pipeline.value,
@@ -188,8 +187,24 @@ function migrateOutcomeConditions(outcomes: V1Outcome[]): V1Outcome[] {
 }
 
 function migrateConfig(config: V1Config): SavedConfig {
-  if (config.version === 6) {
+  if (config.version === 7) {
     return config as unknown as SavedConfig;
+  }
+
+  if (config.version === 6) {
+    const v6 = config as unknown as { pool?: DicePool; rerollConditions?: RerollCondition[]; pipeline?: NamedValue[]; outcomes?: Array<Outcome & { isDefault?: boolean }>; parameters?: Parameter[] };
+    const strippedOutcomes: Outcome[] = (v6.outcomes || []).map((o) => {
+      const { isDefault: _, ...rest } = o as Outcome & { isDefault?: boolean };
+      return rest;
+    });
+    return {
+      version: 7,
+      pool: v6.pool ?? { terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '', comment: '' }] },
+      rerollConditions: v6.rerollConditions || [],
+      pipeline: v6.pipeline || [],
+      outcomes: strippedOutcomes,
+      parameters: v6.parameters ?? [],
+    };
   }
 
   if (config.version === 5) {
@@ -209,7 +224,7 @@ function migrateConfig(config: V1Config): SavedConfig {
         if (c && typeof c === 'object' && 'source' in (c as object)) return c as OutcomeCondition;
         return { ...(c as object), source: src } as OutcomeCondition;
       });
-      const result: Outcome = {
+      const { isDefault: _, ...rest } = {
         id: o.id || crypto.randomUUID(),
         name: o.name,
         conditions,
@@ -217,10 +232,10 @@ function migrateConfig(config: V1Config): SavedConfig {
         comment: o.comment ?? '',
         isDefault: o.isDefault ?? false,
       };
-      return result;
+      return rest as Outcome;
     });
     return {
-      version: 6,
+      version: 7,
       pool: (v5.pool as DicePool) ?? { terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '', comment: '' }] },
       rerollConditions: v5.rerollConditions || [],
       pipeline: v5.pipeline || [],
@@ -231,12 +246,16 @@ function migrateConfig(config: V1Config): SavedConfig {
 
   if (config.version === 4) {
     const migratedOutcomes = migrateOutcomeConditions(config.outcomes || []);
+    const strippedOutcomes = (migratedOutcomes as unknown as Array<Outcome & { isDefault?: boolean }>).map((o) => {
+      const { isDefault: _, ...rest } = o;
+      return rest;
+    });
     return {
-      version: 5,
+      version: 7,
       pool: (config as V1Config).pool as unknown as DicePool,
       rerollConditions: config.rerollConditions || [],
       pipeline: config.pipeline || [],
-      outcomes: migratedOutcomes as unknown as Outcome[],
+      outcomes: strippedOutcomes as unknown as Outcome[],
       parameters: config.parameters as unknown as Parameter[] ?? [],
     };
   }
@@ -257,11 +276,14 @@ function migrateConfig(config: V1Config): SavedConfig {
       return nv;
     });
     return {
-      version: 5,
+      version: 7,
       pool: (v3.pool as unknown as DicePool) ?? { terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '', comment: '' }] },
       rerollConditions: v3.rerollConditions || [],
       pipeline: migratedPipeline,
-      outcomes: (v3.outcomes as unknown as Outcome[]) || [],
+      outcomes: ((v3.outcomes as unknown as Outcome[]) || []).map((o) => {
+        const { isDefault: _, ...rest } = o as Outcome & { isDefault?: boolean };
+        return rest;
+      }),
       parameters: v3.parameters as unknown as Parameter[] ?? [],
     };
   }
@@ -327,7 +349,7 @@ function migrateConfig(config: V1Config): SavedConfig {
     }
   }
 
-  let v4Outcomes: Array<{ id?: string; name: string; source: string; conditions: OutcomeCondition[]; connector: 'and' | 'or'; comment: string; isDefault: boolean }>;
+  let v4Outcomes: Array<{ id?: string; name: string; source: string; conditions: OutcomeCondition[]; connector: 'and' | 'or'; comment: string }>;
   if (config.outcomes && config.outcomes.length > 0 && config.outcomes[0].kind) {
     v4Outcomes = config.outcomes.map((o, i) => {
       if (o.kind === 'threshold') {
@@ -338,7 +360,6 @@ function migrateConfig(config: V1Config): SavedConfig {
           conditions: [{ op: o.comparison === '==' ? '=' : o.comparison, value: o.value }] as unknown as OutcomeCondition[],
           connector: 'and' as const,
           comment: '',
-          isDefault: false,
         };
       }
       if (o.kind === 'pool_success') {
@@ -349,10 +370,9 @@ function migrateConfig(config: V1Config): SavedConfig {
           conditions: [{ op: '>=' as const, value: o.threshold || 1 }] as unknown as OutcomeCondition[],
           connector: 'and' as const,
           comment: '',
-          isDefault: false,
         };
       }
-      return o as unknown as { id?: string; name: string; source: string; conditions: OutcomeCondition[]; connector: 'and' | 'or'; comment: string; isDefault: boolean };
+      return o as unknown as { id?: string; name: string; source: string; conditions: OutcomeCondition[]; connector: 'and' | 'or'; comment: string };
     });
   } else {
     v4Outcomes = (config.outcomes || []) as unknown as typeof v4Outcomes;

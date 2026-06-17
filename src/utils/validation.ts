@@ -143,7 +143,7 @@ export function validateConfig(
   }
 
   for (const outcome of outcomes) {
-    if (outcome.conditions.length === 0 && !outcome.isDefault) {
+    if (outcome.conditions.length === 0) {
       errors.push({ id: nextId(), message: `Outcome "${outcome.name}" has no conditions`, blocking: false });
     }
     if (outcome.conditions.length > 5) {

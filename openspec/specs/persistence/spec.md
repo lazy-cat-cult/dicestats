@@ -26,11 +26,11 @@ A "Save" button in the header SHALL write the current configuration to localStor
 - AND the UI resets to default values
 
 ### Requirement: SavedConfig Schema
-The saved configuration SHALL follow this structure with a `version` field (currently `4`) for future migration:
+The saved configuration SHALL follow this structure with a `version` field (currently `7`) for future migration:
 
 ```typescript
 interface SavedConfig {
-  version: number;              // schema version, currently 4
+  version: number;              // schema version, currently 7
   pool: DicePool;
   rerollConditions: RerollCondition[];
   pipeline: NamedValue[];
@@ -40,9 +40,9 @@ interface SavedConfig {
 ```
 
 #### Scenario: Version field presence
-- GIVEN a configuration saved with version 4
+- GIVEN a configuration saved with version 7
 - WHEN the config is loaded
-- THEN the version is checked and if it differs from 4, migration is applied
+- THEN the version is checked and if it differs from 7, migration is applied
 
 ### Requirement: Invalid Reference Preservation
 On load, invalid references (e.g., a named value referencing a deleted source) SHALL be preserved but marked as invalid — NOT silently dropped.
@@ -55,23 +55,27 @@ On load, invalid references (e.g., a named value referencing a deleted source) S
 - AND the Run button is disabled
 
 ### Requirement: Migration from Older Versions
-If `version` is missing, `1`, `2`, or `3`, the loader SHALL migrate from the old format:
-- v4: No structural migration needed; `ConditionClause.value` now accepts `number | FaceValueSpecial` — old data with `number` values is compatible as-is
-- v3: Converts `keep_highest`/`keep_lowest` pipeline ops to `max`/`min`
-- v1/v2: Converts `pool.keep` to pipeline `max`/`min`, modifiers to pipeline math, old outcome types to unified `Outcome`, parameter `applyTo` to `target` with ID references
+If `version` is missing, `1`, `2`, `3`, `4`, `5`, or `6`, the loader SHALL migrate from the old format:
+- v7: No structural migration needed; `Outcome` no longer has `isDefault` field — old data with `isDefault` is stripped during migration.
+- v6: Strip `isDefault` from all outcomes.
+- v5: Strip `isDefault` from all outcomes after existing v5→v6 migration.
+- v4: Strip `isDefault` from all outcomes after existing v4→v5 migration.
+- v3: Converts `keep_highest`/`keep_lowest` pipeline ops to `max`/`min`, then strip `isDefault`.
+- v1/v2: Converts `pool.keep` to pipeline `max`/`min`, modifiers to pipeline math, old outcome types to unified `Outcome`, parameter `applyTo` to `target` with ID references, then strip `isDefault`.
 - Adds `id` and `tag` to each `DiceTerm` where missing
 - Converts `explode` to `RerollCondition` if present
 - Adds empty `pipeline` and `rerollConditions` arrays
 
+#### Scenario: V6 migration (strip isDefault)
+- GIVEN a saved config with version 6 (outcomes have `isDefault` field)
+- WHEN the config is loaded
+- THEN all outcomes have `isDefault` stripped
+- AND the config is treated as version 7 format
+
 #### Scenario: V3 migration (no data change needed)
 - GIVEN a saved config with version 3 (ConditionClause.value is always number)
 - WHEN the config is loaded
-- THEN it is treated as version 4 format since `number` is a valid subset of `number | FaceValueSpecial`
-
-#### Scenario: V1 migration
-- GIVEN a saved config with version 1 (no tags, no pipeline, old outcome types)
-- WHEN the config is loaded
-- THEN it is migrated to version 3 format with tags, pipeline, and unified outcomes
+- THEN it is migrated through v4→v5→v6→v7, stripping `isDefault` at each stage
 
 ### Requirement: localStorage Full Handling
 If localStorage is full or unavailable, the save operation SHALL silently fail and display a toast message "Could not save configuration".

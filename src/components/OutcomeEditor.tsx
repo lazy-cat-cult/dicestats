@@ -19,7 +19,7 @@ import type {
 import { DICE_CONDITION_TYPES } from '@/types';
 import { SweepIndicator } from '@/components/SweepIndicator';
 import { SweepPopover } from '@/components/SweepPopover';
-import { Button, Checkbox, IconButton, Pill, Select, TextField } from '@/components/ui';
+import { Button, IconButton, Select, TextField } from '@/components/ui';
 import { inferType } from '@/utils/validation';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
@@ -87,7 +87,6 @@ function emptyOutcome(): Outcome {
     conditions: [t === 'scalar' ? makeScalarCondition(source) : makeDiceCondition(source)],
     connector: 'and',
     comment: '',
-    isDefault: false,
   };
 }
 
@@ -167,13 +166,6 @@ export function OutcomeEditor() {
                   maxLength={40}
                   onInput={(v) => updateOutcome(i, { name: v })}
                   className="flex-1 min-w-[200px]"
-                />
-                {outcome.isDefault && <Pill variant="accent">default</Pill>}
-                <Checkbox
-                  label="Default"
-                  checked={outcome.isDefault}
-                  disabled={list.some((o, j) => j !== i && o.isDefault)}
-                  onChange={(v) => updateOutcome(i, { isDefault: v })}
                 />
                 {list.length > 1 && (
                   <IconButton onClick={() => removeOutcome(i)} ariaLabel="Delete outcome" variant="danger">

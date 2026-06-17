@@ -87,7 +87,7 @@ describe('dice mechanics: outcomes with pipeline', () => {
       { id: 'p2', name: 'hit_count', source: 'hits', op: 'count' as const, comment: '' },
     ];
     const outcomes: Outcome[] = [
-      { id: 'o1', name: '1+ hits', conditions: [{ source: 'hit_count', op: '>=' as const, value: 1 }], connector: 'and' as const, comment: '', isDefault: false },
+      { id: 'o1', name: '1+ hits', conditions: [{ source: 'hit_count', op: '>=' as const, value: 1 }], connector: 'and' as const, comment: '' },
     ];
 
     let successCount = 0;
@@ -108,7 +108,7 @@ describe('dice mechanics: outcomes with pipeline', () => {
       terms: [{ id: '1', count: 2, sides: 6, tag: '', comment: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'Hit', conditions: [{ source: 'rolled', op: 'any', subCondition: '>=' as const, value: 1 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o1', name: 'Hit', conditions: [{ source: 'rolled', op: 'any', subCondition: '>=' as const, value: 1 }], connector: 'and', comment: '' },
     ];
 
     const env = new Map<string, PipelineValue>();
@@ -137,7 +137,7 @@ describe('dice mechanics: compound outcomes (per-condition source)', () => {
       { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', operand: 'literal', value: 0 }, comment: '' },
     ];
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'Critical Hit', conditions: [{ source: 'total', op: '>=', value: 15 }, { source: 'delta', op: '>=', value: 0 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o1', name: 'Critical Hit', conditions: [{ source: 'total', op: '>=', value: 15 }, { source: 'delta', op: '>=', value: 0 }], connector: 'and', comment: '' },
     ];
     let matched = 0;
     for (let i = 0; i < 20000; i++) {
@@ -175,8 +175,8 @@ describe('outcome overlap counting', () => {
       terms: [{ id: '1', count: 1, sides: 6, tag: '', comment: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'High', conditions: [{ source: 'face', op: '>=', value: 4 }], connector: 'and', comment: '', isDefault: false },
-      { id: 'o2', name: 'Even', conditions: [{ source: 'face', op: '=', value: 4 }, { source: 'face', op: '=', value: 6 }], connector: 'or', comment: '', isDefault: false },
+      { id: 'o1', name: 'High', conditions: [{ source: 'face', op: '>=', value: 4 }], connector: 'and', comment: '' },
+      { id: 'o2', name: 'Even', conditions: [{ source: 'face', op: '=', value: 4 }, { source: 'face', op: '=', value: 6 }], connector: 'or', comment: '' },
     ];
 
     const overlapCounts = new Map<string, number>();
@@ -209,8 +209,8 @@ describe('outcome overlap counting', () => {
       terms: [{ id: '1', count: 1, sides: 6, tag: '', comment: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'Low', conditions: [{ source: 'face', op: '<=', value: 3 }], connector: 'and', comment: '', isDefault: false },
-      { id: 'o2', name: 'High', conditions: [{ source: 'face', op: '>=', value: 4 }], connector: 'and', comment: '', isDefault: false },
+      { id: 'o1', name: 'Low', conditions: [{ source: 'face', op: '<=', value: 3 }], connector: 'and', comment: '' },
+      { id: 'o2', name: 'High', conditions: [{ source: 'face', op: '>=', value: 4 }], connector: 'and', comment: '' },
     ];
 
     const overlapCounts = new Map<string, number>();
