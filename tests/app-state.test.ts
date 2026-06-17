@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { hashIdToColor, activeSweepsByTarget, totalIterations, dicePoolNotation, existingTags, showComments } from '@/state/app-state';
-import { parameters, dicePool, resetToDefaults, applyPresetConfig, currentPresetName } from '@/state/app-state';
+import { parameters, dicePool, resetToDefaults, applyPresetConfig, currentPresetName, setCurrentPresetName } from '@/state/app-state';
 import { PRESETS } from '@/domain/presets';
 import type { Parameter } from '@/types';
 
@@ -163,6 +163,29 @@ describe('currentPresetName', () => {
     applyPresetConfig(preset);
     expect(currentPresetName.value).toBe(preset.name);
     resetToDefaults();
+    expect(currentPresetName.value).toBeNull();
+  });
+});
+
+describe('setCurrentPresetName', () => {
+  beforeEach(() => {
+    resetToDefaults();
+  });
+
+  it('sets a non-empty string', () => {
+    setCurrentPresetName('My Custom Roll');
+    expect(currentPresetName.value).toBe('My Custom Roll');
+  });
+
+  it('clears the name when set to null', () => {
+    setCurrentPresetName('My Custom Roll');
+    setCurrentPresetName(null);
+    expect(currentPresetName.value).toBeNull();
+  });
+
+  it('coerces an empty string to null', () => {
+    setCurrentPresetName('My Custom Roll');
+    setCurrentPresetName('');
     expect(currentPresetName.value).toBeNull();
   });
 });

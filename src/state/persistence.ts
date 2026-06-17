@@ -163,6 +163,29 @@ export function downloadYamlFile(filename: string, text: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+export async function saveCurrentAsYaml(name: string): Promise<void> {
+  const exportName = name || 'Dice Roll';
+  const { filename, text } = exportCurrentAsYaml(exportName);
+
+  const pickerAvailable = typeof window !== 'undefined' && 'showSaveFilePicker' in window;
+  if (pickerAvailable) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'YAML preset', accept: { 'text/yaml': ['.yaml'] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(text);
+      await writable.close();
+      return;
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+    }
+  }
+
+  downloadYamlFile(filename, text);
+}
+
 export async function readYamlFile(file: File): Promise<string> {
   return await file.text();
 }
