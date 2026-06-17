@@ -13,9 +13,10 @@ const PALETTE = [BILLIARD, GOLD, INK, '#A86A3D', '#3F6FA0', '#7A4A8B', '#B86A4D'
 
 interface OutcomeChartProps {
   result: SimResult;
+  height?: number;
 }
 
-export function OutcomeChart({ result }: OutcomeChartProps) {
+export function OutcomeChart({ result, height = 260 }: OutcomeChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -102,7 +103,7 @@ export function OutcomeChart({ result }: OutcomeChartProps) {
   }, [result]);
 
   return (
-    <div class="relative" style={{ height: '260px' }}>
+    <div class="relative" style={{ height: `${height}px` }}>
       <canvas ref={canvasRef} />
     </div>
   );

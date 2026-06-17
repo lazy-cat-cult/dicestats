@@ -21,6 +21,7 @@ import { PipelineEditor } from '@/components/PipelineEditor';
 import { OutcomeEditor } from '@/components/OutcomeEditor';
 import { ParameterEditor } from '@/components/ParameterEditor';
 import { ResultView } from '@/components/ResultView';
+import { ResultDetailsModal } from '@/components/ResultDetailsModal';
 import { SweepCostChip } from '@/components/SweepCostChip';
 import { OutcomeChart, ParameterChart } from '@/components/DistributionChart';
 import { OddsTape } from '@/components/OddsTape';
@@ -34,6 +35,11 @@ export const simResults = signal<SimResult[]>([]);
 export const simError = signal<string | null>(null);
 export const highCostTooltip = signal<boolean>(false);
 export const loadError = signal<string | null>(null);
+export const detailsModalOpen = signal<boolean>(false);
+
+export function closeDetailsModal() {
+  detailsModalOpen.value = false;
+}
 
 let worker: Worker | null = null;
 
@@ -265,6 +271,16 @@ export function App() {
             <Section
               eyebrow="Detail"
               title={simResults.value.length > 1 ? 'Probability Table' : 'Roll Count'}
+              actions={
+                <Button
+                  variant="ghost"
+                  size="md"
+                  onClick={() => { detailsModalOpen.value = true; }}
+                  ariaLabel="Open details and statistics"
+                >
+                  Details &amp; Statistics
+                </Button>
+              }
             >
               <ResultView results={simResults.value} />
               {simResults.value.length === 1 && (
@@ -304,6 +320,10 @@ export function App() {
         {hasResults ? 'Simulation complete.' : ''}
         {simError.value ? `Simulation error: ${simError.value}` : ''}
       </div>
+
+      {detailsModalOpen.value && simResults.value.length > 0 && (
+        <ResultDetailsModal results={simResults.value} onClose={closeDetailsModal} />
+      )}
     </div>
   );
 }
