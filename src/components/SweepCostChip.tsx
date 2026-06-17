@@ -1,4 +1,4 @@
-import { totalIterations, confirmedHighCost } from '@/state/app-state';
+import { totalIterations, sweep, confirmedHighCost } from '@/state/app-state';
 import { Button, Pill } from '@/components/ui';
 
 interface SweepCostChipProps {
@@ -7,11 +7,17 @@ interface SweepCostChipProps {
 
 export function SweepCostChip({ onConfirmHighCost }: SweepCostChipProps) {
   const total = totalIterations.value;
-  const sims = Math.round(total / 1_000_000);
+  const sw = sweep.value;
+  const xCount = sw.x.length;
+  const yList = sw.y;
+  const yCount = yList ? yList.length : 0;
+  const yActive = yCount > 0;
+  const xActive = xCount > 0;
+  const sweepActive = xActive || yActive;
   const isOver50M = total > 50_000_000;
   const isConfirmed = confirmedHighCost.value;
 
-  if (sims === 0) {
+  if (!sweepActive) {
     return (
       <div class="border border-dashed border-rule px-3 py-2.5 text-center">
         <p class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">
@@ -21,12 +27,16 @@ export function SweepCostChip({ onConfirmHighCost }: SweepCostChipProps) {
     );
   }
 
+  const sims = Math.round(total / 1_000_000);
+  const label = yActive
+    ? `${yCount} × ${xCount} simulation${sims === 1 ? '' : 's'} · ${total.toLocaleString()} rolls`
+    : `${xCount} simulation${xCount === 1 ? '' : 's'} · ${total.toLocaleString()} rolls`;
   const variant = isOver50M ? 'accent' : 'default';
 
   return (
     <div class={`border px-3 py-2.5 flex items-center gap-3 ${isOver50M && !isConfirmed ? 'border-billiard' : 'border-rule'} bg-paper-deep/40`}>
       <Pill variant={variant}>
-        {isOver50M ? '⚠ ' : ''}{sims} simulation{sims === 1 ? '' : 's'} · {total.toLocaleString()} rolls
+        {isOver50M ? '⚠ ' : ''}{label}
       </Pill>
       <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute">
         Total computational cost

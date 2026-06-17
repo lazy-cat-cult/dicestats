@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { evaluatePipeline } from '@/domain/resolve';
 import type { NamedValue, TaggedDie, FaceValueSpecial } from '@/types';
+import { literalExpr } from '@/utils/expression';
 
 describe('evaluatePipeline', () => {
   it('returns rolled as vector source', () => {
@@ -173,7 +174,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'doubled',
         source: 'cnt',
-        op: { fn: 'multiply', operand: 'literal', value: 2 },
+        op: { fn: 'multiply', operand: 'literal', value: literalExpr(2) },
         comment: '',
       },
     ];
@@ -192,7 +193,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'plus_five',
         source: 'cnt',
-        op: { fn: 'add', operand: 'literal', value: 5 },
+        op: { fn: 'add', operand: 'literal', value: literalExpr(5) },
         comment: '',
       },
     ];
@@ -214,7 +215,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'half',
         source: 'cnt',
-        op: { fn: 'divide', operand: 'literal', value: 3 },
+        op: { fn: 'divide', operand: 'literal', value: literalExpr(3) },
         comment: '',
       },
       {
@@ -253,7 +254,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'result',
         source: 'cnt',
-        op: { fn: 'divide', operand: 'literal', value: 0 },
+        op: { fn: 'divide', operand: 'literal', value: literalExpr(0) },
         comment: '',
       },
     ];
@@ -285,7 +286,7 @@ describe('evaluatePipeline', () => {
         id: 'p3',
         name: 'doubled_hits',
         source: 'hit_count',
-        op: { fn: 'multiply', operand: 'literal', value: 2 },
+        op: { fn: 'multiply', operand: 'literal', value: literalExpr(2) },
         comment: '',
       },
     ];
@@ -329,7 +330,7 @@ describe('evaluatePipeline', () => {
         id: 'p2',
         name: 'total_mod',
         source: 'total',
-        op: { fn: 'add', operand: 'literal', value: 3 },
+        op: { fn: 'add', operand: 'literal', value: literalExpr(3) },
         comment: '',
       },
     ];
@@ -385,7 +386,7 @@ describe('evaluatePipeline', () => {
       },
     ];
     const termsSides = [{ sides: 6, tag: '' }];
-    const env = evaluatePipeline(rolled, pipeline, termsSides);
+    const env = evaluatePipeline(rolled, pipeline, { x: 0, y: 0 }, termsSides);
     const crits = env.get('crits') as TaggedDie[];
     expect(crits.length).toBe(1);
     expect(crits[0].face).toBe(6);
@@ -407,7 +408,7 @@ describe('evaluatePipeline', () => {
       },
     ];
     const termsSides = [{ sides: 6, tag: '' }];
-    const env = evaluatePipeline(rolled, pipeline, termsSides);
+    const env = evaluatePipeline(rolled, pipeline, { x: 0, y: 0 }, termsSides);
     const noOnes = env.get('no_ones') as TaggedDie[];
     expect(noOnes.length).toBe(1);
     expect(noOnes[0].face).toBe(5);
@@ -428,7 +429,7 @@ describe('evaluatePipeline', () => {
       },
     ];
     const termsSides = [{ sides: 20, tag: '' }, { sides: 10, tag: 'hunger' }];
-    const env = evaluatePipeline(rolled, pipeline, termsSides);
+    const env = evaluatePipeline(rolled, pipeline, { x: 0, y: 0 }, termsSides);
     const crits = env.get('crits') as TaggedDie[];
     expect(crits.length).toBe(2);
   });

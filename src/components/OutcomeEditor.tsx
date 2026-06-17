@@ -1,10 +1,8 @@
-import { useState } from 'preact/hooks';
 import {
   outcomes,
   pipeline,
-  activeSweepsByTarget,
-  parameters,
   showComments,
+  sweep,
 } from '@/state/app-state';
 import type {
   Outcome,
@@ -12,15 +10,15 @@ import type {
   ConditionOperator,
   DiceConditionType,
   NamedValue,
-  Parameter,
+  Expr,
   ScalarCondition,
   DiceCondition,
 } from '@/types';
 import { DICE_CONDITION_TYPES } from '@/types';
-import { SweepIndicator } from '@/components/SweepIndicator';
-import { SweepPopover } from '@/components/SweepPopover';
-import { Button, IconButton, Select, TextField } from '@/components/ui';
+import { literalExpr } from '@/utils/expression';
 import { inferType } from '@/utils/validation';
+import { ExprInput } from '@/components/ExprInput';
+import { Button, IconButton, Select, TextField } from '@/components/ui';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
 
@@ -71,11 +69,11 @@ function defaultScalarSource(): string {
 }
 
 function makeScalarCondition(source: string): ScalarCondition {
-  return { source, op: '>=', value: 0 };
+  return { source, op: '>=', value: literalExpr(0) };
 }
 
 function makeDiceCondition(source: string): DiceCondition {
-  return { source, op: 'any', subCondition: '>=', value: 0 };
+  return { source, op: 'any', subCondition: '>=', value: literalExpr(0) };
 }
 
 function emptyOutcome(): Outcome {
@@ -93,22 +91,21 @@ function emptyOutcome(): Outcome {
 function convertCondition(cond: OutcomeCondition, newSource: string, newType: 'vector' | 'scalar'): OutcomeCondition {
   if (newType === 'scalar') {
     const sc = isScalarCondition(cond) ? cond : null;
-    return { source: newSource, op: sc?.op ?? '>=', value: sc?.value ?? cond.value };
+    return { source: newSource, op: sc?.op ?? '>=', value: sc?.value ?? literalExpr(0) };
   }
   const dc = isDiceCondition(cond) ? cond : null;
   return {
     source: newSource,
     op: dc?.op ?? 'any',
     subCondition: dc?.subCondition ?? '>=',
-    value: dc?.value ?? cond.value,
+    value: dc?.value ?? literalExpr(0),
   };
 }
 
 export function OutcomeEditor() {
   const list = outcomes.value;
-  const sweeps = activeSweepsByTarget.value;
-  const paramsCount = parameters.value.length;
-  const [popoverOutcomeId, setPopoverOutcomeId] = useState<string | null>(null);
+  const sw = sweep.value;
+  const availableVars = { x: sw.x.length > 0, y: sw.y !== null && sw.y.length > 0 };
 
   function addOutcome() {
     if (list.length >= 10) return;
@@ -121,18 +118,6 @@ export function OutcomeEditor() {
 
   function updateOutcome(index: number, partial: Partial<Outcome>) {
     outcomes.value = list.map((o, i) => (i === index ? { ...o, ...partial } : o));
-  }
-
-  function createOutcomeSweep(outcomeId: string, label: string, values: number[]) {
-    const newParam: Parameter = {
-      id: crypto.randomUUID(),
-      label,
-      values,
-      target: 'outcome.value',
-      targetOutcomeId: outcomeId,
-    };
-    parameters.value = [...parameters.value, newParam];
-    setPopoverOutcomeId(null);
   }
 
   return (
@@ -151,13 +136,12 @@ export function OutcomeEditor() {
       <div class="space-y-2">
         {list.map((outcome, i) => {
           const sourceOptions = getSourceOptions();
-          const sweepParam = sweeps.get(`outcome.value:${outcome.id}`);
 
           return (
             <div
               key={outcome.id}
               id={`outcome-row-${outcome.id}`}
-              class={`border bg-paper-deep/30 px-3 py-2.5 ${sweepParam ? 'border-billiard' : 'border-rule'}`}
+              class="border border-rule bg-paper-deep/30 px-3 py-2.5"
             >
               <div class="flex items-center gap-2 flex-wrap">
                 <TextField
@@ -212,6 +196,7 @@ export function OutcomeEditor() {
                             conditions[ci] = newCond;
                             updateOutcome(i, { conditions });
                           }}
+                          availableVars={availableVars}
                         />
                       ) : (
                         <OutcomeVectorCondition
@@ -221,24 +206,8 @@ export function OutcomeEditor() {
                             conditions[ci] = newCond;
                             updateOutcome(i, { conditions });
                           }}
+                          availableVars={availableVars}
                         />
-                      )}
-                      {ci === 0 && condType === 'scalar' && (
-                        <>
-                          {sweepParam ? (
-                            <SweepIndicator
-                              parameterId={sweepParam.id}
-                              label={sweepParam.label}
-                              values={sweepParam.values}
-                            />
-                          ) : (
-                            paramsCount < 3 && (
-                              <Button variant="quiet" size="sm" onClick={() => setPopoverOutcomeId(outcome.id)} ariaLabel="Add sweep to first condition">
-                                ↻ Sweep
-                              </Button>
-                            )
-                          )}
-                        </>
                       )}
                       {outcome.conditions.length > 1 && (
                         <IconButton onClick={() => {
@@ -298,26 +267,15 @@ export function OutcomeEditor() {
           </Button>
         </div>
       )}
-
-      {popoverOutcomeId && (
-        <SweepPopover
-          open={true}
-          defaultLabel="DC"
-          defaultValues="5, 10, 15, 20"
-          maxSimulationsReached={paramsCount >= 3}
-          onCreate={(label, values) => createOutcomeSweep(popoverOutcomeId, label, values)}
-          onCancel={() => setPopoverOutcomeId(null)}
-        />
-      )}
     </div>
   );
 }
 
-function OutcomeScalarCondition({ cond, onChange }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void }) {
+function OutcomeScalarCondition({ cond, onChange, availableVars }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void; availableVars: { x: boolean; y: boolean } }) {
   const scalar = isScalarCondition(cond) ? cond : null;
   if (!scalar) {
     return (
-      <Button variant="ghost" size="sm" onClick={() => onChange({ source: cond.source, op: '>=', value: 0 })}>
+      <Button variant="ghost" size="sm" onClick={() => onChange({ source: cond.source, op: '>=', value: literalExpr(0) })}>
         Reset
       </Button>
     );
@@ -331,22 +289,22 @@ function OutcomeScalarCondition({ cond, onChange }: { cond: OutcomeCondition; on
         className="w-14"
                 options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
       />
-      <TextField
-        ariaLabel="Value"
-        type="number"
+      <ExprInput
         value={scalar.value}
-        onInput={(v) => onChange({ source: scalar.source, op: scalar.op, value: Number(v) || 0 })}
-        className="w-20"
-                />
+        onChange={(expr: Expr) => onChange({ source: scalar.source, op: scalar.op, value: expr })}
+        ariaLabel="Value"
+        availableVars={availableVars}
+        className="w-32"
+      />
     </div>
   );
 }
 
-function OutcomeVectorCondition({ cond, onChange }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void }) {
+function OutcomeVectorCondition({ cond, onChange, availableVars }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void; availableVars: { x: boolean; y: boolean } }) {
   const dice = isDiceCondition(cond) ? cond : null;
   if (!dice) {
     return (
-      <Button variant="ghost" size="sm" onClick={() => onChange({ source: cond.source, op: 'any', subCondition: '>=', value: 0 })}>
+      <Button variant="ghost" size="sm" onClick={() => onChange({ source: cond.source, op: 'any', subCondition: '>=', value: literalExpr(0) })}>
         Reset
       </Button>
     );
@@ -367,13 +325,13 @@ function OutcomeVectorCondition({ cond, onChange }: { cond: OutcomeCondition; on
         className="w-14"
                 options={CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
       />
-      <TextField
-        ariaLabel="Value"
-        type="number"
+      <ExprInput
         value={dice.value}
-        onInput={(v) => onChange({ source: dice.source, op: dice.op, subCondition: dice.subCondition, value: Number(v) || 0 })}
-        className="w-16"
-                />
+        onChange={(expr: Expr) => onChange({ source: dice.source, op: dice.op, subCondition: dice.subCondition, value: expr })}
+        ariaLabel="Value"
+        availableVars={availableVars}
+        className="w-28"
+      />
     </div>
   );
 }

@@ -1,11 +1,9 @@
-import { useState } from 'preact/hooks';
 import {
   pipeline,
-  activeSweepsByTarget,
-  parameters,
   showComments,
   existingTags,
   getTagColor,
+  sweep,
 } from '@/state/app-state';
 import type {
   NamedValue,
@@ -16,12 +14,12 @@ import type {
   ConditionOperator,
   ScalarBinaryOp,
   FaceValueSpecial,
-  Parameter,
+  Expr,
   ScalarLiteralOp,
   ScalarNamedOp,
 } from '@/types';
-import { SweepIndicator } from '@/components/SweepIndicator';
-import { SweepPopover } from '@/components/SweepPopover';
+import { ExprInput } from '@/components/ExprInput';
+import { literalExpr } from '@/utils/expression';
 import { Button, IconButton, Select, TextField, BracketedNameInput } from '@/components/ui';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
@@ -68,9 +66,8 @@ function getAvailableSources(pipe: NamedValue[], currentIndex: number): { id: st
 
 export function PipelineEditor() {
   const pipe = pipeline.value;
-  const sweeps = activeSweepsByTarget.value;
-  const paramsCount = parameters.value.length;
-  const [popoverNvId, setPopoverNvId] = useState<string | null>(null);
+  const sw = sweep.value;
+  const availableVars = { x: sw.x.length > 0, y: sw.y !== null && sw.y.length > 0 };
 
   function addRow() {
     if (pipe.length >= 20) return;
@@ -79,18 +76,6 @@ export function PipelineEditor() {
 
   function removeRow(index: number) {
     pipeline.value = pipe.filter((_, i) => i !== index);
-  }
-
-  function createPipelineSweep(nvId: string, label: string, values: number[]) {
-    const newParam: Parameter = {
-      id: crypto.randomUUID(),
-      label,
-      values,
-      target: 'pipeline.literal',
-      targetPipelineId: nvId,
-    };
-    parameters.value = [...parameters.value, newParam];
-    setPopoverNvId(null);
   }
 
   function updateRow(index: number, partial: Partial<NamedValue>) {
@@ -175,7 +160,7 @@ export function PipelineEditor() {
                     })();
                     if (sourceType !== newSourceType) {
                       if (newSourceType === 'scalar') {
-                        updateRow(i, { source: newSource, op: { fn: 'add', operand: 'literal', value: 0 } as ScalarFunction });
+                        updateRow(i, { source: newSource, op: { fn: 'add', operand: 'literal', value: literalExpr(0) } as ScalarFunction });
                       } else {
                         updateRow(i, { source: newSource, op: { fn: 'filter', conditions: emptyCondition() } as VectorFunction });
                       }
@@ -217,7 +202,7 @@ export function PipelineEditor() {
                       if (val === 'ceil' || val === 'floor') {
                         updateRow(i, { op: { fn: val } as ScalarFunction });
                       } else if (SCALAR_BINARY_OPS.includes(val as ScalarBinaryOp)) {
-                        updateRow(i, { op: { fn: val as ScalarBinaryOp, operand: 'literal', value: 0 } as ScalarFunction });
+                        updateRow(i, { op: { fn: val as ScalarBinaryOp, operand: 'literal', value: literalExpr(0) } as ScalarFunction });
                       }
                     }}
                     className="w-24"
@@ -256,7 +241,7 @@ export function PipelineEditor() {
                       onChange={(v) => {
                         const operand = v;
                         if (operand === 'literal') {
-                          updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: 0 } as ScalarFunction });
+                          updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: literalExpr(0) } as ScalarFunction });
                         } else {
                           const scalarNames = getScalarNgNames(i);
                           const firstScalar = scalarNames[0] || '';
@@ -270,37 +255,15 @@ export function PipelineEditor() {
                       ]}
                     />
                     {binaryOp.operand === 'literal' ? (
-                      <>
-                        <TextField
-                          ariaLabel="Literal value"
-                          type="number"
-                          value={binaryOp.value ?? 0}
-                          onInput={(v) => {
-                            updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: Number(v) || 0 } as ScalarFunction });
-                          }}
-                          className="w-20"
-                />
-                        {(() => {
-                          const sweepParam = sweeps.get(`pipeline.literal:${nv.id}`);
-                          if (sweepParam) {
-                            return (
-                              <SweepIndicator
-                                parameterId={sweepParam.id}
-                                label={sweepParam.label}
-                                values={sweepParam.values}
-                              />
-                            );
-                          }
-                          if (paramsCount < 3) {
-                            return (
-                              <Button variant="quiet" size="sm" onClick={() => setPopoverNvId(nv.id)} ariaLabel="Add sweep to pipeline literal">
-                                ↻ Sweep
-                              </Button>
-                            );
-                          }
-                          return null;
-                        })()}
-                      </>
+                      <ExprInput
+                        value={(binaryOp as ScalarLiteralOp).value}
+                        onChange={(expr: Expr) => {
+                          updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: expr } as ScalarFunction });
+                        }}
+                        ariaLabel="Literal value"
+                        availableVars={availableVars}
+                        className="w-36"
+                      />
                     ) : (
                       <Select
                         ariaLabel="Source 2"
@@ -346,17 +309,6 @@ export function PipelineEditor() {
             + Add named value
           </Button>
         </div>
-      )}
-
-      {popoverNvId && (
-        <SweepPopover
-          open={true}
-          defaultLabel="Modifier"
-          defaultValues="-2, -1, 0, 1, 2"
-          maxSimulationsReached={paramsCount >= 3}
-          onCreate={(label, values) => createPipelineSweep(popoverNvId, label, values)}
-          onCancel={() => setPopoverNvId(null)}
-        />
       )}
     </div>
   );
@@ -413,7 +365,7 @@ function ConditionChainEditor({ chain, onChange }: { chain: ConditionChain; onCh
               value={clause.field}
               onChange={(v) => updateClause(ci, { field: v as 'face' | 'tag' })}
               className="w-20"
-                options={[{ value: 'face', label: 'face' }, { value: 'tag', label: 'tag' }]}
+              options={[{ value: 'face', label: 'face' }, { value: 'tag', label: 'tag' }]}
             />
             {isFace ? (
               <>

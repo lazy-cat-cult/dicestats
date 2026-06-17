@@ -42,6 +42,7 @@ interface TextFieldProps {
   label?: string;
   value: string | number;
   onInput: (v: string) => void;
+  onBlur?: () => void;
   type?: 'text' | 'number';
   min?: number;
   max?: number;
@@ -59,6 +60,7 @@ export function TextField({
   label,
   value,
   onInput,
+  onBlur,
   type = 'text',
   min,
   max,
@@ -91,6 +93,7 @@ export function TextField({
           aria-label={ariaLabel ?? label}
           class="w-full bg-transparent px-2.5 py-1.5 text-[13px] font-mono tabular text-ink outline-none placeholder:text-ink-mute"
           onInput={(e) => onInput((e.target as HTMLInputElement).value)}
+          onBlur={onBlur}
         />
         {suffix && (
           <span class="flex items-center px-2 font-mono text-[11px] uppercase tracking-wider text-ink-soft border-l border-rule">

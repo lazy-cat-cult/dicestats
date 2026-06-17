@@ -13,10 +13,11 @@ import type {
   ScalarFunction,
   ScalarBinaryOp,
   VectorFunction,
-  Parameter,
-  ParameterTarget,
+  SweepParameters,
   DiceConditionType,
+  Expr,
 } from '@/types';
+import { parseExpr, exprToString, literalExpr } from '@/utils/expression';
 
 export class YamlError extends Error {
   line: number;
@@ -374,7 +375,7 @@ function serializeNode(node: YamlNode, indent: number): string {
     const keys = Object.keys(node);
     if (keys.length === 0) return '{}';
     const pad = ' '.repeat(indent);
-    return keys.map((k) => {
+    return '\n' + keys.map((k) => {
       const v = node[k]!;
       const serialized = serializeNode(v, indent + 2);
       if (serialized.startsWith('\n')) {
@@ -443,6 +444,18 @@ function parseConditionChain(text: string): { chain: ConditionChain; connector: 
   return { chain: { clauses, connector: topConnector }, connector: topConnector };
 }
 
+function parseExprFromText(text: string, label: string): Expr {
+  const trimmed = text.trim();
+  if (trimmed === '') {
+    throw new PresetError(`${label}: empty expression`);
+  }
+  const result = parseExpr(trimmed);
+  if ('error' in result) {
+    throw new PresetError(`${label}: ${result.error}`);
+  }
+  return result.expr;
+}
+
 function parsePool(poolNode: YamlNode): DicePool {
   const items: { value: string; comment: string }[] = [];
   if (typeof poolNode === 'string') {
@@ -466,14 +479,16 @@ function parsePool(poolNode: YamlNode): DicePool {
 
   const result: DiceTerm[] = [];
   for (const { value, comment } of items) {
-    const m = /^(\d+)d(\d+)(?:<([A-Za-z][A-Za-z0-9_]*)>)?$/.exec(value);
+    const m = /^(\S+?)d([^\s<]+)(?:<([A-Za-z][A-Za-z0-9_]*)>)?$/.exec(value);
     if (!m) {
       throw new PresetError(`Invalid die notation "${value}"`);
     }
+    const countText = m[1]!;
+    const sidesText = m[2]!;
     result.push({
       id: crypto.randomUUID(),
-      count: parseInt(m[1]!, 10),
-      sides: parseInt(m[2]!, 10),
+      count: parseExprFromText(countText, `Pool count "${value}"`),
+      sides: parseExprFromText(sidesText, `Pool sides "${value}"`),
       tag: m[3] ?? '',
       comment,
     });
@@ -486,7 +501,7 @@ function parsePool(poolNode: YamlNode): DicePool {
 
 function serializePool(pool: DicePool): YamlNode {
   return pool.terms.map((t) => {
-    const v = `${t.count}d${t.sides}${t.tag ? `<${t.tag}>` : ''}`;
+    const v = `${exprToString(t.count)}d${exprToString(t.sides)}${t.tag ? `<${t.tag}>` : ''}`;
     return t.comment ? { _value: v, _comment: t.comment } : v;
   });
 }
@@ -523,7 +538,7 @@ function serializeRerollEntry(rc: RerollCondition): YamlNode {
   const clauses = rc.conditions.clauses.map((c) => `${c.field} ${c.operator} ${serializeClauseValue(c)}`).join(rc.conditions.connector === 'or' ? ' or ' : ' and ');
   const tail = rc.repeat > 1 ? ` up to ${rc.repeat} times` : '';
   const v = `${rc.action} when ${clauses}${tail}`;
-  return rc.comment ? { _value: v, _comment: rc.comment } : v;
+  return rc.comment ? { _value: v, _comment: v.includes('#') ? rc.comment : rc.comment } : v;
 }
 
 function parsePipelineEntry(text: string, comment: string): { name: string; op: ScalarFunction | VectorFunction; source: string; comment: string } {
@@ -542,17 +557,17 @@ function parsePipelineEntry(text: string, comment: string): { name: string; op: 
     return { name, source, op: { fn, conditions: chain } as VectorFunction, comment };
   }
 
-  const binaryM = /^([A-Za-z_][A-Za-z0-9_]*)\s*([+\-*/])\s*([A-Za-z_][A-Za-z0-9_]*|-?\d+(?:\.\d+)?)$/.exec(expr);
+  const binaryM = /^([A-Za-z_][A-Za-z0-9_]*)\s*([+\-*/])\s*([A-Za-z_][A-Za-z0-9_]*|-?\d+(?:\.\d+)?|\S+)$/.exec(expr);
   if (binaryM) {
     const left = binaryM[1]!;
     const opChar = binaryM[2]!;
     const right = binaryM[3]!;
     const opMap: Record<string, ScalarBinaryOp> = { '+': 'add', '-': 'subtract', '*': 'multiply', '/': 'divide' };
-    if (/^-?\d/.test(right)) {
+    if (/^-?[\d.]/.test(right) || right === 'X' || right === 'Y' || /[+\-*/]/.test(right)) {
       return {
         name,
         source: left,
-        op: { fn: opMap[opChar]!, operand: 'literal', value: parseFloat(right) },
+        op: { fn: opMap[opChar]!, operand: 'literal', value: parseExprFromText(right, `Pipeline "${name}" literal`) },
         comment,
       };
     }
@@ -602,8 +617,8 @@ function serializePipelineEntry(nv: NamedValue): YamlNode {
     const sym: Record<ScalarBinaryOp, string> = { add: '+', subtract: '-', multiply: '*', divide: '/' };
     if (op.operand === 'named' && op.source2) {
       v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${op.source2}`;
-    } else if (op.operand === 'literal' && typeof op.value === 'number') {
-      v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${op.value}`;
+    } else if (op.operand === 'literal') {
+      v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${exprToString(op.value)}`;
     } else {
       v = `${nv.name} = ${JSON.stringify(op)}`;
     }
@@ -668,77 +683,80 @@ function parseSingleOutcomeCondition(tokens: string[]): OutcomeCondition {
       source: tokens[1]!,
       op: tokens[0] as DiceConditionType,
       subCondition: operatorFromToken(tokens[2]!),
-      value: parseInt(tokens[3]!, 10),
+      value: parseExprFromText(tokens[3]!, `Outcome dice value`),
     };
   }
   const source = tokens[0]!;
   const op = operatorFromToken(tokens[1]!);
   const valueText = tokens[2]!;
   if (valueText === 'max' || valueText === 'min') {
-    return { source, op, value: valueText === 'max' ? 9999 : -9999 };
+    const fallback = valueText === 'max' ? 9999 : -9999;
+    return { source, op, value: literalExpr(fallback) };
   }
-  const value = parseInt(valueText, 10);
-  if (Number.isNaN(value)) {
-    throw new PresetError(`Invalid outcome value: "${valueText}"`);
-  }
-  return { source, op, value };
+  return { source, op, value: parseExprFromText(valueText, `Outcome "${source}" value`) };
 }
 
 function serializeOutcomeEntry(o: Outcome): YamlNode {
   const conds = o.conditions.map((c) => {
     if (c.op === 'any' || c.op === 'all' || c.op === 'none') {
-      return `${c.op} ${c.source} ${c.subCondition} ${c.value}`;
+      return `${c.op} ${c.source} ${c.subCondition} ${exprToString(c.value)}`;
     }
-    return `${c.source} ${c.op} ${c.value}`;
+    return `${c.source} ${c.op} ${exprToString(c.value)}`;
   }).join(' and ');
   const v = `${o.name} when ${conds}`;
   return o.comment ? { _value: v, _comment: o.comment } : v;
 }
 
-function parseParameterEntry(text: string): Parameter {
-  let stripped = text.trim();
-  if ((stripped.startsWith('"') && stripped.endsWith('"')) || (stripped.startsWith("'") && stripped.endsWith("'"))) {
-    stripped = stripped.slice(1, -1);
+function parseSweep(node: YamlNode | undefined): SweepParameters {
+  if (node === undefined || node === null) {
+    return { x: [], y: null };
   }
-  const m = new RegExp('^([A-Za-z_][A-Za-z0-9_.\\- ]*?)\\s*=\\s*\\[([^\\]]*)\\]\\s+over\\s+([A-Za-z_][A-Za-z0-9_.]*)(?:\\s+on\\s+([A-Za-z0-9_.\\-]+))?$', 'i').exec(stripped);
-  if (!m) {
-    throw new PresetError(`Invalid parameter entry: "${text}"`);
+  if (!isMapping(node)) {
+    throw new PresetError('"sweep:" must be a mapping with optional x and y lists');
   }
-  const label = m[1]!.trim();
-  const valuesText = m[2]!.trim();
-  const targetStr = m[3]!;
-  const onName = m[4] ?? null;
-
-  const values = valuesText === '' ? [] : valuesText.split(',').map((s) => parseInt(s.trim(), 10));
-  if (values.some((v) => Number.isNaN(v))) {
-    throw new PresetError(`Invalid parameter values: "${valuesText}"`);
+  const xNode = node['x'];
+  const yNode = node['y'];
+  const x = parseSweepList(xNode, 'sweep.x');
+  let y: number[] | null = null;
+  if (yNode !== undefined && yNode !== null) {
+    y = parseSweepList(yNode, 'sweep.y');
+    if (y.length === 0) y = null;
   }
-
-  const validTargets: ParameterTarget[] = ['pool.count', 'pool.sides', 'outcome.value', 'pipeline.literal'];
-  if (!validTargets.includes(targetStr as ParameterTarget)) {
-    throw new PresetError(`Invalid parameter target: "${targetStr}"`);
-  }
-  const target = targetStr as ParameterTarget;
-
-  return {
-    id: crypto.randomUUID(),
-    label,
-    values,
-    target,
-    targetTermId: undefined,
-    targetOutcomeId: undefined,
-    targetPipelineId: undefined,
-    onName,
-  } as Parameter & { onName?: string | null };
+  return { x, y };
 }
 
-function serializeParameterEntry(p: Parameter & { _resolvedName?: string }): string {
-  const on = (p as unknown as { _resolvedName?: string })._resolvedName;
-  const onStr = on ? ` on ${on}` : '';
-  return `${p.label} = [${p.values.join(', ')}] over ${p.target}${onStr}`;
+function parseSweepList(node: YamlNode, label: string): number[] {
+  if (!isList(node)) {
+    throw new PresetError(`"${label}:" must be a list of numbers`);
+  }
+  const result: number[] = [];
+  for (const item of node) {
+    if (typeof item === 'number' && Number.isFinite(item)) {
+      result.push(item);
+    } else if (typeof item === 'string') {
+      const n = Number(item);
+      if (!Number.isFinite(n)) {
+        throw new PresetError(`"${label}:" contains non-numeric value "${item}"`);
+      }
+      result.push(n);
+    } else {
+      throw new PresetError(`"${label}:" contains invalid value`);
+    }
+  }
+  return result;
 }
 
-function astToPreset(ast: YamlNode, _existingNames?: Set<string>): PresetConfig {
+function serializeSweep(sweep: SweepParameters): YamlNode {
+  const obj: { [k: string]: YamlNode } = {
+    x: sweep.x,
+  };
+  if (sweep.y && sweep.y.length > 0) {
+    obj['y'] = sweep.y;
+  }
+  return obj;
+}
+
+function astToPreset(ast: YamlNode): PresetConfig {
   if (!isMapping(ast)) {
     throw new PresetError('Top-level must be a mapping');
   }
@@ -800,17 +818,11 @@ function astToPreset(ast: YamlNode, _existingNames?: Set<string>): PresetConfig 
     }
   }
 
-  let parameters: Parameter[] | undefined;
   if (ast['parameters'] !== undefined && ast['parameters'] !== null) {
-    if (!isList(ast['parameters'])) {
-      throw new PresetError('"parameters:" must be a list');
-    }
-    parameters = [];
-    for (const item of ast['parameters']) {
-      const { value } = unwrapListItem(item);
-      parameters.push(parseParameterEntry(value));
-    }
+    throw new PresetError('Legacy "parameters:" block is not supported. Use "sweep:" with x/y lists and reference X/Y in value cells.');
   }
+
+  const sweep = parseSweep(ast['sweep']);
 
   return {
     id: crypto.randomUUID(),
@@ -819,7 +831,7 @@ function astToPreset(ast: YamlNode, _existingNames?: Set<string>): PresetConfig 
     rerollConditions: reroll,
     pipeline,
     outcomes,
-    parameters,
+    sweep,
   };
 }
 
@@ -849,62 +861,6 @@ function resolveReferences(config: PresetConfig): PresetConfig {
         throw new PresetError(`Outcome "${o.name}" references unknown source "${c.source}"`);
       }
     }
-  }
-
-  for (const p of config.parameters ?? []) {
-    const onName = (p as unknown as { onName?: string | null }).onName;
-    if (p.target === 'pool.count' || p.target === 'pool.sides') {
-      if (onName) {
-        const term = config.pool.terms.find((t) => t.id === onName || t.tag === onName);
-        if (!term) {
-          throw new PresetError(`Parameter "${p.label}" references unknown term "${onName}"`);
-        }
-        p.targetTermId = term.id;
-      } else {
-        const candidates = config.pool.terms;
-        if (candidates.length === 0) {
-          throw new PresetError(`Parameter "${p.label}" targets a term but pool is empty`);
-        }
-        if (candidates.length > 1) {
-          throw new PresetError(`Parameter "${p.label}" requires "on <name>" (multiple terms in pool)`);
-        }
-        p.targetTermId = candidates[0]!.id;
-      }
-    } else if (p.target === 'outcome.value') {
-      if (onName) {
-        const outcome = config.outcomes.find((o) => o.id === onName || o.name === onName);
-        if (!outcome) {
-          throw new PresetError(`Parameter "${p.label}" references unknown outcome "${onName}"`);
-        }
-        p.targetOutcomeId = outcome.id;
-      } else {
-        if (config.outcomes.length === 0) {
-          throw new PresetError(`Parameter "${p.label}" targets an outcome but none are defined`);
-        }
-        if (config.outcomes.length > 1) {
-          throw new PresetError(`Parameter "${p.label}" requires "on <name>" (multiple outcomes)`);
-        }
-        p.targetOutcomeId = config.outcomes[0]!.id;
-      }
-    } else if (p.target === 'pipeline.literal') {
-      if (onName) {
-        const nv = pipelineByName.get(onName);
-        if (!nv) {
-          throw new PresetError(`Parameter "${p.label}" references unknown pipeline step "${onName}"`);
-        }
-        p.targetPipelineId = nv.id;
-      } else {
-        const lit = config.pipeline.find((nv) => {
-          const op = nv.op;
-          return typeof op === 'object' && op !== null && 'fn' in op && (op as { operand?: string }).operand === 'literal';
-        });
-        if (!lit) {
-          throw new PresetError(`Parameter "${p.label}" requires a pipeline step with a literal operand`);
-        }
-        p.targetPipelineId = lit.id;
-      }
-    }
-    delete (p as unknown as { onName?: string | null }).onName;
   }
 
   return config;
@@ -941,54 +897,8 @@ export function presetToAst(config: PresetConfig): YamlNode {
       ? { pipeline: config.pipeline.map(serializePipelineEntry) }
       : {}),
     outcomes: config.outcomes.map(serializeOutcomeEntry),
-    ...(config.parameters && config.parameters.length > 0
-      ? { parameters: config.parameters.map((p) => {
-          const tagged = p as Parameter & { _resolvedName?: string };
-          if (p.targetTermId) {
-            const term = config.pool.terms.find((t) => t.id === p.targetTermId);
-            if (term) {
-              const sameTargetCount = config.parameters!.filter(
-                (pp) => pp.target === p.target && pp.targetTermId === p.targetTermId
-              ).length;
-              const needsOn = config.pool.terms.length > 1 || sameTargetCount > 1;
-              if (needsOn) {
-                if (term.tag) {
-                  tagged._resolvedName = term.tag;
-                } else {
-                  const idx = config.pool.terms.indexOf(term);
-                  tagged._resolvedName = String(idx + 1);
-                }
-              }
-            }
-          } else if (p.targetOutcomeId) {
-            const o = config.outcomes.find((x) => x.id === p.targetOutcomeId);
-            if (o) {
-              const sameTargetCount = config.parameters!.filter(
-                (pp) => pp.target === p.target && pp.targetOutcomeId === p.targetOutcomeId
-              ).length;
-              const needsOn = config.outcomes.length > 1 || sameTargetCount > 1;
-              if (needsOn) {
-                tagged._resolvedName = o.name;
-              }
-            }
-          } else if (p.targetPipelineId) {
-            const nv = config.pipeline.find((x) => x.id === p.targetPipelineId);
-            if (nv) {
-              const sameTargetCount = config.parameters!.filter(
-                (pp) => pp.target === p.target && pp.targetPipelineId === p.targetPipelineId
-              ).length;
-              const litCount = config.pipeline.filter((pp) => {
-                const op = pp.op;
-                return typeof op === 'object' && op !== null && 'fn' in op && (op as { operand?: string }).operand === 'literal';
-              }).length;
-              const needsOn = litCount > 1 || sameTargetCount > 1;
-              if (needsOn) {
-                tagged._resolvedName = nv.name;
-              }
-            }
-          }
-          return serializeParameterEntry(tagged);
-        }) }
+    ...(config.sweep.x.length > 0 || (config.sweep.y && config.sweep.y.length > 0)
+      ? { sweep: serializeSweep(config.sweep) }
       : {}),
   };
 }

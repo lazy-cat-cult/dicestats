@@ -1,20 +1,24 @@
 import { signal, computed, effect } from '@preact/signals';
-import type { DicePool, Outcome, Parameter, PresetConfig, RerollCondition, NamedValue } from '@/types';
+import type { DicePool, Outcome, PresetConfig, RerollCondition, NamedValue, SweepParameters, Expr } from '@/types';
+import { exprToString } from '@/utils/expression';
 import { PRESETS } from '@/domain/presets';
-import { formatSweepRange } from '@/utils/format';
 import { loadUiPrefs, saveUiPrefs } from '@/state/persistence';
 
 function defaultPool(): DicePool {
   return {
-    terms: [{ id: crypto.randomUUID(), count: 1, sides: 20, tag: '', comment: '' }],
+    terms: [{ id: crypto.randomUUID(), count: { kind: 'literal', value: 1 }, sides: { kind: 'literal', value: 20 }, tag: '', comment: '' }],
   };
+}
+
+function defaultSweep(): SweepParameters {
+  return { x: [], y: null };
 }
 
 export const dicePool = signal<DicePool>(defaultPool());
 export const rerollConditions = signal<RerollCondition[]>([]);
 export const pipeline = signal<NamedValue[]>([]);
 export const outcomes = signal<Outcome[]>([]);
-export const parameters = signal<Parameter[]>([]);
+export const sweep = signal<SweepParameters>(defaultSweep());
 export const isSimulating = signal(false);
 export const simProgress = signal({ completed: 0, total: 0 });
 
@@ -45,7 +49,7 @@ export function resetToDefaults() {
   rerollConditions.value = [];
   pipeline.value = [];
   outcomes.value = [];
-  parameters.value = [];
+  sweep.value = defaultSweep();
   currentPresetName.value = null;
 }
 
@@ -69,18 +73,16 @@ export function getTagColor(tag: string): string {
   return TAG_COLORS[index % TAG_COLORS.length] ?? '#6b7280';
 }
 
-export const activeSweepsByTarget = computed<Map<string, Parameter>>(() => {
-  const m = new Map<string, Parameter>();
-  for (const p of parameters.value) {
-    const key = `${p.target}:${p.targetTermId ?? p.targetOutcomeId ?? p.targetPipelineId ?? ''}`;
-    m.set(key, p);
-  }
-  return m;
+export const totalIterations = computed<number>(() => {
+  const xCount = Math.max(1, sweep.value.x.length);
+  const yCount = sweep.value.y ? Math.max(1, sweep.value.y.length) : 1;
+  return xCount * yCount * 1_000_000;
 });
 
-export const totalIterations = computed<number>(() => {
-  const n = parameters.value.reduce((acc, p) => acc * Math.max(1, p.values.length), 1);
-  return n * 1_000_000;
+export const sweepSimCount = computed<number>(() => {
+  const xCount = Math.max(1, sweep.value.x.length);
+  const yCount = sweep.value.y ? Math.max(1, sweep.value.y.length) : 1;
+  return xCount * yCount;
 });
 
 export const confirmedHighCost = signal<boolean>(false);
@@ -96,11 +98,14 @@ export function setCurrentPresetName(name: string | null): void {
 }
 
 export function applyPresetConfig(preset: PresetConfig) {
-  dicePool.value = { ...preset.pool, terms: preset.pool.terms.map((t) => ({ ...t })) };
+  dicePool.value = { ...preset.pool, terms: preset.pool.terms.map((t) => ({ ...t, count: t.count, sides: t.sides })) };
   rerollConditions.value = preset.rerollConditions.map((r) => ({ ...r, conditions: { ...r.conditions, clauses: [...r.conditions.clauses] } }));
   pipeline.value = preset.pipeline.map((p) => ({ ...p }));
   outcomes.value = preset.outcomes.map((o) => ({ ...o, conditions: [...o.conditions] }));
-  parameters.value = preset.parameters?.map((p) => ({ ...p })) ?? [];
+  sweep.value = {
+    x: [...preset.sweep.x],
+    y: preset.sweep.y ? [...preset.sweep.y] : null,
+  };
   currentPresetName.value = preset.name;
 }
 
@@ -118,13 +123,13 @@ export const existingTags = computed<string[]>(() => {
   return Array.from(set).sort();
 });
 
-let lastParamFingerprint = '';
+let lastSweepFingerprint = '';
 effect(() => {
-  const fingerprint = JSON.stringify(parameters.value);
-  if (lastParamFingerprint && lastParamFingerprint !== fingerprint) {
+  const fingerprint = JSON.stringify(sweep.value);
+  if (lastSweepFingerprint && lastSweepFingerprint !== fingerprint) {
     if (confirmedHighCost.value) confirmedHighCost.value = false;
   }
-  lastParamFingerprint = fingerprint;
+  lastSweepFingerprint = fingerprint;
 });
 
 effect(() => {
@@ -140,7 +145,7 @@ effect(() => {
     reroll: rerollConditions.value,
     pipeline: pipeline.value,
     outcomes: outcomes.value,
-    parameters: parameters.value,
+    sweep: sweep.value,
   });
   if (lastConfigFingerprint && lastConfigFingerprint !== fp) {
     configDirty.value = true;
@@ -148,16 +153,37 @@ effect(() => {
   lastConfigFingerprint = fp;
 });
 
+export const previewVars = computed<{ x?: number; y?: number }>(() => {
+  const sw = sweep.value;
+  return {
+    x: sw.x[0],
+    y: sw.y ? sw.y[0] : undefined,
+  };
+});
+
+function formatExprForNotation(expr: Expr, sw: SweepParameters): string {
+  if (expr.kind === 'literal') return String(expr.value);
+  if (expr.kind === 'ref') {
+    const values = expr.name === 'Y' && sw.y ? sw.y : sw.x;
+    if (values.length === 0) return expr.name;
+    if (values.length === 1) return String(values[0]!);
+    const min = values[0]!;
+    const max = values[values.length - 1]!;
+    const isConsecutive = values.every((v, i) => v === min + i);
+    if (isConsecutive) return `${min}..${max}`;
+    return `{${values.join(', ')}}`;
+  }
+  return exprToString(expr);
+}
+
 export const dicePoolNotation = computed(() => {
   const pool = dicePool.value;
-  const sweeps = activeSweepsByTarget.value;
+  const sw = sweep.value;
   return pool.terms
     .map((t) => {
-      const countParam = sweeps.get(`pool.count:${t.id}`);
-      const sidesParam = sweeps.get(`pool.sides:${t.id}`);
-      const countStr = countParam ? formatSweepRange(countParam.values) : String(t.count);
-      const sidesStr = sidesParam ? formatSweepRange(sidesParam.values) : String(t.sides);
-      let s = `${countStr}d${sidesStr}`;
+      const cPart = formatExprForNotation(t.count, sw);
+      const sPart = formatExprForNotation(t.sides, sw);
+      let s = `${cPart}d${sPart}`;
       if (t.tag) s += ` <${t.tag}>`;
       return s;
     })

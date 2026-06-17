@@ -5,10 +5,11 @@ import {
   rerollConditions,
   pipeline,
   outcomes,
-  parameters,
+  sweep,
   isSimulating,
   simProgress,
   totalIterations,
+  sweepSimCount,
   confirmedHighCost,
   configDirty,
   showComments,
@@ -20,10 +21,9 @@ import { DicePoolEditor } from '@/components/DicePoolEditor';
 import { RerollEditor } from '@/components/RerollEditor';
 import { PipelineEditor } from '@/components/PipelineEditor';
 import { OutcomeEditor } from '@/components/OutcomeEditor';
-import { ParameterEditor } from '@/components/ParameterEditor';
+import { SweepEditor } from '@/components/SweepEditor';
 import { ResultView } from '@/components/ResultView';
 import { ResultDetailsModal } from '@/components/ResultDetailsModal';
-import { SweepCostChip } from '@/components/SweepCostChip';
 import { OutcomeChart, ParameterChart } from '@/components/DistributionChart';
 import { OddsTape } from '@/components/OddsTape';
 import { saveConfig, loadConfig } from '@/state/persistence';
@@ -58,7 +58,7 @@ export function resetUiForPresetApply() {
 }
 
 const validationErrors = computed(() =>
-  validateConfig(dicePool.value, rerollConditions.value, pipeline.value, outcomes.value, parameters.value)
+  validateConfig(dicePool.value, rerollConditions.value, pipeline.value, outcomes.value, sweep.value)
 );
 
 const canRun = computed(() => !isSimulating.value && canRunSimulation(validationErrors.value) && outcomes.value.length > 0);
@@ -105,11 +105,11 @@ export function App() {
     simResults.value = [];
 
     const job: SimJob = {
-      pool: { ...dicePool.value, terms: dicePool.value.terms.map((t) => ({ ...t })) },
+      pool: { ...dicePool.value, terms: dicePool.value.terms.map((t) => ({ ...t, count: t.count, sides: t.sides })) },
       rerollConditions: rerollConditions.value.map((r) => ({ ...r, conditions: { ...r.conditions, clauses: [...r.conditions.clauses] } })),
       pipeline: pipeline.value.map((p) => ({ ...p })),
       outcomes: outcomes.value.map((o) => ({ ...o, conditions: [...o.conditions] })),
-      parameters: parameters.value.length > 0 ? parameters.value.map((p) => ({ ...p })) : undefined,
+      sweep: { x: [...sweep.value.x], y: sweep.value.y ? [...sweep.value.y] : null },
       iterations: 1_000_000,
       taskName: currentPresetName.value ?? undefined,
     };
@@ -148,7 +148,14 @@ export function App() {
   const blockingErrors = validationErrors.value.filter((e) => e.blocking);
   const hasResults = !isSimulating.value && simResults.value.length > 0;
   const singleResult = simResults.value.length === 1 ? simResults.value[0] : null;
-  const sweepCount = parameters.value.reduce((a, p) => a * p.values.length, 1);
+  const sims = sweepSimCount.value;
+  const sw = sweep.value;
+  const xCount = sw.x.length;
+  const yCount = sw.y ? sw.y.length : 0;
+  const yActive = yCount > 0;
+  const subLabel = yActive
+    ? `1M × ${xCount} · ${yCount}`
+    : `1M × ${Math.max(1, sims)}`;
 
   return (
     <div class="min-h-screen flex flex-col">
@@ -197,7 +204,7 @@ export function App() {
           <Section
             eyebrow="Step 03"
             title="Resolution Pipeline"
-            description="Transform the rolled dice into named values: keep the best, count sixes, sum, filter by tag, or add a modifier."
+            description="Transform the rolled dice into named values: keep the best, count sixes, sum, filter by tag, or add a modifier. Reference X or Y in any value to make it a sweep variable."
             actions={
               <Checkbox
                 label="Comments"
@@ -211,25 +218,16 @@ export function App() {
           <Section
             eyebrow="Step 04"
             title="Outcomes"
-            description="The buckets the roll is sorted into. The probability of each one is what the simulation estimates."
+            description="The buckets the roll is sorted into. The probability of each one is what the simulation estimates. Use X or Y in any threshold to make it a sweep variable."
           >
             <OutcomeEditor />
           </Section>
           <Section
             eyebrow="Step 05"
             title="Sweep Parameters"
-            description="Re-run the whole simulation for each value of a chosen input. One number becomes a curve."
+            description="Two independent variables, X and Y. Type a number or expression containing X or Y in any value cell above. Y produces one result section per value; each section contains the full X sweep."
           >
-            <ParameterEditor />
-            <div class="mt-4">
-              <SweepCostChip
-                onConfirmHighCost={() => {
-                  confirmedHighCost.value = true;
-                  highCostTooltip.value = true;
-                  setTimeout(() => { highCostTooltip.value = false; }, 4000);
-                }}
-              />
-            </div>
+            <SweepEditor />
           </Section>
 
           <div class="sticky bottom-0 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mt-2 bg-paper/95 backdrop-blur border-t-2 border-gold">
@@ -244,7 +242,7 @@ export function App() {
               >
                 {isSimulating.value ? 'Running…' : hasResults ? 'Roll the Dice Again' : 'Roll the Dice'}
                 <span class="font-mono text-[10px] opacity-90 ml-1 normal-case tracking-[0.08em]">
-                  1M × {Math.max(1, sweepCount)}
+                  {subLabel}
                 </span>
               </Button>
               {isSimulating.value && (
@@ -292,7 +290,7 @@ export function App() {
                   <OutcomeChart result={simResults.value[0]} />
                 </div>
               )}
-              {simResults.value.length > 1 && (
+              {simResults.value.length > 1 && !yActive && (
                 <div class="mt-5">
                   <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-gold-deep mb-2">
                     Probability by Sweep
