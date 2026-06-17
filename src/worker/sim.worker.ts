@@ -1,4 +1,4 @@
-import type { DicePool, RerollCondition, NamedValue, Outcome, Parameter, TaggedDie, SimJob, SimResult } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeOverlap, Parameter, TaggedDie, SimJob, SimResult } from '@/types';
 import { matchConditions, findSides } from '@/domain/matching';
 import { evaluatePipeline } from '@/domain/resolve';
 import { evaluateOutcomes } from '@/domain/classify';
@@ -70,14 +70,14 @@ function simulateOnce(
   pipeline: NamedValue[],
   outcomes: Outcome[],
   termsSides: { sides: number; tag: string }[]
-): { distributionKey: number; outcomeName: string | null } {
+): { distributionKey: number; matchedOutcomes: string[] } {
   let dice = rollPool(pool);
   dice = applyRerollConditions(dice, rerollConditions, termsSides);
 
   const env = evaluatePipeline(dice, pipeline, termsSides);
   env.set('rolled', dice);
 
-  const outcomeName = evaluateOutcomes(outcomes, env);
+  const matchedOutcomes = evaluateOutcomes(outcomes, env);
 
   let distributionKey: number;
   let lastScalar: number | null = null;
@@ -93,7 +93,7 @@ function simulateOnce(
     distributionKey = dice.reduce((s, d) => s + d.face, 0);
   }
 
-  return { distributionKey, outcomeName };
+  return { distributionKey, matchedOutcomes };
 }
 
 function runSimulation(
@@ -109,6 +109,7 @@ function runSimulation(
   for (const o of outcomes) {
     outcomeCounts.set(o.name, 0);
   }
+  const overlapCounts = new Map<string, number>();
   const distribution = new Map<number, number>();
 
   for (let i = 0; i < iterations; i++) {
@@ -118,12 +119,22 @@ function runSimulation(
       }
     }
 
-    const { distributionKey, outcomeName } = simulateOnce(pool, rerollConditions, pipeline, outcomes, termsSides);
+    const { distributionKey, matchedOutcomes } = simulateOnce(pool, rerollConditions, pipeline, outcomes, termsSides);
 
     distribution.set(distributionKey, (distribution.get(distributionKey) ?? 0) + 1);
 
-    if (outcomeName) {
-      outcomeCounts.set(outcomeName, (outcomeCounts.get(outcomeName) ?? 0) + 1);
+    for (const name of matchedOutcomes) {
+      outcomeCounts.set(name, (outcomeCounts.get(name) ?? 0) + 1);
+    }
+
+    if (matchedOutcomes.length > 1) {
+      const sorted = [...matchedOutcomes].sort();
+      for (let a = 0; a < sorted.length; a++) {
+        for (let b = a + 1; b < sorted.length; b++) {
+          const key = `${sorted[a]}||${sorted[b]}`;
+          overlapCounts.set(key, (overlapCounts.get(key) ?? 0) + 1);
+        }
+      }
     }
   }
 
@@ -132,6 +143,18 @@ function runSimulation(
     sortedDist[k] = v;
   }
 
+  const overlaps: OutcomeOverlap[] = [];
+  for (const [key, count] of overlapCounts) {
+    if (count === 0) continue;
+    const sepIdx = key.indexOf('||');
+    overlaps.push({
+      outcomes: [key.slice(0, sepIdx), key.slice(sepIdx + 2)],
+      count,
+      probability: count / iterations,
+    });
+  }
+  overlaps.sort((a, b) => b.count - a.count);
+
   return {
     label: taskName ?? '',
     outcomes: outcomes.map((o) => ({
@@ -139,6 +162,7 @@ function runSimulation(
       probability: (outcomeCounts.get(o.name) ?? 0) / iterations,
       count: outcomeCounts.get(o.name) ?? 0,
     })),
+    overlaps,
     totalRolls: iterations,
     distribution: sortedDist,
   };

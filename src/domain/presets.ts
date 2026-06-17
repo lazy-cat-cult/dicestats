@@ -347,7 +347,7 @@ export const PRESETS: PresetConfig[] = [
         conditions: [{ source: 'delta', op: '=', value: 0 }],
         connector: 'and',
         comment: '',
-        isDefault: true,
+        isDefault: false,
       },
       {
         id: 'o2',
