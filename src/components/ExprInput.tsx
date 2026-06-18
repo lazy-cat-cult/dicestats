@@ -175,12 +175,12 @@ function VarToggle({ mode, onSwitch }: { mode: ExprMode; onSwitch: () => void })
       class={`flex items-center justify-center w-8 border shrink-0 ${mode === 'var' ? 'border-billiard bg-billiard/10 text-billiard' : 'border-rule bg-paper-deep/50 text-ink-mute hover:text-ink-soft hover:bg-paper'} transition-colors cursor-pointer select-none`}
     >
       {mode === 'num' ? (
-        <svg viewBox="0 0 16 16" class="w-3.5 h-3.5" aria-hidden="true">
-          <text x="3" y="12.5" font-size="12" font-family="monospace" font-weight="bold" fill="currentColor">n</text>
+        <svg viewBox="0 0 24 16" class="w-7 h-3.5" aria-hidden="true">
+          <text x="3" y="12.5" font-size="12" font-family="monospace" font-weight="bold" fill="currentColor">num</text>
         </svg>
       ) : (
-        <svg viewBox="0 0 16 16" class="w-3.5 h-3.5" aria-hidden="true">
-          <text x="2.5" y="12.5" font-size="12" font-family="monospace" font-weight="bold" fill="currentColor">x̄</text>
+        <svg viewBox="0 0 24 16" class="w-7 h-3.5" aria-hidden="true">
+          <text x="3" y="12.5" font-size="12" font-family="monospace" font-weight="bold" fill="currentColor">var</text>
         </svg>
       )}
     </button>
