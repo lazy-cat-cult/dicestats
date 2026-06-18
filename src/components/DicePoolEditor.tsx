@@ -1,3 +1,4 @@
+import { useState } from 'preact/hooks';
 import { dicePool, dicePoolNotation, getTagColor, sweep } from '@/state/app-state';
 import { ExprInput } from '@/components/ExprInput';
 import { Button, IconButton, Select, TextField } from '@/components/ui';
@@ -10,6 +11,7 @@ export function DicePoolEditor() {
   const pool = dicePool.value;
   const sw = sweep.value;
   const availableVars = { x: sw.x.length > 0, y: sw.y !== null && sw.y.length > 0 };
+  const [customSides, setCustomSides] = useState<Set<number>>(new Set());
 
   function updateTerm(index: number, partial: Partial<DiceTerm>) {
     const terms = dicePool.value.terms.map((t, i) => (i === index ? { ...t, ...partial } : { ...t }));
@@ -49,6 +51,8 @@ export function DicePoolEditor() {
           const sidesValue = term.sides;
           const sidesIsLiteral = sidesValue.kind === 'literal';
           const sidesNum = sidesIsLiteral ? sidesValue.value : null;
+          const isStandardDie = sidesIsLiteral && sidesNum !== null && DIE_SIDES.includes(sidesNum);
+          const isCustom = customSides.has(i);
           return (
             <div
               key={term.id}
@@ -66,20 +70,29 @@ export function DicePoolEditor() {
 
               <span class="font-mono text-[12px] text-ink-mute">d</span>
 
-              {sidesIsLiteral && sidesNum !== null && DIE_SIDES.includes(sidesNum) ? (
-                <Select
-                  ariaLabel="Dice sides"
-                  value={String(sidesNum)}
-                  onChange={(v) => {
-                    if (v !== 'custom') updateTerm(i, { sides: literalExpr(Number(v)) });
-                  }}
-                  className="w-20"
-                  options={[
-                    ...DIE_SIDES.map((s) => ({ value: String(s), label: String(s) })),
-                    { value: 'custom', label: '…' },
-                  ]}
-                />
-              ) : (
+              <Select
+                ariaLabel="Dice sides"
+                value={isStandardDie && !isCustom ? String(sidesNum!) : 'custom'}
+                onChange={(v) => {
+                  if (v === 'custom') {
+                    const next = new Set(customSides);
+                    next.add(i);
+                    setCustomSides(next);
+                  } else {
+                    const next = new Set(customSides);
+                    next.delete(i);
+                    setCustomSides(next);
+                    updateTerm(i, { sides: literalExpr(Number(v)) });
+                  }
+                }}
+                className="w-20"
+                options={[
+                  ...DIE_SIDES.map((s) => ({ value: String(s), label: String(s) })),
+                  { value: 'custom', label: 'custom' },
+                ]}
+              />
+
+              {(!isStandardDie || isCustom) && (
                 <ExprInput
                   value={sidesValue}
                   onChange={(expr: Expr) => updateTerm(i, { sides: expr })}
