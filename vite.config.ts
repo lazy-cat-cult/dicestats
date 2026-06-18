@@ -3,6 +3,7 @@ import preact from '@preact/preset-vite';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
+  base: '/dicestat/',
   plugins: [preact(), tailwindcss()],
   resolve: {
     alias: {
