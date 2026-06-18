@@ -161,7 +161,7 @@ export function App() {
     <div class="min-h-screen flex flex-col">
       <header class="bg-billiard text-paper">
         <div class="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-          <a href="#" class="flex items-center gap-3 group" aria-label="Oddsboard home">
+          <a href="#" class="flex items-center gap-3 group" aria-label="Dicestats home">
             <span class="inline-flex items-center justify-center w-12 h-12 border-2 border-gold bg-billiard-deep shadow-[0_2px_0_0_var(--color-gold)]">
               <svg viewBox="0 0 100 100" class="w-9 h-9" aria-hidden="true">
                 <path d="M50 22 L78 36 L68 70 L32 70 L22 36 Z"
@@ -174,7 +174,7 @@ export function App() {
               </svg>
             </span>
             <span class="flex flex-col leading-none">
-              <span class="font-display text-[30px] tracking-[0.06em] text-paper leading-none">ODDSBOARD</span>
+              <span class="font-display text-[30px] tracking-[0.06em] text-paper leading-none">DICESTATS</span>
               <span class="font-mono text-[9px] uppercase tracking-[0.28em] text-gold mt-1.5">
                 Dice Probability · v1
               </span>

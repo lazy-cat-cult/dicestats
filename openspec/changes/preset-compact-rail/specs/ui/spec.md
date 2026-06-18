@@ -4,7 +4,7 @@
 The application SHALL have a full-width header with solid `bg-billiard` background and the following elements:
 
 - A square logo lockup on the left: a 12×12 unit (`w-12 h-12`) square with a gold 2px border on `bg-billiard-deep` background and a `shadow-[0_2px_0_0_var(--color-gold)]`, containing a white d5 (pentagon) outline with five pips arranged in a 1-2-2 layout. The fifth (bottom-right) pip is filled gold.
-- Next to the logo, the wordmark "ODDSBOARD" in `font-display text-[30px] text-paper` with letter-spacing `0.06em` and `leading-none`.
+- Next to the logo, the wordmark "DICESTATS" in `font-display text-[30px] text-paper` with letter-spacing `0.06em` and `leading-none`.
 - Below the wordmark, a `font-mono text-[9px] uppercase tracking-[0.28em] text-gold mt-1.5` eyebrow line "Dice Probability · v1".
 
 The header background MUST be solid `billiard`. There is no bottom border; a `border-b border-rule` separator appears on the preset rail pinned below it, not on the header. The header SHALL NOT contain any Save, Load, Clear, or other configuration buttons; configuration actions are exposed by the Preset Rail (see Preset Rail and Save and Load YAML Presets requirements).

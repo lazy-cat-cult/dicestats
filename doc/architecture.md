@@ -1,4 +1,4 @@
-# Oddsboard — Architecture
+# Dicestats — Architecture
 
 ## 1. Overview
 

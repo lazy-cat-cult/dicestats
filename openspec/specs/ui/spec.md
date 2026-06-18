@@ -74,7 +74,7 @@ On viewports below `lg`:
 The application SHALL have a full-width header with solid `bg-billiard` background and the following elements:
 
 - A square logo lockup on the left: a 12×12 unit (`w-12 h-12`) square with a gold 2px border on `bg-billiard-deep` background and a `shadow-[0_2px_0_0_var(--color-gold)]`, containing a white d5 (pentagon) outline with five pips arranged in a 1-2-2 layout. The fifth (bottom-right) pip is filled gold.
-- Next to the logo, the wordmark "ODDSBOARD" in `font-display text-[30px] text-paper` with letter-spacing `0.06em` and `leading-none`.
+- Next to the logo, the wordmark "DICESTATS" in `font-display text-[30px] text-paper` with letter-spacing `0.06em` and `leading-none`.
 - Below the wordmark, a `font-mono text-[9px] uppercase tracking-[0.28em] text-gold mt-1.5` eyebrow line "Dice Probability · v1".
 - On the right, two ghost buttons with `border-gold/50 text-paper hover:border-gold hover:text-gold`: "Save" and "Load" (each loading/saving the YAML preset format). "Load" opens a hidden `<input type="file">` accepting `.yaml`/`.yml`.
 - To the left of the Save/Load buttons, an inline `font-mono text-[11px] text-gold-soft` message slot showing a `loadError` (file read / parse / preset errors) when present; the slot is hidden when there is no error and is suppressed below the `sm` breakpoint.
