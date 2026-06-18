@@ -47,7 +47,7 @@ The modal's input trims whitespace and lowercases both query and name; presets w
 Same pattern as `SweepPopover`: render via `createPortal` into a portal at `document.body`. This avoids z-index/overflow surprises from the rail's `overflow-x-auto` and matches the existing dialog convention.
 
 ### Decision: Save/Load moved to the rail footer, header kept
-The header is reduced to the logo lockup and the "ODDSBOARD" wordmark/eyebrow. The hidden `<input type="file">` used by Load is co-located with the rail's Load button (the `useRef` and the `onChange` handler live in `PresetSelector`). `loadError` is rendered next to the rail's Save/Load buttons in the same `text-gold-soft` slot pattern.
+The header is reduced to the logo lockup and the "DICESTATS" wordmark/eyebrow. The hidden `<input type="file">` used by Load is co-located with the rail's Load button (the `useRef` and the `onChange` handler live in `PresetSelector`). `loadError` is rendered next to the rail's Save/Load buttons in the same `text-gold-soft` slot pattern.
 
 ### Decision: `handleSave` / `handleLoadFile` live in `PresetSelector`
 To avoid prop-drilling through `App`, the file-input ref, the Save click handler, and the Load file handler are now owned by `PresetSelector`. `loadError` is exported from `app.tsx` and imported by `PresetSelector`. `mergeOrStagePreset` and `applyPresetConfig` are also called from `PresetSelector`'s load handler.

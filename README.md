@@ -1,4 +1,4 @@
-# Oddsboard — Dice Probability Calculator
+# Dicestats — Dice Probability Calculator
 
 A Monte Carlo dice probability calculator for tabletop RPGs. Runs 1,000,000 simulations per sweep in a Web Worker.
 
