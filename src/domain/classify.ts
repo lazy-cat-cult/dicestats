@@ -31,11 +31,12 @@ export function evaluateOutcome(
   if (outcome.conditions.length === 0) return false;
 
   const results = outcome.conditions.map((cond) => evaluateCondition(cond, env, vars));
-
-  if (outcome.connector === 'and') {
-    return results.every(Boolean);
+  let acc = results[0]!;
+  for (let i = 0; i < outcome.connectors.length; i++) {
+    const next = results[i + 1]!;
+    acc = outcome.connectors[i] === 'and' ? acc && next : acc || next;
   }
-  return results.some(Boolean);
+  return acc;
 }
 
 export function evaluateOutcomes(

@@ -12,15 +12,23 @@ Each outcome SHALL have:
 - `name`: display name, maximum 40 characters
 - `source`: references a named value ID from the pipeline or `rolled`
 - `conditions`: array of `OutcomeCondition`, maximum 5 conditions per outcome
-- `connector`: `and` or `or` — how multiple conditions combine
+- `connectors`: array of `'and' | 'or'` — per-condition-pair logical operators, length = conditions.length - 1
 - `comment`: optional description, maximum 100 characters
 
 ```typescript
 type DiceConditionType = 'any' | 'all' | 'none';
 
 type OutcomeCondition =
-  | { op: ConditionOperator; value: number }                                        // scalar comparison
-  | { op: DiceConditionType; subCondition: ConditionOperator; value: number };      // dice quantifier
+  | { source: string; op: ConditionOperator; value: Expr }
+  | { source: string; op: DiceConditionType; subCondition: ConditionOperator; value: Expr };
+
+interface Outcome {
+  id: string;
+  name: string;
+  conditions: OutcomeCondition[];
+  connectors: ('and' | 'or')[];
+  comment: string;
+}
 ```
 
 #### Scenario: Outcome without isDefault
@@ -102,7 +110,7 @@ Using a `DiceConditionType` condition (`any`, `all`, `none`) on a scalar source 
 - THEN a validation error is displayed and the simulation is blocked
 
 ### Requirement: Condition Connector Semantics
-When the connector is `and`, ALL conditions MUST match for the outcome to match. When the connector is `or`, ANY condition matching SHALL cause the outcome to match.
+When `connectors[i]` is `'and'`, both `conditions[i]` and `conditions[i+1]` MUST match. When `connectors[i]` is `'or'`, either condition matching SHALL satisfy that pair.
 
 #### Scenario: AND connector
 - GIVEN an outcome "Critical Success" with conditions `[total_successes >= 5, crit_count >= 2]` connected by `and`

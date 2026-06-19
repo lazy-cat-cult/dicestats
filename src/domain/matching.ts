@@ -1,19 +1,21 @@
-import type { TaggedDie, ConditionClause, ConditionChain, FaceValueSpecial } from '@/types';
+import type { TaggedDie, ConditionClause, ConditionChain } from '@/types';
 import { compare } from '@/types';
+import { evalExpr } from '@/utils/expression';
 
-function resolveFaceValue(value: number | FaceValueSpecial, die: TaggedDie, termsSides: { sides: number; tag: string }[]): number {
-  if (value === 'max_value') {
-    return findSides(die.tag, termsSides);
-  }
-  if (value === 'min_value') {
-    return 1;
-  }
-  return value;
-}
-
-export function matchClause(die: TaggedDie, clause: ConditionClause, termsSides: { sides: number; tag: string }[]): boolean {
+export function matchClause(die: TaggedDie, clause: ConditionClause, termsSides: { sides: number; tag: string }[], vars: { x: number; y: number }): boolean {
   if (clause.field === 'face') {
-    return compare(die.face, clause.operator, resolveFaceValue(clause.value, die, termsSides));
+    switch (clause.operator) {
+      case 'is_min':
+        return die.face === 1;
+      case 'is_max':
+        return die.face === findSides(die.tag, termsSides);
+      case 'is_even':
+        return die.face % 2 === 0;
+      case 'is_odd':
+        return die.face % 2 !== 0;
+      default:
+        return compare(die.face, clause.operator, evalExpr(clause.value!, vars));
+    }
   }
   if (clause.field === 'tag') {
     if (clause.operator === '=') return die.tag === clause.value;
@@ -22,12 +24,14 @@ export function matchClause(die: TaggedDie, clause: ConditionClause, termsSides:
   return false;
 }
 
-export function matchConditions(die: TaggedDie, chain: ConditionChain, termsSides: { sides: number; tag: string }[]): boolean {
+export function matchConditions(die: TaggedDie, chain: ConditionChain, termsSides: { sides: number; tag: string }[], vars: { x: number; y: number }): boolean {
   if (chain.clauses.length === 0) return false;
-  if (chain.connector === 'and') {
-    return chain.clauses.every((c) => matchClause(die, c, termsSides));
+  let result = matchClause(die, chain.clauses[0]!, termsSides, vars);
+  for (let i = 0; i < chain.connectors.length; i++) {
+    const next = matchClause(die, chain.clauses[i + 1]!, termsSides, vars);
+    result = chain.connectors[i] === 'and' ? result && next : result || next;
   }
-  return chain.clauses.some((c) => matchClause(die, c, termsSides));
+  return result;
 }
 
 export function findSides(tag: string, terms: { sides: number; tag: string }[]): number {

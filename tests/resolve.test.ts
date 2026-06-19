@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { evaluatePipeline } from '@/domain/resolve';
-import type { NamedValue, TaggedDie, FaceValueSpecial } from '@/types';
+import type { NamedValue, TaggedDie } from '@/types';
 import { literalExpr } from '@/utils/expression';
 
 describe('evaluatePipeline', () => {
@@ -21,7 +21,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'hits',
         source: 'rolled',
-        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: 5 }], connector: 'and' } },
+        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: literalExpr(5) }], connectors: [] } },
         comment: '',
       },
     ];
@@ -43,7 +43,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'non_ones',
         source: 'rolled',
-        op: { fn: 'remove', conditions: { clauses: [{ field: 'face', operator: '=', value: 1 }], connector: 'and' } },
+        op: { fn: 'remove', conditions: { clauses: [{ field: 'face', operator: '=', value: literalExpr(1) }], connectors: [] } },
         comment: '',
       },
     ];
@@ -63,7 +63,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'hits',
         source: 'rolled',
-        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: 5 }], connector: 'and' } },
+        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: literalExpr(5) }], connectors: [] } },
         comment: '',
       },
       {
@@ -107,7 +107,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'hits',
         source: 'rolled',
-        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: 5 }], connector: 'and' } },
+        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: literalExpr(5) }], connectors: [] } },
         comment: '',
       },
       {
@@ -174,7 +174,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'doubled',
         source: 'cnt',
-        op: { fn: 'multiply', operand: 'literal', value: literalExpr(2) },
+        op: { fn: 'multiply', terms: [{ operand: 'literal', value: literalExpr(2) }] },
         comment: '',
       },
     ];
@@ -193,7 +193,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'plus_five',
         source: 'cnt',
-        op: { fn: 'add', operand: 'literal', value: literalExpr(5) },
+        op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(5) }] },
         comment: '',
       },
     ];
@@ -215,7 +215,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'half',
         source: 'cnt',
-        op: { fn: 'divide', operand: 'literal', value: literalExpr(3) },
+        op: { fn: 'divide', terms: [{ operand: 'literal', value: literalExpr(3) }] },
         comment: '',
       },
       {
@@ -254,7 +254,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'result',
         source: 'cnt',
-        op: { fn: 'divide', operand: 'literal', value: literalExpr(0) },
+        op: { fn: 'divide', terms: [{ operand: 'literal', value: literalExpr(0) }] },
         comment: '',
       },
     ];
@@ -272,7 +272,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'hits',
         source: 'rolled',
-        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: 5 }], connector: 'and' } },
+        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: literalExpr(5) }], connectors: [] } },
         comment: '',
       },
       {
@@ -286,7 +286,7 @@ describe('evaluatePipeline', () => {
         id: 'p3',
         name: 'doubled_hits',
         source: 'hit_count',
-        op: { fn: 'multiply', operand: 'literal', value: literalExpr(2) },
+        op: { fn: 'multiply', terms: [{ operand: 'literal', value: literalExpr(2) }] },
         comment: '',
       },
     ];
@@ -306,7 +306,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'hunger_dice',
         source: 'rolled',
-        op: { fn: 'filter', conditions: { clauses: [{ field: 'tag', operator: '=', value: 'hunger' }], connector: 'and' } },
+        op: { fn: 'filter', conditions: { clauses: [{ field: 'tag', operator: '=', value: 'hunger' }], connectors: [] } },
         comment: '',
       },
     ];
@@ -330,7 +330,7 @@ describe('evaluatePipeline', () => {
         id: 'p2',
         name: 'total_mod',
         source: 'total',
-        op: { fn: 'add', operand: 'literal', value: literalExpr(3) },
+        op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(3) }] },
         comment: '',
       },
     ];
@@ -360,7 +360,7 @@ describe('evaluatePipeline', () => {
         id: 'p3',
         name: 'net',
         source: 'total',
-        op: { fn: 'subtract', operand: 'named', source2: 'bonus' },
+        op: { fn: 'subtract', terms: [{ operand: 'named', source2: 'bonus' }] },
         comment: '',
       },
     ];
@@ -381,7 +381,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'crits',
         source: 'rolled',
-        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '=', value: 'max_value' as FaceValueSpecial }], connector: 'and' } },
+        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: 'is_max' }], connectors: [] } },
         comment: '',
       },
     ];
@@ -403,7 +403,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'no_ones',
         source: 'rolled',
-        op: { fn: 'remove', conditions: { clauses: [{ field: 'face', operator: '=', value: 'min_value' as FaceValueSpecial }], connector: 'and' } },
+        op: { fn: 'remove', conditions: { clauses: [{ field: 'face', operator: 'is_min' }], connectors: [] } },
         comment: '',
       },
     ];
@@ -424,7 +424,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'crits',
         source: 'rolled',
-        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '=', value: 'max_value' as FaceValueSpecial }], connector: 'and' } },
+        op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: 'is_max' }], connectors: [] } },
         comment: '',
       },
     ];

@@ -117,9 +117,14 @@ export function resetUiForPresetApply() {
 
 export const showComments = signal<boolean>(loadUiPrefs().showComments);
 
+export const showPoolComments = signal<boolean>(loadUiPrefs().showPoolComments);
+export const showRerollComments = signal<boolean>(loadUiPrefs().showRerollComments);
+export const showOutcomeComments = signal<boolean>(loadUiPrefs().showOutcomeComments);
+
 export const existingTags = computed<string[]>(() => {
   const set = new Set<string>();
   for (const t of dicePool.value.terms) if (t.tag) set.add(t.tag);
+  for (const rc of rerollConditions.value) if (rc.tagAs) set.add(rc.tagAs);
   return Array.from(set).sort();
 });
 
@@ -133,7 +138,12 @@ effect(() => {
 });
 
 effect(() => {
-  saveUiPrefs({ showComments: showComments.value });
+  saveUiPrefs({
+    showComments: showComments.value,
+    showPoolComments: showPoolComments.value,
+    showRerollComments: showRerollComments.value,
+    showOutcomeComments: showOutcomeComments.value,
+  });
 });
 
 export const configDirty = signal<boolean>(false);

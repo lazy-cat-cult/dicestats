@@ -24,23 +24,23 @@ A "Save" button in the header SHALL write the current configuration to localStor
 - AND the UI resets to default values
 
 ### Requirement: SavedConfig Schema
-The saved configuration SHALL follow this structure with a `version` field (currently `7`) for future migration:
+The saved configuration SHALL follow this structure with a `version` field (currently `9`) for future migration:
 
 ```typescript
 interface SavedConfig {
-  version: number;              // schema version, currently 7
+  version: number;              // schema version, currently 9
   pool: DicePool;
   rerollConditions: RerollCondition[];
   pipeline: NamedValue[];
   outcomes: Outcome[];
-  parameters: Parameter[];
+  sweep: SweepParameters;
 }
 ```
 
 #### Scenario: Version field presence
-- GIVEN a configuration saved with version 7
+- GIVEN a configuration saved with version 9
 - WHEN the config is loaded
-- THEN the version is checked and if it differs from 7, migration is applied
+- THEN the version is checked and if it differs from 9, migration is applied
 
 ### Requirement: Invalid Reference Preservation
 On load, invalid references (e.g., a named value referencing a deleted source) SHALL be preserved but marked as invalid — NOT silently dropped.
@@ -53,27 +53,12 @@ On load, invalid references (e.g., a named value referencing a deleted source) S
 - AND the Run button is disabled
 
 ### Requirement: Migration from Older Versions
-If `version` is missing, `1`, `2`, `3`, `4`, `5`, or `6`, the loader SHALL migrate from the old format:
-- v7: No structural migration needed; `Outcome` no longer has `isDefault` field — old data with `isDefault` is stripped during migration.
+If `version` is missing, `1`–`8`, the loader SHALL migrate from the old format:
+- v9: Converts `ConditionClause` face values from `'max_value'`/`'min_value'` to `is_max`/`is_min` operators with `undefined` value; wraps bare `number` condition values in `literalExpr()`; adds `tagAs: ''` to all `RerollCondition`; wraps old single-operand binary ops (`{ fn, operand, value/source2 }`) into `{ fn, terms: [{ operand, value/source2 }] }`.
+- v8: Strips `isDefault` from outcomes; converts `parameters[]` array to `sweep.x`/`sweep.y`.
+- v7: No structural migration needed.
 - v6: Strip `isDefault` from all outcomes.
-- v5: Strip `isDefault` from all outcomes after existing v5→v6 migration.
-- v4: Strip `isDefault` from all outcomes after existing v4→v5 migration.
-- v3: Converts `keep_highest`/`keep_lowest` pipeline ops to `max`/`min`, then strip `isDefault`.
-- v1/v2: Converts `pool.keep` to pipeline `max`/`min`, modifiers to pipeline math, old outcome types to unified `Outcome`, parameter `applyTo` to `target` with ID references, then strip `isDefault`.
-- Adds `id` and `tag` to each `DiceTerm` where missing
-- Converts `explode` to `RerollCondition` if present
-- Adds empty `pipeline` and `rerollConditions` arrays
-
-#### Scenario: V6 migration (strip isDefault)
-- GIVEN a saved config with version 6 (outcomes have `isDefault` field)
-- WHEN the config is loaded
-- THEN all outcomes have `isDefault` stripped
-- AND the config is treated as version 7 format
-
-#### Scenario: V3 migration (no data change needed)
-- GIVEN a saved config with version 3 (ConditionClause.value is always number)
-- WHEN the config is loaded
-- THEN it is migrated through v4→v5→v6→v7, stripping `isDefault` at each stage
+- v5-1: Progressive migration maintaining compatibility.
 
 ### Requirement: localStorage Full Handling
 If localStorage is full or unavailable, the save operation SHALL silently fail and display a toast message "Could not save configuration".

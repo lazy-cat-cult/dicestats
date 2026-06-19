@@ -136,7 +136,7 @@ Each of the five configuration sections (Dice Pool, Reroll Conditions, Resolutio
 - A `font-display` heading in `text-[2rem] leading-none text-ink tracking-wider` showing the section name only (e.g. "Dice Pool"). The step number is NOT rendered inside the heading.
 - A description sentence in `text-[13px] text-ink-soft mt-2 leading-relaxed` directly under the heading, occupying the full width of the column (no `max-width` cap).
 - The editor card(s) below the heading, spanning the full column width.
-- An optional `actions` slot aligned to the right of the section header row (used, for example, by the Pipeline section's "Show comments" checkbox).
+- An optional `actions` slot aligned to the right of the section header row (used, for example, by each section's "Comments" checkbox).
 
 #### Scenario: Section spacing
 - GIVEN any configuration section
@@ -145,12 +145,27 @@ Each of the five configuration sections (Dice Pool, Reroll Conditions, Resolutio
 - AND the description fills the full column width
 
 #### Scenario: Section actions slot
-- GIVEN a section that passes an `actions` node (e.g. the Pipeline section's "Comments" checkbox)
+      - GIVEN a section that passes an `actions` node (e.g. the "Comments" checkbox present on every section)
 - WHEN the section header renders
 - THEN the action is right-aligned in the header row and the section title remains on the left
 
+### Requirement: Comments Toggle Per Section
+Each of the four configuration sections (Dice Pool, Reroll Conditions, Resolution Pipeline, Outcomes) SHALL expose its own independent "Comments" checkbox in the section header's `actions` slot. Show/hide state is persisted per-section in `UiPrefs` via `localStorage`. All comment fields default to hidden.
+
+#### Scenario: Dice Pool comments hidden by default
+- GIVEN a fresh application load
+- WHEN the Dice Pool section renders
+- THEN no comment fields are visible on dice term rows
+- AND the section header shows an unchecked "Comments" checkbox
+
+#### Scenario: Toggle Dice Pool comments
+- GIVEN the user checks the "Comments" checkbox in the Dice Pool section
+- WHEN the dice term rows re-render
+- THEN each term row shows a comment `TextField` after the tag input
+- AND the checkbox state is persisted across page reloads
+
 ### Requirement: DicePoolEditor
-The DicePoolEditor SHALL display a list of dice term rows, each showing a count input, a "d" label, a sides select, an optional tag input, a sweep indicator when swept, and a remove button. Standard die sizes (4, 6, 8, 10, 12, 20, 100) SHALL appear in a select with a "custom" option (the option's user-visible label is `…`) for numeric input. An "Add die" button SHALL append a new term (default: 1d6, tag ""). One term SHALL always remain (delete button hidden when only one exists). Each row's left border is colored according to its tag (when present), using the `getTagColor(tag)` palette (see Tag Color Palette requirement).
+The DicePoolEditor SHALL display a list of dice term rows, each showing a count input, a "d" label, a sides select, an optional tag input, an optional comment field (gated by the per-section "Comments" checkbox), a sweep indicator when swept, and a remove button. Standard die sizes (4, 6, 8, 10, 12, 20, 100) SHALL appear in a select with a "custom" option (the option's user-visible label is `…`) for numeric input. An "Add die" button SHALL append a new term (default: 1d6, tag ""). One term SHALL always remain (delete button hidden when only one exists). Each row's left border is colored according to its tag (when present), using the `getTagColor(tag)` palette (see Tag Color Palette requirement).
 
 A live dice notation preview SHALL be shown above the rows in `font-mono tabular text-[13px] text-ink` inside a `code` element with `px-2 py-1 border border-rule bg-paper-deep/40`. The notation format is:
 
@@ -175,9 +190,10 @@ Example output: `2d8 <red>, 1d6 <blue>`.
 The RerollEditor SHALL display a list of reroll rows, each rendered as a card on `bg-paper-deep/30` with:
 
 - A `Select` for the action ("reroll" / "explode"), default "reroll".
-- A `ConditionChainEditor` for the conditions, allowing up to 10 clauses joined by AND/OR. Each clause has a "Field" select (face/tag), an "Operator" select (six operators for face, = and != for tag), a "Value" field (number input for face, existing-tags select for tag), and an inline remove button when more than one clause is present.
+- A `ConditionChainEditor` for the conditions, now in vertical layout. Each clause line is prefixed with `| when` (first clause) or `|` (subsequent clauses). The connector Select appears on subsequent clauses. The operator Select includes `is_min`, `is_max`, `is_even`, `is_odd`. For is_* operators the value input is hidden; for other operators an `ExprInput` replaces the numeric input.
 - A "repeat" number input (1..99) with a label that changes to "Max cascade depth" when the action is "explode".
-- An optional comment field (`font-mono`, 100 chars max).
+- A "tag as" `TextField` (max 30 chars, placeholder "inherit") for overriding the tag on rerolled/exploded dice.
+- An optional comment field (`font-mono`, 100 chars max), gated by the per-section "Comments" checkbox.
 - Move up / move down / delete icon buttons aligned to the right.
 
 Up to 10 reroll rows are allowed. Empty state is a dashed-border card: "No reroll conditions. Add a condition to replace or explode dice that meet a face or tag rule."
@@ -198,10 +214,10 @@ The PipelineEditor SHALL display a list of named-value rows, each rendered as a 
 - A name field rendered by `BracketedNameInput`. When the row's output type is `vector` (a list of dice), the name field is visually wrapped in non-editable grey square brackets: the value `total` is displayed as `[ total ]`. The brackets are `aria-hidden` spans with `user-select: none` so backspace at the bracket positions cannot delete them. When the output type is `scalar`, no brackets are shown.
 - A "=" label.
 - A source `Select` showing all prior named values plus the implicit `rolled` source. Vector sources are labelled `[ name ]` in the dropdown; scalar sources are labelled `name` plain.
-- A function `Select` whose options depend on the source's type: vector source offers `filter`, `remove`, `count`, `sum`, `max`, `min`; scalar source offers `add`, `subtract`, `multiply`, `divide`, `ceil`, `floor`.
-- For `filter` / `remove`, a nested `ConditionChainEditor`.
-- For binary math (`add`/`subtract`/`multiply`/`divide`), an operand toggle (`literal` vs `named`) and either a number input (literal) or a scalar-name `Select` (named).
-- An optional comment field (toggled by a global "Show comments" checkbox in the section header).
+- A function `Select` whose options depend on the source's type: vector source offers `filter`, `remove`, `count`, `sum`, `max`, `min`, `sub`; scalar source offers `add`, `subtract`, `multiply`, `divide`, `ceil`, `floor`.
+- For `filter` / `remove`, a nested `ConditionChainEditor` in vertical layout.
+- For binary math (`add`/`subtract`/`multiply`/`divide`), a multi-term editor: each term has an operand toggle (`literal` vs `named`) and either an `ExprInput` (literal) or a scalar-name `Select` (named). Terms are applied sequentially (first to source, subsequent to accumulated result). A "+ term" button adds terms; remove icon on each term when count > 1.
+- An optional comment field (toggled by the per-section "Comments" checkbox).
 - Validation errors (invalid name pattern, duplicate name, invalid source) are listed in `text-billiard font-mono text-[11px]` at the bottom of the row.
 - Up to 20 named values are allowed.
 
@@ -238,7 +254,7 @@ The OutcomeEditor SHALL display a list of outcome rows. Each row contains:
 - A list of conditions; each condition has a source `Select` (vector sources labelled `[ name ]`, scalar labelled `name`) and either a scalar condition (operator + value) or a dice condition (type `any`/`all`/`none` + sub-operator + value).
 - An AND/OR connector select when more than one condition exists.
 - A "+ condition" button (max 5 conditions per outcome).
-- An optional comment field (toggled by the global "Show comments" checkbox).
+- An optional comment field (toggled by the per-section "Comments" checkbox).
 
 Up to 10 outcomes are allowed. Empty state is a dashed-border card: "No outcomes. Add an outcome to define a probability bucket."
 

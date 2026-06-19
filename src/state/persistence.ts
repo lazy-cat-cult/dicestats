@@ -1,4 +1,4 @@
-import type { SavedConfig, DicePool, Outcome, RerollCondition, NamedValue, OutcomeCondition, PresetConfig, SweepParameters, Expr, DiceTerm } from '@/types';
+import type { SavedConfig, DicePool, Outcome, RerollCondition, NamedValue, OutcomeCondition, PresetConfig, SweepParameters, Expr, DiceTerm, ScalarBinaryTerm, ConditionChain } from '@/types';
 import { dicePool, outcomes, sweep, rerollConditions, pipeline, configDirty } from './app-state';
 import { exportConfigAsYaml, parsePreset, filenameForName } from '@/utils/yaml';
 import { literalExpr } from '@/utils/expression';
@@ -8,16 +8,24 @@ const UI_PREFS_KEY = 'dice-calc-ui';
 
 interface UiPrefs {
   showComments: boolean;
+  showPoolComments: boolean;
+  showRerollComments: boolean;
+  showOutcomeComments: boolean;
 }
 
 export function loadUiPrefs(): UiPrefs {
   try {
     const raw = localStorage.getItem(UI_PREFS_KEY);
-    if (!raw) return { showComments: false };
+    if (!raw) return { showComments: false, showPoolComments: false, showRerollComments: false, showOutcomeComments: false };
     const parsed = JSON.parse(raw) as Partial<UiPrefs>;
-    return { showComments: parsed.showComments === true };
+    return {
+      showComments: parsed.showComments === true,
+      showPoolComments: parsed.showPoolComments === true,
+      showRerollComments: parsed.showRerollComments === true,
+      showOutcomeComments: parsed.showOutcomeComments === true,
+    };
   } catch {
-    return { showComments: false };
+    return { showComments: false, showPoolComments: false, showRerollComments: false, showOutcomeComments: false };
   }
 }
 
@@ -78,7 +86,7 @@ interface V7Config {
 
 export function saveConfig() {
   const config: SavedConfig = {
-    version: 8,
+    version: 9,
     pool: dicePool.value,
     rerollConditions: rerollConditions.value,
     pipeline: pipeline.value,
@@ -125,11 +133,14 @@ function literalizeNumberInPool(pool: DicePool): DicePool {
 function literalizePipeline(pipeline: NamedValue[]): NamedValue[] {
   return pipeline.map((nv) => {
     if (typeof nv.op === 'object' && nv.op !== null && 'fn' in nv.op) {
-      const op = nv.op as { fn: string; operand?: string; value?: number | Expr; source2?: string };
+      const op = nv.op as { fn: string; operand?: string; value?: number | Expr; source2?: string; terms?: ScalarBinaryTerm[] };
       if ((op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') && op.operand === 'literal') {
         if (typeof op.value === 'number') {
-          return { ...nv, op: { ...op, value: literalExpr(op.value) } as NamedValue['op'] } as NamedValue;
+          return { ...nv, op: { fn: op.fn, terms: [{ operand: 'literal', value: literalExpr(op.value) }] } as NamedValue['op'] } as NamedValue;
         }
+      }
+      if ((op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') && op.operand === 'named') {
+        return { ...nv, op: { fn: op.fn, terms: [{ operand: 'named', source2: op.source2 || '' }] } as NamedValue['op'] } as NamedValue;
       }
     }
     return nv;
@@ -201,9 +212,9 @@ function migrateV7ToV8(config: V7Config): SavedConfig {
       } else if (p.target === 'pipeline.literal') {
         const nv = pipeline.find((n) => n.id === p.targetPipelineId);
         if (nv && typeof nv.op === 'object' && nv.op !== null && 'fn' in nv.op) {
-          const op = nv.op as { fn: string; operand?: string };
+          const op = nv.op as { fn: string; operand?: string; terms?: ScalarBinaryTerm[] };
           if (op.operand === 'literal' && (op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide')) {
-            nv.op = { ...op, value: { kind: 'ref', name: 'X' } } as NamedValue['op'];
+            nv.op = { fn: op.fn, terms: [{ operand: 'literal', value: { kind: 'ref', name: 'X' } }] } as NamedValue['op'];
           }
         }
       }
@@ -214,23 +225,98 @@ function migrateV7ToV8(config: V7Config): SavedConfig {
   const sweep: SweepParameters = { x: xSorted, y: null };
 
   return {
-    version: 8,
+    version: 8 as unknown as 9,
     pool: literalizeNumberInPool(rawPool),
     rerollConditions: config.rerollConditions || [],
     pipeline,
     outcomes,
     sweep,
+  } as SavedConfig;
+}
+
+function migrateV8ToV9(config: SavedConfig): SavedConfig {
+  const reroll: RerollCondition[] = (config.rerollConditions || []).map((rc) => ({
+    ...rc,
+    tagAs: (rc as RerollCondition & { tagAs?: string }).tagAs || '',
+    conditions: migrateConditionChain(rc.conditions),
+  }));
+
+  const pipe: NamedValue[] = (config.pipeline || []).map((nv) => {
+    if (typeof nv.op === 'object' && nv.op !== null && 'fn' in nv.op) {
+      const op = nv.op as { fn: string; operand?: string; value?: number | Expr; source2?: string; terms?: ScalarBinaryTerm[]; conditions?: ConditionChain & { connector?: string } };
+      if ((op.fn === 'filter' || op.fn === 'remove') && op.conditions) {
+        const migratedConditions = migrateConditionChain(op.conditions);
+        return { ...nv, op: { ...op, conditions: migratedConditions } as NamedValue['op'] } as NamedValue;
+      }
+      if ((op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') && !op.terms) {
+        if (op.operand === 'literal') {
+          return { ...nv, op: { fn: op.fn, terms: [{ operand: 'literal', value: op.value || literalExpr(0) }] } as NamedValue['op'] } as NamedValue;
+        }
+        if (op.operand === 'named') {
+          return { ...nv, op: { fn: op.fn, terms: [{ operand: 'named', source2: op.source2 || '' }] } as NamedValue['op'] } as NamedValue;
+        }
+      }
+    }
+    return nv;
+  });
+
+  const migratedOutcomes: Outcome[] = (config.outcomes || []).map((o) => {
+    const oldOutcome = o as Outcome & { connector?: string };
+    if (oldOutcome.connectors && oldOutcome.connectors.length > 0) return o;
+    const oldConn = oldOutcome.connector || 'and';
+    return {
+      ...o,
+      connectors: o.conditions.length > 1 ? Array(o.conditions.length - 1).fill(oldConn) as ('and' | 'or')[] : [],
+    };
+  });
+
+  return {
+    version: 9,
+    pool: config.pool,
+    rerollConditions: reroll,
+    pipeline: pipe,
+    outcomes: migratedOutcomes,
+    sweep: config.sweep,
   };
 }
 
-function migrateConfig(config: V7Config): SavedConfig {
-  if (config.version === 8) {
-    return config as unknown as SavedConfig;
+function migrateConditionChain(chain: ConditionChain & { connector?: string }): ConditionChain {
+  const clauses = chain.clauses.map((clause) => {
+    if (clause.field === 'face') {
+      const oldValue = clause.value as unknown;
+      if (oldValue === 'max_value') {
+        return { field: 'face' as const, operator: 'is_max' as const };
+      }
+      if (oldValue === 'min_value') {
+        return { field: 'face' as const, operator: 'is_min' as const };
+      }
+      if (typeof oldValue === 'number') {
+        return { field: 'face' as const, operator: clause.operator, value: literalExpr(oldValue) };
+      }
+      return { field: 'face' as const, operator: clause.operator, value: oldValue as Expr | undefined };
+    }
+    return clause;
+  });
+
+  if (chain.connectors && chain.connectors.length > 0) {
+    return { clauses, connectors: chain.connectors };
   }
-  if (config.version === 7) {
-    return migrateV7ToV8(config);
+  const oldConnector = (chain as { connector?: string }).connector || 'and';
+  return { clauses, connectors: clauses.length > 1 ? Array(clauses.length - 1).fill(oldConnector) as ('and' | 'or')[] : [] };
+}
+
+function migrateConfig(config: V7Config | SavedConfig): SavedConfig {
+  const ver: number = config.version;
+  if (ver === 9) {
+    return config as SavedConfig;
   }
-  return migrateV7ToV8({ ...config, version: 7 });
+  if (ver === 8) {
+    return migrateV8ToV9(config as SavedConfig);
+  }
+  if (ver === 7) {
+    return migrateV8ToV9(migrateV7ToV8(config as V7Config));
+  }
+  return migrateV8ToV9(migrateV7ToV8({ ...config, version: 7 } as V7Config));
 }
 
 export function loadConfig(): boolean {

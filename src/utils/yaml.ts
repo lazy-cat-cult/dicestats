@@ -6,7 +6,6 @@ import type {
   ConditionChain,
   ConditionClause,
   ConditionOperator,
-  FaceValueSpecial,
   NamedValue,
   Outcome,
   OutcomeCondition,
@@ -16,6 +15,7 @@ import type {
   SweepParameters,
   DiceConditionType,
   Expr,
+  ScalarBinaryTerm,
 } from '@/types';
 import { parseExpr, exprToString, literalExpr } from '@/utils/expression';
 
@@ -387,7 +387,7 @@ function serializeNode(node: YamlNode, indent: number): string {
   return String(node);
 }
 
-const OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
+const OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!=', 'is_min', 'is_max', 'is_even', 'is_odd'];
 
 function operatorFromToken(tok: string): ConditionOperator {
   if (!OPERATORS.includes(tok as ConditionOperator)) {
@@ -396,44 +396,53 @@ function operatorFromToken(tok: string): ConditionOperator {
   return tok as ConditionOperator;
 }
 
-function faceValueFromToken(tok: string): number | FaceValueSpecial {
-  if (tok === 'max' || tok === 'max_value') return 'max_value';
-  if (tok === 'min' || tok === 'min_value') return 'min_value';
-  if (/^-?\d+$/.test(tok)) return parseInt(tok, 10);
-  throw new PresetError(`Invalid face value "${tok}"`);
-}
+
 
 function parseClause(parts: string[]): ConditionClause {
-  if (parts.length < 3) {
+  if (parts.length < 2) {
     throw new PresetError(`Clause too short: "${parts.join(' ')}"`);
   }
   const field = parts[0]!;
   const op = parts[1]!;
-  const value = parts[2]!;
   if (field === 'face') {
-    return { field: 'face', operator: operatorFromToken(op), value: faceValueFromToken(value) };
+    if (op === 'is_min' || op === 'is_max' || op === 'is_even' || op === 'is_odd') {
+      return { field: 'face', operator: op as ConditionOperator };
+    }
+    if (parts.length < 3) {
+      throw new PresetError(`Face condition requires a value: "${parts.join(' ')}"`);
+    }
+    const valueText = parts.slice(2).join(' ');
+    const isOldMax = op === '=' && (valueText === 'max' || valueText === 'max_value');
+    const isOldMin = op === '=' && (valueText === 'min' || valueText === 'min_value');
+    if (isOldMax) return { field: 'face', operator: 'is_max' };
+    if (isOldMin) return { field: 'face', operator: 'is_min' };
+    return { field: 'face', operator: operatorFromToken(op), value: parseExprFromText(valueText, 'clause value') };
   }
   if (field === 'tag') {
     if (op !== '=' && op !== '!=') {
       throw new PresetError(`Tag field supports only = and !=, got "${op}"`);
     }
+    const value = parts.slice(2).join(' ') || '';
     return { field: 'tag', operator: op, value };
   }
   throw new PresetError(`Unknown clause field "${field}"`);
 }
 
-function parseConditionChain(text: string): { chain: ConditionChain; connector: 'and' | 'or' } {
+function parseConditionChain(text: string): ConditionChain {
   const tokens = text.split(/\s+/);
   if (tokens.length === 0) {
     throw new PresetError('Empty condition chain');
   }
-  const topConnector = tokens.includes('or') ? 'or' : 'and';
   const cleaned = tokens.filter((t) => t !== 'where' && t !== 'when');
   const clauseTokens: string[][] = [];
+  const connectorTokens: string[] = [];
   let current: string[] = [];
   for (const tok of cleaned) {
     if (tok === 'and' || tok === 'or') {
-      if (current.length > 0) clauseTokens.push(current);
+      if (current.length > 0) {
+        clauseTokens.push(current);
+        connectorTokens.push(tok);
+      }
       current = [];
     } else {
       current.push(tok);
@@ -441,7 +450,8 @@ function parseConditionChain(text: string): { chain: ConditionChain; connector: 
   }
   if (current.length > 0) clauseTokens.push(current);
   const clauses = clauseTokens.map(parseClause);
-  return { chain: { clauses, connector: topConnector }, connector: topConnector };
+  const connectors: ('and' | 'or')[] = connectorTokens.slice(0, clauses.length - 1) as ('and' | 'or')[];
+  return { clauses, connectors };
 }
 
 function parseExprFromText(text: string, label: string): Expr {
@@ -507,38 +517,46 @@ function serializePool(pool: DicePool): YamlNode {
 }
 
 function parseRerollEntry(text: string, comment: string): RerollCondition {
-  const m = /^(reroll|explode)\s+when\s+(.+?)(?:\s+up to\s+(\d+)\s+times?)?$/i.exec(text);
+  const m = /^(reroll|explode)\s+when\s+(.+?)(?:\s+up to\s+(\d+)\s+times?)?(?:\s+tag as\s+(\S+))?$/i.exec(text);
   if (!m) {
     throw new PresetError(`Invalid reroll entry: "${text}"`);
   }
   const action = m[1]!.toLowerCase() as 'reroll' | 'explode';
   const clauseText = m[2]!;
   const repeat = m[3] ? parseInt(m[3], 10) : 1;
-  const { chain } = parseConditionChain(clauseText);
+  const tagAs = m[4] ?? '';
+  const chain = parseConditionChain(clauseText);
   return {
     id: crypto.randomUUID(),
     action,
     conditions: chain,
     repeat,
     comment,
+    tagAs,
   };
 }
 
 function serializeClauseValue(c: ConditionClause): string {
   if (c.field === 'face') {
-    if (typeof c.value === 'number') return String(c.value);
-    if (c.value === 'max_value') return 'max';
-    if (c.value === 'min_value') return 'min';
-    return String(c.value);
+    if (c.value === undefined) return '';
+    return exprToString(c.value);
   }
   return String(c.value);
 }
 
 function serializeRerollEntry(rc: RerollCondition): YamlNode {
-  const clauses = rc.conditions.clauses.map((c) => `${c.field} ${c.operator} ${serializeClauseValue(c)}`).join(rc.conditions.connector === 'or' ? ' or ' : ' and ');
+  const clauses = rc.conditions.clauses.map((c) => {
+    const sv = serializeClauseValue(c);
+    return sv ? `${c.field} ${c.operator} ${sv}` : `${c.field} ${c.operator}`;
+  });
+  let clauseStr = clauses[0] || '';
+  for (let i = 0; i < rc.conditions.connectors.length; i++) {
+    clauseStr += ` ${rc.conditions.connectors[i]} ${clauses[i + 1] || ''}`;
+  }
   const tail = rc.repeat > 1 ? ` up to ${rc.repeat} times` : '';
-  const v = `${rc.action} when ${clauses}${tail}`;
-  return rc.comment ? { _value: v, _comment: v.includes('#') ? rc.comment : rc.comment } : v;
+  const tagAs = rc.tagAs ? ` tag as ${rc.tagAs}` : '';
+  const v = `${rc.action} when ${clauseStr}${tail}${tagAs}`;
+  return rc.comment ? { _value: v, _comment: rc.comment } : v;
 }
 
 function parsePipelineEntry(text: string, comment: string): { name: string; op: ScalarFunction | VectorFunction; source: string; comment: string } {
@@ -553,7 +571,7 @@ function parsePipelineEntry(text: string, comment: string): { name: string; op: 
   if (filterM) {
     const fn = filterM[1]!.toLowerCase() as 'filter' | 'remove';
     const source = filterM[2]!;
-    const { chain } = parseConditionChain(filterM[3]!);
+    const chain = parseConditionChain(filterM[3]!);
     return { name, source, op: { fn, conditions: chain } as VectorFunction, comment };
   }
 
@@ -567,14 +585,14 @@ function parsePipelineEntry(text: string, comment: string): { name: string; op: 
       return {
         name,
         source: left,
-        op: { fn: opMap[opChar]!, operand: 'literal', value: parseExprFromText(right, `Pipeline "${name}" literal`) },
+        op: { fn: opMap[opChar]!, terms: [{ operand: 'literal', value: parseExprFromText(right, `Pipeline "${name}" literal`) }] },
         comment,
       };
     }
     return {
       name,
       source: left,
-      op: { fn: opMap[opChar]!, operand: 'named', source2: right },
+      op: { fn: opMap[opChar]!, terms: [{ operand: 'named', source2: right }] },
       comment,
     };
   }
@@ -590,7 +608,7 @@ function parsePipelineEntry(text: string, comment: string): { name: string; op: 
     };
   }
 
-  const unaryM = /^(sum|min|max|count|ceil|floor)\s+([A-Za-z_][A-Za-z0-9_]*)$/i.exec(expr);
+  const unaryM = /^(sum|min|max|count|ceil|floor|sub)\s+([A-Za-z_][A-Za-z0-9_]*)$/i.exec(expr);
   if (unaryM) {
     const fn = unaryM[1]!.toLowerCase();
     const source = unaryM[2]!;
@@ -609,16 +627,36 @@ function serializePipelineEntry(nv: NamedValue): YamlNode {
   if (typeof op === 'string') {
     v = `${nv.name} = ${op} ${nv.source}`;
   } else if (op.fn === 'filter' || op.fn === 'remove') {
-    const clauses = op.conditions.clauses.map((c) => `${c.field} ${c.operator} ${serializeClauseValue(c)}`).join(op.conditions.connector === 'or' ? ' or ' : ' and ');
-    v = `${nv.name} = ${op.fn} ${nv.source} where ${clauses}`;
+    const clauses = op.conditions.clauses.map((c) => {
+      const sv = serializeClauseValue(c);
+      return sv ? `${c.field} ${c.operator} ${sv}` : `${c.field} ${c.operator}`;
+    });
+    let clauseStr = clauses[0] || '';
+    for (let i = 0; i < op.conditions.connectors.length; i++) {
+      clauseStr += ` ${op.conditions.connectors[i]} ${clauses[i + 1] || ''}`;
+    }
+    v = `${nv.name} = ${op.fn} ${nv.source} where ${clauseStr}`;
   } else if (op.fn === 'ceil' || op.fn === 'floor') {
     v = `${nv.name} = ${op.fn} ${nv.source}`;
   } else if (op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') {
     const sym: Record<ScalarBinaryOp, string> = { add: '+', subtract: '-', multiply: '*', divide: '/' };
-    if (op.operand === 'named' && op.source2) {
-      v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${op.source2}`;
-    } else if (op.operand === 'literal') {
-      v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${exprToString(op.value)}`;
+    if ('terms' in op && Array.isArray(op.terms) && op.terms.length > 0) {
+      const first = op.terms[0]!;
+      if (first.operand === 'named' && first.source2) {
+        v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${first.source2}`;
+      } else if (first.operand === 'literal') {
+        v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${exprToString(first.value)}`;
+      } else {
+        v = `${nv.name} = ${JSON.stringify(op)}`;
+      }
+      for (let i = 1; i < op.terms.length; i++) {
+        const t = op.terms[i]!;
+        if (t.operand === 'named' && t.source2) {
+          v += ` ${sym[op.fn]} ${t.source2}`;
+        } else if (t.operand === 'literal') {
+          v += ` ${sym[op.fn]} ${exprToString(t.value)}`;
+        }
+      }
     } else {
       v = `${nv.name} = ${JSON.stringify(op)}`;
     }
@@ -638,28 +676,35 @@ function parseOutcomeEntry(text: string, comment: string): Outcome {
   const name = m[1]!.trim();
   const clauseText = m[2]!.trim();
 
-  const conditions = parseOutcomeConditions(clauseText);
+  const { conditions, connectors } = parseOutcomeConditions(clauseText);
   return {
     id: crypto.randomUUID(),
     name,
     conditions,
-    connector: 'and',
+    connectors,
     comment,
   };
 }
 
-function parseOutcomeConditions(text: string): OutcomeCondition[] {
+function parseOutcomeConditions(text: string): { conditions: OutcomeCondition[]; connectors: ('and' | 'or')[] } {
   const conditions: OutcomeCondition[] = [];
+  const connectors: ('and' | 'or')[] = [];
   const tokens = text.split(/\s+/);
   let i = 0;
   let buffer: string[] = [];
+  let pendingConnector: 'and' | 'or' | null = null;
   const flushBuffer = (): void => {
     if (buffer.length === 0) return;
     conditions.push(parseSingleOutcomeCondition(buffer));
     buffer = [];
+    if (pendingConnector !== null) {
+      connectors.push(pendingConnector);
+      pendingConnector = null;
+    }
   };
   while (i < tokens.length) {
     if (tokens[i] === 'and' || tokens[i] === 'or') {
+      pendingConnector = tokens[i] === 'or' ? 'or' : 'and';
       flushBuffer();
       i++;
       continue;
@@ -668,7 +713,7 @@ function parseOutcomeConditions(text: string): OutcomeCondition[] {
     i++;
   }
   flushBuffer();
-  return conditions;
+  return { conditions, connectors };
 }
 
 function parseSingleOutcomeCondition(tokens: string[]): OutcomeCondition {
@@ -702,8 +747,12 @@ function serializeOutcomeEntry(o: Outcome): YamlNode {
       return `${c.op} ${c.source} ${c.subCondition} ${exprToString(c.value)}`;
     }
     return `${c.source} ${c.op} ${exprToString(c.value)}`;
-  }).join(' and ');
-  const v = `${o.name} when ${conds}`;
+  });
+  let condStr = conds[0] || '';
+  for (let i = 0; i < o.connectors.length; i++) {
+    condStr += ` ${o.connectors[i]} ${conds[i + 1] || ''}`;
+  }
+  const v = `${o.name} when ${condStr}`;
   return o.comment ? { _value: v, _comment: o.comment } : v;
 }
 
@@ -846,10 +895,19 @@ function resolveReferences(config: PresetConfig): PresetConfig {
       throw new PresetError(`Pipeline "${nv.name}" references unknown source "${nv.source}"`);
     }
     if (typeof nv.op === 'object' && nv.op !== null && 'fn' in nv.op) {
-      const op = nv.op as { fn: string; operand?: string; source2?: string };
+      const op = nv.op as { fn: string; operand?: string; source2?: string; terms?: ScalarBinaryTerm[] };
       if (op.operand === 'named' && op.source2) {
         if (!pipelineByName.has(op.source2)) {
           throw new PresetError(`Pipeline "${nv.name}" references unknown source "${op.source2}"`);
+        }
+      }
+      if (op.terms) {
+        for (const term of op.terms) {
+          if (term.operand === 'named' && term.source2) {
+            if (!pipelineByName.has(term.source2)) {
+              throw new PresetError(`Pipeline "${nv.name}" references unknown source "${term.source2}"`);
+            }
+          }
         }
       }
     }

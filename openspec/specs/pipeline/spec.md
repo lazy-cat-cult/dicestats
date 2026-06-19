@@ -16,7 +16,7 @@ The pipeline SHALL consist of an ordered list of `NamedValue` entries. Each entr
 
 There are two categories:
 - **VectorFunction**: `filter` or `remove` — each with a `ConditionChain` and produces a vector
-- **ScalarFunction**: `count`, `sum`, `max`, `min`, binary math (`add`/`subtract`/`multiply`/`divide` with literal or named operand), `ceil`, `floor` — produces a scalar
+- **ScalarFunction**: `count`, `sum`, `max`, `min`, `sub`, binary math (`add`/`subtract`/`multiply`/`divide` with terms array), `ceil`, `floor` — produces a scalar
 
 ```typescript
 type VectorFunction =
@@ -25,13 +25,17 @@ type VectorFunction =
 
 type ScalarBinaryOp = 'add' | 'subtract' | 'multiply' | 'divide';
 
+type ScalarBinaryTerm =
+  | { operand: 'literal'; value: Expr }
+  | { operand: 'named'; source2: string };
+
 type ScalarFunction =
   | 'count'
   | 'sum'
   | 'max'
   | 'min'
-  | { fn: ScalarBinaryOp; operand: 'literal'; value: number }
-  | { fn: ScalarBinaryOp; operand: 'named'; source2: string }
+  | 'sub'
+  | { fn: ScalarBinaryOp; terms: ScalarBinaryTerm[] }
   | { fn: 'ceil' }
   | { fn: 'floor' }
   | { fn: 'max'; operand: 'named'; source2: string }
@@ -65,29 +69,30 @@ The pipeline SHALL support two vector functions:
 - `filter` SHALL keep elements matching conditions and produce a vector
 - `remove` SHALL remove elements matching conditions and produce a vector
 
-Both SHALL use a `ConditionChain` (same type as in reroll conditions) with 1–10 clauses connected by `and`/`or`. The `ConditionClause` for `face` field supports both numeric values and `FaceValueSpecial` values (`'max_value'` | `'min_value'`), which resolve at match time based on the die's `sides`.
+Both SHALL use a `ConditionChain` (same type as in reroll conditions) with 1–10 clauses connected by `and`/`or`. The `ConditionClause` for `face` field supports both numeric expression values and `is_*` operators (`is_min` | `is_max` | `is_even` | `is_odd`).
 
 #### Scenario: Filter operation
 - GIVEN `hits = filter rolled where face >= 5`
 - WHEN rolled values are [{ face: 3, tag: "" }, { face: 6, tag: "" }, { face: 2, tag: "" }]
 - THEN `hits` contains [{ face: 6, tag: "" }]
 
-#### Scenario: Filter with max_value
-- GIVEN `crits = filter rolled where face = max_value` on a d6 pool
+#### Scenario: Filter with is_max
+- GIVEN `crits = filter rolled where face is_max` on a d6 pool
 - WHEN rolled values are [{ face: 4, tag: "" }, { face: 6, tag: "" }]
-- THEN `crits` contains [{ face: 6, tag: "" }] (max_value resolves to 6)
+- THEN `crits` contains [{ face: 6, tag: "" }] (is_max matches face 6 for d6)
 
 #### Scenario: Remove operation
 - GIVEN `no_ones = remove rolled where face = 1`
 - WHEN rolled values are [{ face: 1, tag: "" }, { face: 4, tag: "" }]
 - THEN `no_ones` contains [{ face: 4, tag: "" }]
 
-### Requirement: Scalar Functions (count/sum/max/min)
+### Requirement: Scalar Functions (count/sum/max/min/sub)
 The pipeline SHALL support scalar functions that operate on a vector or scalar and always produce a single number:
 - `count` SHALL return the number of elements in a vector
 - `sum` SHALL return the sum of face values in a vector
 - `max` SHALL return the maximum face value in a vector (a single number, NOT a subset of dice)
 - `min` SHALL return the minimum face value in a vector (a single number, NOT a subset of dice)
+- `sub` SHALL return the first element's face minus all remaining elements' faces: `arr.slice(1).reduce((s, d) => s - d.face, arr[0]!.face)`. Empty vector returns 0.
 
 `max` and `min` MUST be understood as scalar functions. They are NOT equivalent to `keep_highest`/`keep_lowest` which returned a vector of N dice.
 
@@ -104,11 +109,11 @@ The pipeline SHALL support scalar functions that operate on a vector or scalar a
 - THEN `total` is 10
 
 ### Requirement: Scalar Binary Math Operations
-Binary math operations (`add`, `subtract`, `multiply`, `divide`) SHALL accept either a literal value or a named scalar value as the second operand:
-- `{ fn: ScalarBinaryOp; operand: 'literal'; value: number }` SHALL operate with a constant
-- `{ fn: ScalarBinaryOp; operand: 'named'; source2: string }` SHALL operate with another named scalar
+Binary math operations (`add`, `subtract`, `multiply`, `divide`) SHALL accept a `terms` array of `ScalarBinaryTerm` entries:
+- `{ operand: 'literal'; value: Expr }` SHALL operate with a constant expression
+- `{ operand: 'named'; source2: string }` SHALL operate with another named scalar
 
-For `named` operand, `source2` MUST reference `rolled` or a named value defined in a prior row that produces a **scalar** type.
+The first term is applied to the source value, and each subsequent term is applied to the accumulated result. For `named` terms, `source2` MUST reference `rolled` or a named value defined in a prior row that produces a **scalar** type.
 
 #### Scenario: Add with named source
 - GIVEN `total_successes = add success_count by double_crits`
@@ -159,7 +164,7 @@ A pipeline row's `source` and `source2` (for named operand) SHALL reference `rol
 ### Requirement: Type Derivation
 The output type of each pipeline row SHALL be derived from the operation:
 - `filter`, `remove` → **vector**
-- `count`, `sum`, `max`, `min`, binary math, `ceil`, `floor` → **scalar**
+- `count`, `sum`, `max`, `min`, `sub`, binary math, `ceil`, `floor` → **scalar**
 
 #### Scenario: Type mismatch — count on scalar
 - GIVEN a pipeline row referencing a scalar named value as source with `op: 'count'`
@@ -179,12 +184,12 @@ A `divide` operation where the divisor is zero SHALL produce 0 (not Infinity or 
 - THEN `average` is 0
 
 ### Requirement: Max/Min on Empty Vector
-When `max` or `min` is applied to an empty vector, the result SHALL be `-Infinity` or `Infinity` respectively. Users SHOULD guard against this using `none?` outcome conditions.
+When `max`, `min`, or `sub` is applied to an empty vector, the result SHALL be `0`.
 
 #### Scenario: Max on empty vector
 - GIVEN a filter that removes all dice, followed by `max`
 - WHEN the filter yields an empty vector
-- THEN `max` returns `-Infinity`
+- THEN `max` returns `0`
 
 ### Requirement: Pipeline Row Limit
 The pipeline SHALL support a maximum of 20 rows.
