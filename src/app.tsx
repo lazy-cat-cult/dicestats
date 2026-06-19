@@ -1,5 +1,5 @@
 import { signal } from '@preact/signals';
-import type { SimResult, SimJob } from '@/types';
+import type { SimResult, SimJob, SampleTrace } from '@/types';
 import {
   dicePool,
   rerollConditions,
@@ -17,7 +17,11 @@ import {
   showRerollComments,
   showOutcomeComments,
   currentPresetName,
-
+  sampleMode,
+  sampleTrace,
+  sampleX,
+  sampleY,
+  resetSampleMode,
 } from '@/state/app-state';
 import { PresetSelector } from '@/components/PresetSelector';
 import { DicePoolEditor } from '@/components/DicePoolEditor';
@@ -29,6 +33,7 @@ import { ResultView } from '@/components/ResultView';
 import { ResultDetailsModal } from '@/components/ResultDetailsModal';
 import { OutcomeChart, ParameterChart } from '@/components/DistributionChart';
 import { OddsTape } from '@/components/OddsTape';
+import { SampleView } from '@/components/SampleView';
 import { saveConfig, loadConfig } from '@/state/persistence';
 import { validateConfig, canRunSimulation } from '@/utils/validation';
 import { computed } from '@preact/signals';
@@ -58,6 +63,7 @@ export function resetUiForPresetApply() {
   simResults.value = [];
   simError.value = null;
   confirmedHighCost.value = false;
+  resetSampleMode();
 }
 
 const validationErrors = computed(() =>
@@ -103,6 +109,7 @@ export function App() {
       return;
     }
     confirmedHighCost.value = false;
+    resetSampleMode();
     isSimulating.value = true;
     simError.value = null;
     simResults.value = [];
@@ -130,6 +137,18 @@ export function App() {
         worker?.terminate();
         worker = null;
       }
+      if (msg.type === 'sampleResult') {
+        sampleTrace.value = msg.trace as SampleTrace;
+        sampleMode.value = 'result';
+        worker?.terminate();
+        worker = null;
+      }
+      if (msg.type === 'sampleError') {
+        simError.value = msg.message || 'Sample error';
+        sampleMode.value = 'idle';
+        worker?.terminate();
+        worker = null;
+      }
       if (msg.type === 'error') {
         simError.value = msg.message;
         isSimulating.value = false;
@@ -139,8 +158,13 @@ export function App() {
     };
 
     worker.onerror = (e: ErrorEvent) => {
-      simError.value = e.message || 'Simulation error';
-      isSimulating.value = false;
+      if (sampleMode.value === 'sampling') {
+        simError.value = e.message || 'Sample error';
+        sampleMode.value = 'idle';
+      } else {
+        simError.value = e.message || 'Simulation error';
+        isSimulating.value = false;
+      }
       worker?.terminate();
       worker = null;
     };
@@ -148,8 +172,65 @@ export function App() {
     worker.postMessage({ type: 'run', job });
   }
 
+  function runSample() {
+    cancelSimulation();
+    resetSampleMode();
+    simResults.value = [];
+    simError.value = null;
+    sampleMode.value = 'sampling';
+
+    const sw = sweep.value;
+    let xVal: number | null = null;
+    let yVal: number | null = null;
+    if (sw.x.length > 0) {
+      xVal = sw.x[Math.floor(Math.random() * sw.x.length)]!;
+    }
+    if (sw.y && sw.y.length > 0) {
+      yVal = sw.y[Math.floor(Math.random() * sw.y.length)]!;
+    }
+    sampleX.value = xVal;
+    sampleY.value = yVal;
+
+    const job: SimJob = {
+      pool: { ...dicePool.value, terms: dicePool.value.terms.map((t) => ({ ...t, count: t.count, sides: t.sides })) },
+      rerollConditions: rerollConditions.value.map((r) => ({ ...r, conditions: { ...r.conditions, clauses: [...r.conditions.clauses] } })),
+      pipeline: pipeline.value.map((p) => ({ ...p })),
+      outcomes: outcomes.value.map((o) => ({ ...o, conditions: [...o.conditions] })),
+      sweep: { x: [...sw.x], y: sw.y ? [...sw.y] : null },
+      iterations: 1,
+      taskName: currentPresetName.value ?? undefined,
+    };
+
+    worker = new Worker(new URL('@/worker/sim.worker.ts', import.meta.url), { type: 'module' });
+
+    worker.onmessage = (e: MessageEvent) => {
+      const msg = e.data;
+      if (msg.type === 'sampleResult') {
+        sampleTrace.value = msg.trace as SampleTrace;
+        sampleMode.value = 'result';
+        worker?.terminate();
+        worker = null;
+      }
+      if (msg.type === 'sampleError') {
+        simError.value = msg.message || 'Sample error';
+        sampleMode.value = 'idle';
+        worker?.terminate();
+        worker = null;
+      }
+    };
+
+    worker.onerror = (e: ErrorEvent) => {
+      simError.value = e.message || 'Sample error';
+      sampleMode.value = 'idle';
+      worker?.terminate();
+      worker = null;
+    };
+
+    worker.postMessage({ type: 'sample', job, x: xVal ?? undefined, y: yVal ?? undefined });
+  }
+
   const blockingErrors = validationErrors.value.filter((e) => e.blocking);
-  const hasResults = !isSimulating.value && simResults.value.length > 0;
+  const hasResults = !isSimulating.value && simResults.value.length > 0 && sampleMode.value === 'idle';
   const singleResult = simResults.value.length === 1 ? simResults.value[0] : null;
   const sims = sweepSimCount.value;
   const sw = sweep.value;
@@ -159,6 +240,8 @@ export function App() {
   const subLabel = yActive
     ? `1M × ${xCount} · ${yCount}`
     : `1M × ${Math.max(1, sims)}`;
+  const canSample = canRun.value && sampleMode.value !== 'sampling';
+  const sampleActive = sampleMode.value === 'result' && sampleTrace.value !== null;
 
   return (
     <div class="min-h-screen flex flex-col">
@@ -257,6 +340,16 @@ export function App() {
           <div class="sticky bottom-0 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mt-2 bg-paper/95 backdrop-blur border-t-2 border-gold">
             <div class="flex items-center gap-3">
               <Button
+                variant="ghost"
+                size="md"
+                onClick={runSample}
+                disabled={!canSample}
+                className="shrink-0"
+                ariaLabel="Roll a single sample throw"
+              >
+                {sampleMode.value === 'sampling' ? 'Sampling…' : 'Sample'}
+              </Button>
+              <Button
                 variant="primary"
                 size="lg"
                 onClick={runSimulation}
@@ -286,6 +379,65 @@ export function App() {
         </div>
 
         <aside class="lg:sticky lg:top-6 lg:self-start space-y-6">
+          {sampleActive && (() => {
+            const trace = sampleTrace.value!;
+            function postSample(overrides?: { termIndex: number; faces: number[] }[]) {
+              cancelSimulation();
+              const job: SimJob = {
+                pool: { ...dicePool.value, terms: dicePool.value.terms.map((t) => ({ ...t, count: t.count, sides: t.sides })) },
+                rerollConditions: rerollConditions.value.map((r) => ({ ...r, conditions: { ...r.conditions, clauses: [...r.conditions.clauses] } })),
+                pipeline: pipeline.value.map((p) => ({ ...p })),
+                outcomes: outcomes.value.map((o) => ({ ...o, conditions: [...o.conditions] })),
+                sweep: { x: [...sweep.value.x], y: sweep.value.y ? [...sweep.value.y] : null },
+                iterations: 1,
+                taskName: currentPresetName.value ?? undefined,
+              };
+              worker = new Worker(new URL('@/worker/sim.worker.ts', import.meta.url), { type: 'module' });
+              worker.onmessage = (e2) => {
+                const m = e2.data;
+                if (m.type === 'sampleResult') {
+                  sampleTrace.value = m.trace as SampleTrace;
+                  worker?.terminate();
+                  worker = null;
+                }
+                if (m.type === 'sampleError') {
+                  worker?.terminate();
+                  worker = null;
+                }
+              };
+              worker.onerror = () => { worker?.terminate(); worker = null; };
+              worker.postMessage({ type: 'sample', job, x: sampleX.value ?? undefined, y: sampleY.value ?? undefined, overrides });
+            }
+            function buildAllFaces(): { termIndex: number; faces: number[] }[] {
+              return dicePool.value.terms.map((_, ti) => ({
+                termIndex: ti,
+                faces: trace.diceDetails.filter((d) => d.termIndex === ti).map((d) => d.originalFace),
+              }));
+            }
+            return (
+              <SampleView
+                trace={trace}
+                diceTerms={dicePool.value.terms}
+                onFaceChange={(termIndex, dieIndex, newFace) => {
+                  const overrides = buildAllFaces();
+                  const ot = overrides.find((o) => o.termIndex === termIndex);
+                  if (ot && dieIndex < ot.faces.length) ot.faces[dieIndex] = newFace;
+                  postSample(overrides);
+                }}
+                onSweepChange={(xVal, yVal) => {
+                  if (xVal !== undefined) sampleX.value = xVal;
+                  if (yVal !== undefined) sampleY.value = yVal;
+                  postSample(buildAllFaces());
+                }}
+                onRollAgain={() => runSample()}
+                sampleX={sampleX.value}
+                sampleY={sampleY.value}
+              />
+            );
+          })()}
+          {sampleMode.value === 'sampling' && (
+            <SampleRunningPanel />
+          )}
           {hasResults && singleResult && <OddsTape result={singleResult} progress={null} />}
           {isSimulating.value && <RunningPanel progress={simProgress.value} />}
           {simError.value && <ErrorPanel message={simError.value} />}
@@ -325,7 +477,7 @@ export function App() {
             </Section>
           )}
 
-          {!isSimulating.value && !hasResults && !simError.value && (
+          {!isSimulating.value && !hasResults && !simError.value && sampleMode.value === 'idle' && (
             <EmptyPanel />
           )}
         </aside>
@@ -408,6 +560,22 @@ function EmptyPanel() {
         <span class="font-mono text-billiard"> Roll the Dice</span>. The simulation
         runs 1,000,000 rolls in a background worker and reports each outcome's
         probability here.
+      </p>
+    </div>
+  );
+}
+
+function SampleRunningPanel() {
+  return (
+    <div class="border-2 border-billiard bg-paper p-5 shadow-[0_3px_0_0_var(--color-billiard)]">
+      <div class="flex items-center justify-between mb-3">
+        <span class="font-display text-billiard text-[15px] tracking-[0.18em] inline-flex items-center gap-2">
+          <span class="inline-block w-2 h-2 bg-billiard rounded-full" />
+          SAMPLING
+        </span>
+      </div>
+      <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft">
+        Running one throw…
       </p>
     </div>
   );

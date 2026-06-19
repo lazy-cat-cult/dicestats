@@ -1,5 +1,5 @@
 import { signal, computed, effect } from '@preact/signals';
-import type { DicePool, Outcome, PresetConfig, RerollCondition, NamedValue, SweepParameters, Expr } from '@/types';
+import type { DicePool, Outcome, PresetConfig, RerollCondition, NamedValue, SweepParameters, Expr, SampleTrace } from '@/types';
 import { exprToString } from '@/utils/expression';
 import { PRESETS } from '@/domain/presets';
 import { loadUiPrefs, saveUiPrefs } from '@/state/persistence';
@@ -21,6 +21,18 @@ export const outcomes = signal<Outcome[]>([]);
 export const sweep = signal<SweepParameters>(defaultSweep());
 export const isSimulating = signal(false);
 export const simProgress = signal({ completed: 0, total: 0 });
+
+export const sampleMode = signal<'idle' | 'sampling' | 'result'>('idle');
+export const sampleTrace = signal<SampleTrace | null>(null);
+export const sampleX = signal<number | null>(null);
+export const sampleY = signal<number | null>(null);
+
+export function resetSampleMode() {
+  sampleMode.value = 'idle';
+  sampleTrace.value = null;
+  sampleX.value = null;
+  sampleY.value = null;
+}
 
 export function resetToPreset(presetId: string) {
   const preset = [...PRESETS, ...userPresets.value].find((p) => p.id === presetId);
