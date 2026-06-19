@@ -1,9 +1,10 @@
-import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeOverlap, MatchSetCount, SimJob, SimResult, DiceTerm, Expr, TaggedDie, NamedValue as NamedValueT, Outcome as OutcomeT, ScalarFunction, VectorFunction, ScalarBinaryTerm } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeOverlap, MatchSetCount, SimJob, SimResult, DiceTerm, Expr, TaggedDie, NamedValue as NamedValueT, Outcome as OutcomeT, ScalarFunction, VectorFunction, ScalarBinaryTerm, SampleTrace } from '@/types';
 import { NOT_MATCHED_LABEL } from '@/types';
 import { matchConditions, findSides } from '@/domain/matching';
 import { evaluatePipeline } from '@/domain/resolve';
 import { evaluateOutcomes } from '@/domain/classify';
 import { evalExpr, exprToInteger, literalExpr } from '@/utils/expression';
+import { buildSampleTrace } from '@/utils/sample';
 
 const MATCH_SET_SEP = '\u0001';
 const MATCH_SET_CAP = 50;
@@ -219,6 +220,18 @@ function materializeExpr(expr: Expr, vars: { x: number; y: number }): Expr {
   return literalExpr(evalExpr(expr, vars));
 }
 
+function sampleOnce(
+  pool: DicePool,
+  rerollConditions: RerollCondition[],
+  pipeline: NamedValue[],
+  outcomes: Outcome[],
+  termsSides: { sides: number; tag: string }[],
+  vars: { x: number; y: number },
+  overrides?: { termIndex: number; faces: number[] }[]
+): SampleTrace {
+  return buildSampleTrace(pool, rerollConditions, pipeline, outcomes, termsSides, vars, overrides);
+}
+
 function materializeTerm(term: DiceTerm, vars: { x: number; y: number }): DiceTerm {
   return {
     id: term.id,
@@ -291,11 +304,14 @@ function buildSweepList(sweep: { x: number[]; y: number[] | null }): { xList: nu
 
 export type WorkerMessage =
   | { type: 'run'; job: SimJob }
+  | { type: 'sample'; job: SimJob; x?: number; y?: number; overrides?: { termIndex: number; faces: number[] }[] }
   | { type: 'cancel' };
 
 export type WorkerResponse =
   | { type: 'progress'; completed: number; total: number }
   | { type: 'result'; results: SimResult[] }
+  | { type: 'sampleResult'; trace: SampleTrace }
+  | { type: 'sampleError'; message: string }
   | { type: 'error'; message: string };
 
 let cancelled = false;
@@ -346,5 +362,28 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
     } catch (err: unknown) {
       self.postMessage({ type: 'error', message: err instanceof Error ? err.message : String(err) } as WorkerResponse);
     }
+    return;
+  }
+
+  if (msg.type === 'sample') {
+    cancelled = false;
+    try {
+      const vars = { x: msg.x ?? 0, y: msg.y ?? 0 };
+      const materialized = materializeSimJob(msg.job, vars);
+      const termsSides = materialized.pool.terms.map((t) => ({ sides: exprToInteger(t.sides, vars, { min: 1, max: 999 }), tag: t.tag }));
+      const trace = sampleOnce(
+        materialized.pool,
+        materialized.rerollConditions,
+        materialized.pipeline,
+        materialized.outcomes,
+        termsSides,
+        vars,
+        msg.overrides
+      );
+      self.postMessage({ type: 'sampleResult', trace } as WorkerResponse);
+    } catch (err: unknown) {
+      self.postMessage({ type: 'sampleError', message: err instanceof Error ? err.message : String(err) } as WorkerResponse);
+    }
+    return;
   }
 };

@@ -161,6 +161,39 @@ export interface PresetConfig {
   sweep: SweepParameters;
 }
 
+export interface SampleRerollEvent {
+  conditionIndex: number;
+  action: 'reroll' | 'explode';
+  oldFace: number;
+  newFace: number;
+}
+
+export interface SampleDieDetail {
+  termIndex: number;
+  originalFace: number;
+  tag: string;
+  rerollEvents: SampleRerollEvent[];
+}
+
+export interface SamplePipelineValue {
+  name: string;
+  value: number | TaggedDie[];
+  type: 'scalar' | 'vector';
+}
+
+export interface SampleOutcomeMatch {
+  name: string;
+  matched: boolean;
+}
+
+export interface SampleTrace {
+  diceDetails: SampleDieDetail[];
+  pipeline: SamplePipelineValue[];
+  outcomes: SampleOutcomeMatch[];
+  sweepX: number | null;
+  sweepY: number | null;
+}
+
 export interface SavedConfig {
   version: 9;
   pool: DicePool;
