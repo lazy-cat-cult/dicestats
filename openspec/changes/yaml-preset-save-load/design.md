@@ -73,8 +73,8 @@ A list of `name = expr`. Each entry is one named step; the order in the list is 
 | `remove X where clauses` | `op: { fn: 'remove', conditions }` |
 | `ceil X` | `op: { fn: 'ceil' }` |
 | `floor X` | `op: { fn: 'floor' }` |
-| `A + B` / `A - B` / `A * B` / `A / B` | `op: { fn: add|subtract|multiply|divide, operand: 'named', source2: B }` |
-| `max(A, B)` / `min(A, B)` | `op: { fn: 'max'\|'min', operand: 'named', source2: B }` |
+| `A + B` / `A - B` / `A * B` / `A / B` | `op: { fn: add|subtract|multiply|divide, operand: 'ref', source2: B }` |
+| `max(A, B)` / `min(A, B)` | `op: { fn: 'max'\|'min', operand: 'ref', source2: B }` |
 
 Scalar literals are not currently expressible in pseudolanguage; if a preset needs `+5` it should be split into a step. This keeps the pseudolanguage declarative (no expression eval).
 

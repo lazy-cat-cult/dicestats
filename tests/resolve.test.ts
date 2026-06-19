@@ -174,7 +174,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'doubled',
         source: 'cnt',
-        op: { fn: 'multiply', terms: [{ operand: 'literal', value: literalExpr(2) }] },
+        op: { fn: 'multiply', terms: [{ operand: 'val', value: literalExpr(2) }] },
         comment: '',
       },
     ];
@@ -193,7 +193,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'plus_five',
         source: 'cnt',
-        op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(5) }] },
+        op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(5) }] },
         comment: '',
       },
     ];
@@ -215,7 +215,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'half',
         source: 'cnt',
-        op: { fn: 'divide', terms: [{ operand: 'literal', value: literalExpr(3) }] },
+        op: { fn: 'divide', terms: [{ operand: 'val', value: literalExpr(3) }] },
         comment: '',
       },
       {
@@ -254,7 +254,7 @@ describe('evaluatePipeline', () => {
         id: 'p1',
         name: 'result',
         source: 'cnt',
-        op: { fn: 'divide', terms: [{ operand: 'literal', value: literalExpr(0) }] },
+        op: { fn: 'divide', terms: [{ operand: 'val', value: literalExpr(0) }] },
         comment: '',
       },
     ];
@@ -286,7 +286,7 @@ describe('evaluatePipeline', () => {
         id: 'p3',
         name: 'doubled_hits',
         source: 'hit_count',
-        op: { fn: 'multiply', terms: [{ operand: 'literal', value: literalExpr(2) }] },
+        op: { fn: 'multiply', terms: [{ operand: 'val', value: literalExpr(2) }] },
         comment: '',
       },
     ];
@@ -330,7 +330,7 @@ describe('evaluatePipeline', () => {
         id: 'p2',
         name: 'total_mod',
         source: 'total',
-        op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(3) }] },
+        op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(3) }] },
         comment: '',
       },
     ];
@@ -360,7 +360,7 @@ describe('evaluatePipeline', () => {
         id: 'p3',
         name: 'net',
         source: 'total',
-        op: { fn: 'subtract', terms: [{ operand: 'named', source2: 'bonus' }] },
+        op: { fn: 'subtract', terms: [{ operand: 'ref', source2: 'bonus' }] },
         comment: '',
       },
     ];
@@ -439,13 +439,13 @@ describe('evaluatePipeline', () => {
       const rolled: TaggedDie[] = [{ face: 10, tag: '' }];
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'main_value', source: 'rolled', op: 'max', comment: '' },
-        { id: 'p2', name: 'crithit', source: 'main_value', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
-        { id: 'p3', name: 'critmiss', source: 'main_value', op: { fn: 'subtract', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
+        { id: 'p2', name: 'crithit', source: 'main_value', op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(2) }] }, comment: '' },
+        { id: 'p3', name: 'critmiss', source: 'main_value', op: { fn: 'subtract', terms: [{ operand: 'val', value: literalExpr(2) }] }, comment: '' },
         {
           id: 'p4', name: 'total', source: 'main_value',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'named', source2: 'crithit' }, condition: { source: 'main_value', op: '=', value: literalExpr(10) } },
-            { value: { operand: 'named', source2: 'critmiss' }, condition: { source: 'main_value', op: '=', value: literalExpr(1) } },
+            { value: { operand: 'ref', source2: 'crithit' }, condition: { source: 'main_value', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'ref', source2: 'critmiss' }, condition: { source: 'main_value', op: '=', value: literalExpr(1) } },
           ] },
           comment: '',
         },
@@ -458,11 +458,11 @@ describe('evaluatePipeline', () => {
       const rolled: TaggedDie[] = [{ face: 5, tag: '' }];
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'main_value', source: 'rolled', op: 'max', comment: '' },
-        { id: 'p2', name: 'crithit', source: 'main_value', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
+        { id: 'p2', name: 'crithit', source: 'main_value', op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(2) }] }, comment: '' },
         {
           id: 'p3', name: 'total', source: 'main_value',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'named', source2: 'crithit' }, condition: { source: 'main_value', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'ref', source2: 'crithit' }, condition: { source: 'main_value', op: '=', value: literalExpr(10) } },
           ] },
           comment: '',
         },
@@ -478,7 +478,7 @@ describe('evaluatePipeline', () => {
         {
           id: 'p2', name: 'total', source: 'main_value',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'literal', value: literalExpr(-2) }, condition: { source: 'main_value', op: '=', value: literalExpr(1) } },
+            { value: { operand: 'val', value: literalExpr(-2) }, condition: { source: 'main_value', op: '=', value: literalExpr(1) } },
           ] },
           comment: '',
         },
@@ -494,7 +494,7 @@ describe('evaluatePipeline', () => {
         {
           id: 'p2', name: 'result', source: 'val',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'val', op: 'is_even' } },
+            { value: { operand: 'val', value: literalExpr(1) }, condition: { source: 'val', op: 'is_even' } },
           ] },
           comment: '',
         },
@@ -510,7 +510,7 @@ describe('evaluatePipeline', () => {
         {
           id: 'p2', name: 'result', source: 'val',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'literal', value: literalExpr(2) }, condition: { source: 'val', op: 'is_odd' } },
+            { value: { operand: 'val', value: literalExpr(2) }, condition: { source: 'val', op: 'is_odd' } },
           ] },
           comment: '',
         },
@@ -526,8 +526,8 @@ describe('evaluatePipeline', () => {
         {
           id: 'p2', name: 'result', source: 'val',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'literal', value: literalExpr(99) }, condition: { source: 'missing', op: '=', value: literalExpr(1) } },
-            { value: { operand: 'literal', value: literalExpr(42) }, condition: { source: 'val', op: '=', value: literalExpr(5) } },
+            { value: { operand: 'val', value: literalExpr(99) }, condition: { source: 'missing', op: '=', value: literalExpr(1) } },
+            { value: { operand: 'val', value: literalExpr(42) }, condition: { source: 'val', op: '=', value: literalExpr(5) } },
           ] },
           comment: '',
         },
@@ -540,14 +540,14 @@ describe('evaluatePipeline', () => {
       const rolled: TaggedDie[] = [{ face: 1, tag: '' }];
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'main_value', source: 'rolled', op: 'max', comment: '' },
-        { id: 'p2', name: 'crithit', source: 'main_value', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
-        { id: 'p3', name: 'critmiss', source: 'main_value', op: { fn: 'subtract', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
+        { id: 'p2', name: 'crithit', source: 'main_value', op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(2) }] }, comment: '' },
+        { id: 'p3', name: 'critmiss', source: 'main_value', op: { fn: 'subtract', terms: [{ operand: 'val', value: literalExpr(2) }] }, comment: '' },
         {
           id: 'p4', name: 'total', source: 'main_value',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'named', source2: 'crithit' }, condition: { source: 'main_value', op: '=', value: literalExpr(10) } },
-            { value: { operand: 'named', source2: 'critmiss' }, condition: { source: 'main_value', op: '=', value: literalExpr(1) } },
-            { value: { operand: 'literal', value: literalExpr(-2) }, condition: { source: 'critmiss', op: '<', value: literalExpr(0) } },
+            { value: { operand: 'ref', source2: 'crithit' }, condition: { source: 'main_value', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'ref', source2: 'critmiss' }, condition: { source: 'main_value', op: '=', value: literalExpr(1) } },
+            { value: { operand: 'val', value: literalExpr(-2) }, condition: { source: 'critmiss', op: '<', value: literalExpr(0) } },
           ] },
           comment: '',
         },

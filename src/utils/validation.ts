@@ -26,7 +26,7 @@ export function isBinaryMathLiteral(nv: NamedValue): boolean {
   const fn = op.fn;
   if (fn !== 'add' && fn !== 'subtract' && fn !== 'multiply' && fn !== 'divide') return false;
   if (op.terms && op.terms.length > 0) {
-    return op.terms[0]!.operand === 'literal';
+    return op.terms[0]!.operand === 'val';
   }
   return false;
 }
@@ -35,7 +35,7 @@ export function asScalarLiteral(nv: NamedValue): ScalarBinaryTerm | null {
   const op = asScalarObjectOp(nv.op);
   if (!op) return null;
   if (op.fn !== 'add' && op.fn !== 'subtract' && op.fn !== 'multiply' && op.fn !== 'divide') return null;
-  if (op.terms && op.terms.length > 0 && op.terms[0]!.operand === 'literal') {
+  if (op.terms && op.terms.length > 0 && op.terms[0]!.operand === 'val') {
     return op.terms[0]!;
   }
   return null;
@@ -127,16 +127,16 @@ export function validateConfig(
           const terms = obj.terms;
           if (terms) {
             for (const term of terms) {
-              if (term.operand === 'named' && term.source2 === nv.name) {
+              if (term.operand === 'ref' && term.source2 === nv.name) {
                 errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" cannot reference itself`, blocking: true });
               }
-              if (fn === 'divide' && term.operand === 'literal') {
+              if (fn === 'divide' && term.operand === 'val') {
                 const litVal = term.value.kind === 'literal' ? term.value.value : null;
                 if (litVal === 0) {
                   errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" divides by zero`, blocking: false });
                 }
               }
-              if (term.operand === 'literal') {
+              if (term.operand === 'val') {
                 const testVars = { x: 1, y: 1 };
                 const v = evalExpr(term.value, testVars);
                 if (!Number.isFinite(v)) {
@@ -188,7 +188,7 @@ export function validateConfig(
                   errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: condition value evaluates to non-finite value`, blocking: false });
                 }
               }
-              if (branch.value.operand === 'named') {
+              if (branch.value.operand === 'ref') {
                 const branchVal = branch.value;
                 if (branchVal.source2 === nv.name) {
                   errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: cannot reference itself`, blocking: true });
@@ -200,7 +200,7 @@ export function validateConfig(
                   errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: branch value source "${branchVal.source2}" appears after switch row`, blocking: true });
                 }
               }
-              if (branch.value.operand === 'literal') {
+              if (branch.value.operand === 'val') {
                 const testVars = { x: 1, y: 1 };
                 const v = evalExpr(branch.value.value, testVars);
                 if (!Number.isFinite(v)) {

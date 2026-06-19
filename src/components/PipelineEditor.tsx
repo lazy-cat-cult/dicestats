@@ -38,7 +38,7 @@ function emptyNamedValue(): NamedValue {
 
 function emptySwitchBranch(): SwitchBranch {
   return {
-    value: { operand: 'literal', value: literalExpr(0) },
+    value: { operand: 'val', value: literalExpr(0) },
     condition: { source: '', op: '=', value: literalExpr(1) },
   };
 }
@@ -151,7 +151,7 @@ export function PipelineEditor() {
                     })();
                     if (sourceType !== newSourceType) {
                       if (newSourceType === 'scalar') {
-                        updateRow(i, { source: newSource, op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(0) }] } as ScalarFunction });
+                        updateRow(i, { source: newSource, op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(0) }] } as ScalarFunction });
                       } else {
                         updateRow(i, { source: newSource, op: { fn: 'filter', conditions: emptyCondition() } as VectorFunction });
                       }
@@ -194,7 +194,7 @@ export function PipelineEditor() {
                       if (val === 'ceil' || val === 'floor') {
                         updateRow(i, { op: { fn: val } as ScalarFunction });
                       } else if (SCALAR_BINARY_OPS.includes(val as ScalarBinaryOp)) {
-                        updateRow(i, { op: { fn: val as ScalarBinaryOp, terms: [{ operand: 'literal', value: literalExpr(0) }] } as ScalarFunction });
+                        updateRow(i, { op: { fn: val as ScalarBinaryOp, terms: [{ operand: 'val', value: literalExpr(0) }] } as ScalarFunction });
                       } else if (val === 'switch') {
                         updateRow(i, { op: { fn: 'switch', branches: [emptySwitchBranch()] } as ScalarFunction });
                       }
@@ -243,7 +243,7 @@ export function PipelineEditor() {
                 }
 
                 function addTerm() {
-                  updateTerms([...terms, { operand: 'literal', value: literalExpr(0) }]);
+                  updateTerms([...terms, { operand: 'val', value: literalExpr(0) }]);
                 }
 
                 function removeTerm(ti: number) {
@@ -259,20 +259,20 @@ export function PipelineEditor() {
                           ariaLabel="Operand"
                           value={term.operand}
                           onChange={(v) => {
-                            if (v === 'literal') {
-                              updateTerm(ti, { operand: 'literal', value: literalExpr(0) } as ScalarBinaryTerm);
+                            if (v === 'val') {
+                              updateTerm(ti, { operand: 'val', value: literalExpr(0) } as ScalarBinaryTerm);
                             } else {
                               const firstScalar = scalarNames[0] || '';
-                              updateTerm(ti, { operand: 'named', source2: firstScalar } as ScalarBinaryTerm);
+                              updateTerm(ti, { operand: 'ref', source2: firstScalar } as ScalarBinaryTerm);
                             }
                           }}
                           className="w-20"
                           options={[
-                            { value: 'literal', label: 'literal' },
-                            { value: 'named', label: 'named' },
+                            { value: 'val', label: 'val' },
+                            { value: 'ref', label: 'ref' },
                           ]}
                         />
-                        {term.operand === 'literal' ? (
+                        {term.operand === 'val' ? (
                           <ExprInput
                             value={term.value}
                             onChange={(expr: Expr) => updateTerm(ti, { value: expr } as ScalarBinaryTerm)}
@@ -344,20 +344,20 @@ export function PipelineEditor() {
                             ariaLabel="Branch value type"
                             value={branch.value.operand}
                             onChange={(v) => {
-                              if (v === 'literal') {
-                                updateBranchValue(bi, { operand: 'literal', value: literalExpr(0) } as ScalarBinaryTerm);
+                              if (v === 'val') {
+                                updateBranchValue(bi, { operand: 'val', value: literalExpr(0) } as ScalarBinaryTerm);
                               } else {
                                 const firstScalar = scalarNames[0] || '';
-                                updateBranchValue(bi, { operand: 'named', source2: firstScalar } as ScalarBinaryTerm);
+                                updateBranchValue(bi, { operand: 'ref', source2: firstScalar } as ScalarBinaryTerm);
                               }
                             }}
                             className="w-16"
                             options={[
-                              { value: 'literal', label: 'val' },
-                              { value: 'named', label: 'ref' },
+                              { value: 'val', label: 'val' },
+                              { value: 'ref', label: 'ref' },
                             ]}
                           />
-                          {branch.value.operand === 'literal' ? (
+                          {branch.value.operand === 'val' ? (
                             <ExprInput
                               value={branch.value.value}
                               onChange={(expr: Expr) => updateBranchValue(bi, { value: expr } as ScalarBinaryTerm)}

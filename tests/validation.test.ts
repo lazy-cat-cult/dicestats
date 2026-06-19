@@ -159,7 +159,7 @@ describe('validateConfig', () => {
     it('reports error for self-referencing pipeline', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'a', source: 'rolled', op: 'sum' as const, comment: '' },
-        { id: 'p2', name: 'b', source: 'a', op: { fn: 'add' as const, terms: [{ operand: 'named' as const, source2: 'b' }] }, comment: '' },
+        { id: 'p2', name: 'b', source: 'a', op: { fn: 'add' as const, terms: [{ operand: 'ref' as const, source2: 'b' }] }, comment: '' },
       ];
       const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('cannot reference itself'))).toBe(true);
@@ -168,7 +168,7 @@ describe('validateConfig', () => {
     it('reports non-blocking error for divide by zero', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
-        { id: 'p2', name: 'div', source: 'total', op: { fn: 'divide', terms: [{ operand: 'literal', value: literalExpr(0) }] }, comment: '' },
+        { id: 'p2', name: 'div', source: 'total', op: { fn: 'divide', terms: [{ operand: 'val', value: literalExpr(0) }] }, comment: '' },
       ];
       const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
       expect(errors.some((e) => !e.blocking && e.message.includes('divides by zero'))).toBe(true);
@@ -313,7 +313,7 @@ describe('validateConfig', () => {
     it('passes for compound outcome with two valid sources', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
-        { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(0) }] }, comment: '' },
+        { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(0) }] }, comment: '' },
       ];
       const outcome: Outcome = {
         id: 'o1',
@@ -346,12 +346,12 @@ describe('validateConfig', () => {
     it('passes validation for valid switch', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'val', source: 'rolled', op: 'max', comment: '' },
-        { id: 'p2', name: 'doubled', source: 'val', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
+        { id: 'p2', name: 'doubled', source: 'val', op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(2) }] }, comment: '' },
         {
           id: 'p3', name: 'result', source: 'val',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'named', source2: 'doubled' }, condition: { source: 'val', op: '=', value: literalExpr(10) } },
-            { value: { operand: 'literal', value: literalExpr(0) }, condition: { source: 'val', op: '=', value: literalExpr(1) } },
+            { value: { operand: 'ref', source2: 'doubled' }, condition: { source: 'val', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'val', value: literalExpr(0) }, condition: { source: 'val', op: '=', value: literalExpr(1) } },
           ] },
           comment: '',
         },
@@ -368,7 +368,7 @@ describe('validateConfig', () => {
         {
           id: 'p3', name: 'result', source: 'hits',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'total', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'val', value: literalExpr(1) }, condition: { source: 'total', op: '=', value: literalExpr(10) } },
           ] },
           comment: '',
         },
@@ -382,7 +382,7 @@ describe('validateConfig', () => {
         {
           id: 'p1', name: 'result', source: 'rolled',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'rolled', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'val', value: literalExpr(1) }, condition: { source: 'rolled', op: '=', value: literalExpr(10) } },
           ] },
           comment: '',
         },
@@ -397,7 +397,7 @@ describe('validateConfig', () => {
         {
           id: 'p2', name: 'result', source: 'val',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'nonexistent', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'val', value: literalExpr(1) }, condition: { source: 'nonexistent', op: '=', value: literalExpr(10) } },
           ] },
           comment: '',
         },
@@ -412,7 +412,7 @@ describe('validateConfig', () => {
         {
           id: 'p2', name: 'result', source: 'val',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'later', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'val', value: literalExpr(1) }, condition: { source: 'later', op: '=', value: literalExpr(10) } },
           ] },
           comment: '',
         },
@@ -429,7 +429,7 @@ describe('validateConfig', () => {
         {
           id: 'p3', name: 'result', source: 'val',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'hits', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'val', value: literalExpr(1) }, condition: { source: 'hits', op: '=', value: literalExpr(10) } },
           ] },
           comment: '',
         },
@@ -444,7 +444,7 @@ describe('validateConfig', () => {
         {
           id: 'p2', name: 'result', source: 'val',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'val', op: 'is_min' as any, value: literalExpr(10) } },
+            { value: { operand: 'val', value: literalExpr(1) }, condition: { source: 'val', op: 'is_min' as any, value: literalExpr(10) } },
           ] },
           comment: '',
         },
@@ -459,7 +459,7 @@ describe('validateConfig', () => {
         {
           id: 'p2', name: 'result', source: 'val',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'named', source2: 'result' }, condition: { source: 'val', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'ref', source2: 'result' }, condition: { source: 'val', op: '=', value: literalExpr(10) } },
           ] },
           comment: '',
         },
@@ -474,7 +474,7 @@ describe('validateConfig', () => {
         {
           id: 'p2', name: 'result', source: 'val',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'named', source2: 'later' }, condition: { source: 'val', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'ref', source2: 'later' }, condition: { source: 'val', op: '=', value: literalExpr(10) } },
           ] },
           comment: '',
         },
@@ -503,7 +503,7 @@ describe('validateConfig', () => {
         {
           id: 'p2', name: 'result', source: 'val',
           op: { fn: 'switch', branches: Array.from({ length: 11 }, (_, i) => ({
-            value: { operand: 'literal', value: literalExpr(i) },
+            value: { operand: 'val', value: literalExpr(i) },
             condition: { source: 'val', op: '=', value: literalExpr(i) },
           })) },
           comment: '',

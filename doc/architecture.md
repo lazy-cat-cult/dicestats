@@ -143,11 +143,10 @@ type VectorFunction =
 
 type ScalarFunction =
   | 'count' | 'sum' | 'max' | 'min'
-  | { fn: ScalarBinaryOp; operand: 'literal'; value: number }
-  | { fn: ScalarBinaryOp; operand: 'named'; source2: string }
-  | { fn: 'ceil' } | { fn: 'floor' }
-  | { fn: 'max'; operand: 'named'; source2: string }
-  | { fn: 'min'; operand: 'named'; source2: string };
+  | { fn: ScalarBinaryOp; operand: 'val'; value: number }
+  | { fn: ScalarBinaryOp; operand: 'ref'; source2: string }
+  | { fn: 'max'; operand: 'ref'; source2: string }
+  | { fn: 'min'; operand: 'ref'; source2: string };
 
 interface NamedValue {
   id: string;

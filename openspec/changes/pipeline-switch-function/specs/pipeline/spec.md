@@ -28,7 +28,7 @@ type SwitchBranch = {
 
 `SwitchCondition.source` SHALL reference a named value defined in a prior pipeline row that produces a scalar type.
 
-`SwitchBranch.value` SHALL use the existing `ScalarBinaryTerm` type: `{ operand: 'literal'; value: Expr }` or `{ operand: 'named'; source2: string }`. When `operand` is `'named'`, `source2` SHALL reference a named scalar value defined in a prior pipeline row.
+`SwitchBranch.value` SHALL use the existing `ScalarBinaryTerm` type: `{ operand: 'val'; value: Expr }` or `{ operand: 'ref'; source2: string }`. When `operand` is `'ref'`, `source2` SHALL reference a named scalar value defined in a prior pipeline row.
 
 #### Scenario: switch type structure
 - GIVEN a pipeline row with `source: 'main_value'` and `op: { fn: 'switch', branches: [...] }`
@@ -74,7 +74,7 @@ The resolved source from `condition.source` SHALL be number-coerced for `is_even
 - THEN `bonus` is 5 (named literal resolves against Expr evaluator: `evalExpr({ kind: 'literal', value: 5 }, vars)`)
 
 #### Scenario: literal branch value with named source2
-- GIVEN `result = fallback switch` with branch `doubled if flag = 1` where branch value is `{ operand: 'named', source2: 'doubled' }`
+- GIVEN `result = fallback switch` with branch `doubled if flag = 1` where branch value is `{ operand: 'ref', source2: 'doubled' }`
 - WHEN `fallback` is 0, `flag` is 1, `doubled` is 14
 - THEN `result` is 14 (branch value resolves to named scalar)
 

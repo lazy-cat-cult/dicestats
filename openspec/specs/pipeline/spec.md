@@ -26,8 +26,8 @@ type VectorFunction =
 type ScalarBinaryOp = 'add' | 'subtract' | 'multiply' | 'divide';
 
 type ScalarBinaryTerm =
-  | { operand: 'literal'; value: Expr }
-  | { operand: 'named'; source2: string };
+  | { operand: 'val'; value: Expr }
+  | { operand: 'ref'; source2: string };
 
 type ScalarFunction =
   | 'count'
@@ -38,8 +38,8 @@ type ScalarFunction =
   | { fn: ScalarBinaryOp; terms: ScalarBinaryTerm[] }
   | { fn: 'ceil' }
   | { fn: 'floor' }
-  | { fn: 'max'; operand: 'named'; source2: string }
-  | { fn: 'min'; operand: 'named'; source2: string };
+  | { fn: 'max'; operand: 'ref'; source2: string }
+  | { fn: 'min'; operand: 'ref'; source2: string };
 
 type NamedValue =
   | { id: string; name: string; source: string; op: VectorFunction; comment: string }
@@ -110,8 +110,8 @@ The pipeline SHALL support scalar functions that operate on a vector or scalar a
 
 ### Requirement: Scalar Binary Math Operations
 Binary math operations (`add`, `subtract`, `multiply`, `divide`) SHALL accept a `terms` array of `ScalarBinaryTerm` entries:
-- `{ operand: 'literal'; value: Expr }` SHALL operate with a constant expression
-- `{ operand: 'named'; source2: string }` SHALL operate with another named scalar
+- `{ operand: 'val'; value: Expr }` SHALL operate with a constant expression
+- `{ operand: 'ref'; source2: string }` SHALL operate with another named scalar
 
 The first term is applied to the source value, and each subsequent term is applied to the accumulated result. For `named` terms, `source2` MUST reference `rolled` or a named value defined in a prior row that produces a **scalar** type.
 
@@ -137,8 +137,8 @@ The first term is applied to the source value, and each subsequent term is appli
 `max` and `min` SHALL also accept a named scalar operand (in addition to operating on a vector), producing the larger or smaller of the two scalars respectively.
 
 ```typescript
-| { fn: 'max'; operand: 'named'; source2: string }
-| { fn: 'min'; operand: 'named'; source2: string }
+| { fn: 'max'; operand: 'ref'; source2: string }
+| { fn: 'min'; operand: 'ref'; source2: string }
 ```
 
 `source2` MUST reference a prior named scalar.

@@ -33,7 +33,7 @@ function normalizeIds(config: PresetConfig): PresetConfig {
     }
     if (typeof p.op === 'object' && p.op !== null && 'fn' in p.op) {
       const op = p.op as { operand?: string; source2?: string };
-      if (op.operand === 'named' && op.source2 && pipelineIdSet.has(op.source2)) {
+      if (op.operand === 'ref' && op.source2 && pipelineIdSet.has(op.source2)) {
         const idx = config.pipeline.findIndex((pp) => pp.id === op.source2);
         (base as { op: unknown }).op = { ...(p.op as object), source2: allPipelineIds[idx]! };
       }
@@ -214,7 +214,7 @@ describe('yaml pipeline parser', () => {
       '  - F when best >= 0',
     ].join('\n'));
     const best = cfg.pipeline[2]!;
-    if (typeof best.op === 'object' && best.op.fn === 'max' && best.op.operand === 'named') {
+    if (typeof best.op === 'object' && best.op.fn === 'max' && best.op.operand === 'ref') {
       expect(best.op.source2).toBe('vb');
     } else {
       expect.fail('expected named max');
@@ -490,7 +490,7 @@ describe('yaml daggerheart template', () => {
     expect(totalMod?.source).toBe('total');
     const op = totalMod?.op as { fn: string; terms: { operand: string; value: { kind: string; value: number } }[] };
     expect(op.fn).toBe('add');
-    expect(op.terms[0]!.operand).toBe('literal');
+    expect(op.terms[0]!.operand).toBe('val');
     expect(op.terms[0]!.value).toEqual({ kind: 'literal', value: 0 });
   });
 

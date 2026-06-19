@@ -479,9 +479,9 @@ function parseSwitchBranch(text: string): SwitchBranch {
 
   let value: ScalarBinaryTerm;
   if (/^-?\d/.test(valueText)) {
-    value = { operand: 'literal', value: parseExprFromText(valueText, 'Switch branch value') };
+    value = { operand: 'val', value: parseExprFromText(valueText, 'Switch branch value') };
   } else {
-    value = { operand: 'named', source2: valueText };
+    value = { operand: 'ref', source2: valueText };
   }
 
   const parts = conditionText.split(/\s+/);
@@ -513,7 +513,7 @@ function parseSwitchBranch(text: string): SwitchBranch {
 
 function serializeSwitchBranch(branch: SwitchBranch): string {
   let valueStr: string;
-  if (branch.value.operand === 'literal') {
+  if (branch.value.operand === 'val') {
     valueStr = exprToString(branch.value.value);
   } else {
     valueStr = branch.value.source2;
@@ -661,14 +661,14 @@ function parsePipelineEntry(text: string, comment: string, branches?: string[]):
       return {
         name,
         source: left,
-        op: { fn: opMap[opChar]!, terms: [{ operand: 'literal', value: parseExprFromText(right, `Pipeline "${name}" literal`) }] },
+        op: { fn: opMap[opChar]!, terms: [{ operand: 'val', value: parseExprFromText(right, `Pipeline "${name}" literal`) }] },
         comment,
       };
     }
     return {
       name,
       source: left,
-      op: { fn: opMap[opChar]!, terms: [{ operand: 'named', source2: right }] },
+      op: { fn: opMap[opChar]!, terms: [{ operand: 'ref', source2: right }] },
       comment,
     };
   }
@@ -679,7 +679,7 @@ function parsePipelineEntry(text: string, comment: string, branches?: string[]):
     return {
       name,
       source: twoArgM[2]!,
-      op: { fn, operand: 'named', source2: twoArgM[3]! },
+      op: { fn, operand: 'ref', source2: twoArgM[3]! },
       comment,
     };
   }
@@ -721,25 +721,25 @@ function serializePipelineEntry(nv: NamedValue): YamlNode {
     const sym: Record<ScalarBinaryOp, string> = { add: '+', subtract: '-', multiply: '*', divide: '/' };
     if ('terms' in op && Array.isArray(op.terms) && op.terms.length > 0) {
       const first = op.terms[0]!;
-      if (first.operand === 'named' && first.source2) {
+      if (first.operand === 'ref' && first.source2) {
         v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${first.source2}`;
-      } else if (first.operand === 'literal') {
+      } else if (first.operand === 'val') {
         v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${exprToString(first.value)}`;
       } else {
         v = `${nv.name} = ${JSON.stringify(op)}`;
       }
       for (let i = 1; i < op.terms.length; i++) {
         const t = op.terms[i]!;
-        if (t.operand === 'named' && t.source2) {
+        if (t.operand === 'ref' && t.source2) {
           v += ` ${sym[op.fn]} ${t.source2}`;
-        } else if (t.operand === 'literal') {
+        } else if (t.operand === 'val') {
           v += ` ${sym[op.fn]} ${exprToString(t.value)}`;
         }
       }
     } else {
       v = `${nv.name} = ${JSON.stringify(op)}`;
     }
-  } else if ((op.fn === 'max' || op.fn === 'min') && op.operand === 'named' && op.source2) {
+  } else if ((op.fn === 'max' || op.fn === 'min') && op.operand === 'ref' && op.source2) {
     v = `${nv.name} = ${op.fn}(${nv.source}, ${op.source2})`;
   } else {
     v = `${nv.name} = ${JSON.stringify(op)}`;
@@ -1016,20 +1016,20 @@ function resolveReferences(config: PresetConfig): PresetConfig {
           if (branch.condition.source !== 'rolled' && !pipelineByName.has(branch.condition.source)) {
             throw new PresetError(`Pipeline "${nv.name}" switch branch references unknown condition source "${branch.condition.source}"`);
           }
-          if (branch.value.operand === 'named' && branch.value.source2) {
+          if (branch.value.operand === 'ref' && branch.value.source2) {
             if (!pipelineByName.has(branch.value.source2)) {
               throw new PresetError(`Pipeline "${nv.name}" switch branch references unknown value source "${branch.value.source2}"`);
             }
           }
         }
-      } else if (op.operand === 'named' && op.source2) {
+      } else if (op.operand === 'ref' && op.source2) {
         if (!pipelineByName.has(op.source2)) {
           throw new PresetError(`Pipeline "${nv.name}" references unknown source "${op.source2}"`);
         }
       }
       if (op.terms) {
         for (const term of op.terms) {
-          if (term.operand === 'named' && term.source2) {
+          if (term.operand === 'ref' && term.source2) {
             if (!pipelineByName.has(term.source2)) {
               throw new PresetError(`Pipeline "${nv.name}" references unknown source "${term.source2}"`);
             }
