@@ -1,10 +1,11 @@
-import { rerollConditions } from '@/state/app-state';
+import { rerollConditions, showRerollComments } from '@/state/app-state';
 import type { RerollCondition, ConditionChain } from '@/types';
 import { Button, IconButton, Select, TextField } from '@/components/ui';
 import { ConditionChainEditor } from '@/components/ConditionChainEditor';
+import { literalExpr } from '@/utils/expression';
 
 function emptyCondition(): ConditionChain {
-  return { clauses: [{ field: 'face', operator: '>=', value: 1 }], connector: 'and' };
+  return { clauses: [{ field: 'face', operator: '>=', value: literalExpr(1) }], connectors: [] };
 }
 
 function emptyRerollCondition(): RerollCondition {
@@ -14,6 +15,7 @@ function emptyRerollCondition(): RerollCondition {
     conditions: emptyCondition(),
     repeat: 1,
     comment: '',
+    tagAs: '',
   };
 }
 
@@ -68,6 +70,15 @@ export function RerollEditor() {
             class="border border-rule bg-paper-deep/30 px-3 py-2.5"
           >
             <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">if</span>
+              <ConditionChainEditor
+                chain={rc.conditions}
+                onChange={(chain) => updateCondition(i, { conditions: chain })}
+                variant="reroll"
+              />
+            </div>
+            <div class="mt-2 flex items-center gap-2 flex-wrap">
+              <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">then</span>
               <Select
                 ariaLabel="Action"
                 value={rc.action}
@@ -77,15 +88,8 @@ export function RerollEditor() {
                   { value: 'reroll', label: 'Reroll' },
                   { value: 'explode', label: 'Explode' },
                 ]}
-                />
-              <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">if</span>
-              <ConditionChainEditor
-                chain={rc.conditions}
-                onChange={(chain) => updateCondition(i, { conditions: chain })}
               />
-            </div>
-            <div class="mt-2 flex items-center gap-2 flex-wrap">
-              <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">repeat</span>
+              <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute">max times</span>
               <TextField
                 ariaLabel="Repeat count"
                 type="number"
@@ -94,18 +98,26 @@ export function RerollEditor() {
                 value={rc.repeat}
                 onInput={(v) => updateCondition(i, { repeat: Number(v) || 1 })}
                 className="w-16"
-                />
-              <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute">
-                {rc.action === 'explode' ? 'max cascade depth' : 'times'}
-              </span>
-              <TextField
-                ariaLabel="Comment"
-                value={rc.comment}
-                placeholder="Comment (optional)"
-                maxLength={100}
-                onInput={(v) => updateCondition(i, { comment: v })}
-                className="flex-1 min-w-[180px]"
               />
+              <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute">tag as</span>
+              <TextField
+                ariaLabel="Tag as"
+                value={rc.tagAs}
+                placeholder="inherit"
+                maxLength={30}
+                onInput={(v) => updateCondition(i, { tagAs: v })}
+                className="w-32"
+              />
+              {showRerollComments.value && (
+                <TextField
+                  ariaLabel="Comment"
+                  value={rc.comment}
+                  placeholder="Comment (optional)"
+                  maxLength={100}
+                  onInput={(v) => updateCondition(i, { comment: v })}
+                  className="flex-1 min-w-[180px]"
+                />
+              )}
               <div class="flex items-center gap-0.5 ml-auto">
                 <IconButton onClick={() => moveUp(i)} ariaLabel="Move up" disabled={i === 0}>
                   <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 7l3-3 3 3" stroke="currentColor" stroke-width="1.4" fill="none" /></svg>
@@ -132,5 +144,3 @@ export function RerollEditor() {
     </div>
   );
 }
-
-

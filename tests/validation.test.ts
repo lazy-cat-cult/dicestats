@@ -20,7 +20,7 @@ function makeOutcome(overrides?: Partial<Outcome>): Outcome {
     id: 'o1',
     name: 'Hit',
     conditions: [{ source: 'total', op: '>=', value: literalExpr(10) }],
-    connector: 'and',
+    connectors: [],
     comment: '',
     ...overrides,
   };
@@ -159,7 +159,7 @@ describe('validateConfig', () => {
     it('reports error for self-referencing pipeline', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'a', source: 'rolled', op: 'sum' as const, comment: '' },
-        { id: 'p2', name: 'b', source: 'a', op: { fn: 'add' as const, operand: 'named' as const, source2: 'b' }, comment: '' },
+        { id: 'p2', name: 'b', source: 'a', op: { fn: 'add' as const, terms: [{ operand: 'named' as const, source2: 'b' }] }, comment: '' },
       ];
       const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('cannot reference itself'))).toBe(true);
@@ -168,7 +168,7 @@ describe('validateConfig', () => {
     it('reports non-blocking error for divide by zero', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
-        { id: 'p2', name: 'div', source: 'total', op: { fn: 'divide', operand: 'literal', value: literalExpr(0) }, comment: '' },
+        { id: 'p2', name: 'div', source: 'total', op: { fn: 'divide', terms: [{ operand: 'literal', value: literalExpr(0) }] }, comment: '' },
       ];
       const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
       expect(errors.some((e) => !e.blocking && e.message.includes('divides by zero'))).toBe(true);
@@ -201,8 +201,9 @@ describe('validateConfig', () => {
       const conditions: RerollCondition[] = Array.from({ length: 11 }, (_, i) => ({
         id: `rc${i}`,
         action: 'reroll' as const,
-        conditions: { clauses: [{ field: 'face' as const, operator: '>=' as const, value: 1 }], connector: 'and' as const },
+        conditions: { clauses: [{ field: 'face' as const, operator: '>=' as const, value: literalExpr(1) }], connectors: [] as const },
         repeat: 1,
+        tagAs: '',
         comment: '',
       }));
       const errors = validateConfig(validPool, conditions, validPipeline, [validOutcome], validSweep);
@@ -213,8 +214,9 @@ describe('validateConfig', () => {
       const conditions: RerollCondition[] = [{
         id: 'rc1',
         action: 'reroll',
-        conditions: { clauses: [{ field: 'face', operator: '>=', value: 1 }], connector: 'and' },
+        conditions: { clauses: [{ field: 'face', operator: '>=', value: literalExpr(1) }], connectors: [] },
         repeat: 0,
+        tagAs: '',
         comment: '',
       }];
       const errors = validateConfig(validPool, conditions, validPipeline, [validOutcome], validSweep);
@@ -292,7 +294,7 @@ describe('validateConfig', () => {
     it('reports blocking error for scalar condition on vector source per condition', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
-        { id: 'p2', name: 'kept', source: 'rolled', op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: 1 }], connector: 'and' } }, comment: '' },
+        { id: 'p2', name: 'kept', source: 'rolled', op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: literalExpr(1) }], connectors: [] } }, comment: '' },
       ];
       const outcome = makeOutcome({ conditions: [{ source: 'kept', op: '>=', value: literalExpr(10) }] });
       const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validSweep);
@@ -311,7 +313,7 @@ describe('validateConfig', () => {
     it('passes for compound outcome with two valid sources', () => {
       const pipeline: NamedValue[] = [
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
-        { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', operand: 'literal', value: literalExpr(0) }, comment: '' },
+        { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(0) }] }, comment: '' },
       ];
       const outcome: Outcome = {
         id: 'o1',
@@ -320,7 +322,7 @@ describe('validateConfig', () => {
           { source: 'total', op: '>=', value: literalExpr(15) },
           { source: 'delta', op: '>=', value: literalExpr(0) },
         ],
-        connector: 'and',
+        connectors: ['and'],
         comment: '',
       };
       const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validSweep);

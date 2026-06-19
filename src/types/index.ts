@@ -11,12 +11,10 @@ export {
   normalizeSweepValues,
 } from '@/utils/expression';
 
-export type ConditionOperator = '>' | '>=' | '<' | '<=' | '=' | '!=';
-
-export type FaceValueSpecial = 'max_value' | 'min_value';
+export type ConditionOperator = '>' | '>=' | '<' | '<=' | '=' | '!=' | 'is_min' | 'is_max' | 'is_even' | 'is_odd';
 
 export type ConditionClause =
-  | { field: 'face'; operator: ConditionOperator; value: number | FaceValueSpecial }
+  | { field: 'face'; operator: ConditionOperator; value?: Expr }
   | { field: 'tag'; operator: '=' | '!='; value: string };
 
 export interface DiceTerm {
@@ -35,7 +33,7 @@ export type RerollAction = 'reroll' | 'explode';
 
 export interface ConditionChain {
   clauses: ConditionClause[];
-  connector: 'and' | 'or';
+  connectors: ('and' | 'or')[];
 }
 
 export interface RerollCondition {
@@ -44,6 +42,7 @@ export interface RerollCondition {
   conditions: ConditionChain;
   repeat: number;
   comment: string;
+  tagAs: string;
 }
 
 export type VectorFunction =
@@ -52,25 +51,26 @@ export type VectorFunction =
 
 export type ScalarBinaryOp = 'add' | 'subtract' | 'multiply' | 'divide';
 
+export type ScalarBinaryTerm =
+  | { operand: 'literal'; value: Expr }
+  | { operand: 'named'; source2: string };
+
 export type ScalarFunction =
   | 'count'
   | 'sum'
   | 'max'
   | 'min'
-  | { fn: ScalarBinaryOp; operand: 'literal'; value: Expr }
-  | { fn: ScalarBinaryOp; operand: 'named'; source2: string }
+  | 'sub'
+  | { fn: ScalarBinaryOp; terms: ScalarBinaryTerm[] }
   | { fn: 'ceil' }
   | { fn: 'floor' }
   | { fn: 'max'; operand: 'named'; source2: string }
   | { fn: 'min'; operand: 'named'; source2: string };
 
-export type ScalarLiteralOp = { fn: ScalarBinaryOp; operand: 'literal'; value: Expr };
-export type ScalarNamedOp = { fn: ScalarBinaryOp; operand: 'named'; source2: string };
 export type ScalarCeilFloorOp = { fn: 'ceil' | 'floor' };
 export type ScalarMaxMinNamedOp = { fn: 'max' | 'min'; operand: 'named'; source2: string };
 export type ScalarObjectFunction =
-  | ScalarLiteralOp
-  | ScalarNamedOp
+  | { fn: ScalarBinaryOp; terms: ScalarBinaryTerm[] }
   | ScalarCeilFloorOp
   | ScalarMaxMinNamedOp;
 
@@ -103,7 +103,7 @@ export interface Outcome {
   id: string;
   name: string;
   conditions: OutcomeCondition[];
-  connector: 'and' | 'or';
+  connectors: ('and' | 'or')[];
   comment: string;
 }
 
@@ -162,7 +162,7 @@ export interface PresetConfig {
 }
 
 export interface SavedConfig {
-  version: 8;
+  version: 9;
   pool: DicePool;
   rerollConditions: RerollCondition[];
   pipeline: NamedValue[];
@@ -185,5 +185,6 @@ export function compare(a: number, op: ConditionOperator, b: number): boolean {
     case '<': return a < b;
     case '=': return a === b;
     case '!=': return a !== b;
+    default: return false;
   }
 }

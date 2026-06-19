@@ -149,7 +149,7 @@ describe('yaml reroll parser', () => {
     expect(cfg.rerollConditions).toHaveLength(1);
     expect(cfg.rerollConditions[0]?.action).toBe('explode');
     expect(cfg.rerollConditions[0]?.repeat).toBe(5);
-    expect(cfg.rerollConditions[0]?.conditions.clauses[0]?.value).toBe('max_value');
+    expect(cfg.rerollConditions[0]?.conditions.clauses[0]?.operator).toBe('is_max');
   });
 
   it('parses multi-clause reroll', () => {
@@ -196,7 +196,7 @@ describe('yaml pipeline parser', () => {
     ].join('\n'));
     const p = cfg.pipeline[0]!;
     if (typeof p.op === 'object' && p.op.fn === 'filter') {
-      expect(p.op.conditions.clauses[0]?.value).toBe(5);
+      expect(p.op.conditions.clauses[0]?.value).toEqual({ kind: 'literal', value: 5 });
     } else {
       expect.fail('expected filter op');
     }
@@ -488,10 +488,10 @@ describe('yaml daggerheart template', () => {
     const totalMod = cfg.pipeline.find((p) => p.name === 'total_mod');
     expect(totalMod).toBeDefined();
     expect(totalMod?.source).toBe('total');
-    const op = totalMod?.op as { fn: string; operand: string; value: { kind: string; value: number } };
+    const op = totalMod?.op as { fn: string; terms: { operand: string; value: { kind: string; value: number } }[] };
     expect(op.fn).toBe('add');
-    expect(op.operand).toBe('literal');
-    expect(op.value).toEqual({ kind: 'literal', value: 0 });
+    expect(op.terms[0]!.operand).toBe('literal');
+    expect(op.terms[0]!.value).toEqual({ kind: 'literal', value: 0 });
   });
 
   it('sweep x resolves to configured values', () => {

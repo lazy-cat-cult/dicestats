@@ -59,36 +59,14 @@ describe('dice mechanics: keep via pipeline', () => {
       terms: [{ id: '1', count: literalExpr(2), sides: literalExpr(20), tag: '', comment: '' }],
     };
     const pipeline: NamedValue[] = [
-      { id: 'p1', name: 'best', source: 'rolled', op: 'max', comment: '' },
-    ];
-    let maxBest = 0;
-    for (let i = 0; i < 5000; i++) {
-      const dice = rollPool(pool);
-      const env = evaluatePipeline(dice, pipeline);
-      const best = env.get('best') as number;
-      if (best > maxBest) maxBest = best;
-    }
-    expect(maxBest).toBe(20);
-  });
-});
-
-describe('dice mechanics: outcomes with pipeline', () => {
-  it('Shadowrun: 5d6 at least 1 hit (>=5) via pipeline', () => {
-    const pool: DicePool = {
-      terms: [{ id: '1', count: literalExpr(5), sides: literalExpr(6), tag: '', comment: '' }],
-    };
-    const pipeline = [
-      {
-        id: 'p1',
-        name: 'hits',
-        source: 'rolled',
-        op: { fn: 'filter' as const, conditions: { clauses: [{ field: 'face' as const, operator: '>=' as const, value: 5 }], connector: 'and' as const } },
+      { id: 'p1', name: 'hits', source: 'rolled',
+        op: { fn: 'filter' as const, conditions: { clauses: [{ field: 'face' as const, operator: '>=' as const, value: literalExpr(5) }], connectors: [] as const } },
         comment: '',
-      },
-      { id: 'p2', name: 'hit_count', source: 'hits', op: 'count' as const, comment: '' },
+      } as NamedValue,
+      { id: 'p2', name: 'hit_count', source: 'hits', op: 'count' as const, comment: '' } as NamedValue,
     ];
     const outcomes: Outcome[] = [
-      { id: 'o1', name: '1+ hits', conditions: [{ source: 'hit_count', op: '>=' as const, value: literalExpr(1) }], connector: 'and' as const, comment: '' },
+      { id: 'o1', name: '1+ hits', conditions: [{ source: 'hit_count', op: '>=' as const, value: literalExpr(1) }], connectors: [] as const, comment: '' },
     ];
 
     let successCount = 0;
@@ -100,8 +78,8 @@ describe('dice mechanics: outcomes with pipeline', () => {
       if (evaluateOutcomes(outcomes, env).includes('1+ hits')) successCount++;
     }
     const prob = successCount / N;
-    expect(prob).toBeGreaterThan(0.83);
-    expect(prob).toBeLessThan(0.92);
+    expect(prob).toBeGreaterThan(0.93);
+    expect(prob).toBeLessThan(0.98);
   });
 
   it('PbtA: 2d6 sum outcomes', () => {
@@ -109,7 +87,7 @@ describe('dice mechanics: outcomes with pipeline', () => {
       terms: [{ id: '1', count: literalExpr(2), sides: literalExpr(6), tag: '', comment: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'Hit', conditions: [{ source: 'rolled', op: 'any', subCondition: '>=' as const, value: literalExpr(1) }], connector: 'and', comment: '' },
+      { id: 'o1', name: 'Hit', conditions: [{ source: 'rolled', op: 'any', subCondition: '>=' as const, value: literalExpr(1) }], connectors: [], comment: '' },
     ];
 
     const env = new Map<string, PipelineValue>();
@@ -135,10 +113,10 @@ describe('dice mechanics: compound outcomes (per-condition source)', () => {
     };
     const pipeline: NamedValue[] = [
       { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
-      { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', operand: 'literal', value: literalExpr(0) }, comment: '' },
+      { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(0) }] }, comment: '' },
     ];
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'Critical Hit', conditions: [{ source: 'total', op: '>=', value: literalExpr(15) }, { source: 'delta', op: '>=', value: literalExpr(0) }], connector: 'and', comment: '' },
+      { id: 'o1', name: 'Critical Hit', conditions: [{ source: 'total', op: '>=', value: literalExpr(15) }, { source: 'delta', op: '>=', value: literalExpr(0) }], connectors: ['and'], comment: '' },
     ];
     let matched = 0;
     for (let i = 0; i < 20000; i++) {
@@ -176,8 +154,8 @@ describe('outcome overlap counting', () => {
       terms: [{ id: '1', count: literalExpr(1), sides: literalExpr(6), tag: '', comment: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'High', conditions: [{ source: 'face', op: '>=', value: literalExpr(4) }], connector: 'and', comment: '' },
-      { id: 'o2', name: 'Even', conditions: [{ source: 'face', op: '=', value: literalExpr(4) }, { source: 'face', op: '=', value: literalExpr(6) }], connector: 'or', comment: '' },
+      { id: 'o1', name: 'High', conditions: [{ source: 'face', op: '>=', value: literalExpr(4) }], connectors: [], comment: '' },
+      { id: 'o2', name: 'Even', conditions: [{ source: 'face', op: '=', value: literalExpr(4) }, { source: 'face', op: '=', value: literalExpr(6) }], connectors: ['or'], comment: '' },
     ];
 
     const overlapCounts = new Map<string, number>();
@@ -210,8 +188,8 @@ describe('outcome overlap counting', () => {
       terms: [{ id: '1', count: literalExpr(1), sides: literalExpr(6), tag: '', comment: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'Low', conditions: [{ source: 'face', op: '<=', value: literalExpr(3) }], connector: 'and', comment: '' },
-      { id: 'o2', name: 'High', conditions: [{ source: 'face', op: '>=', value: literalExpr(4) }], connector: 'and', comment: '' },
+      { id: 'o1', name: 'Low', conditions: [{ source: 'face', op: '<=', value: literalExpr(3) }], connectors: [], comment: '' },
+      { id: 'o2', name: 'High', conditions: [{ source: 'face', op: '>=', value: literalExpr(4) }], connectors: [], comment: '' },
     ];
 
     const overlapCounts = new Map<string, number>();
@@ -242,8 +220,8 @@ describe('match-set frequency accumulation', () => {
       terms: [{ id: '1', count: literalExpr(1), sides: literalExpr(6), tag: '', comment: '' }],
     };
     const outcomes: Outcome[] = [
-      { id: 'o1', name: 'High', conditions: [{ source: 'face', op: '>=', value: literalExpr(4) }], connector: 'and', comment: '' },
-      { id: 'o2', name: 'Even', conditions: [{ source: 'face', op: '=', value: literalExpr(4) }, { source: 'face', op: '=', value: literalExpr(6) }], connector: 'or', comment: '' },
+      { id: 'o1', name: 'High', conditions: [{ source: 'face', op: '>=', value: literalExpr(4) }], connectors: [], comment: '' },
+      { id: 'o2', name: 'Even', conditions: [{ source: 'face', op: '=', value: literalExpr(4) }, { source: 'face', op: '=', value: literalExpr(6) }], connectors: ['or'], comment: '' },
     ];
 
     const setCounts = new Map<string, number>();

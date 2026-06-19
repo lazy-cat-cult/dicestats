@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { dicePool, dicePoolNotation, getTagColor, sweep } from '@/state/app-state';
+import { dicePool, dicePoolNotation, getTagColor, sweep, showPoolComments } from '@/state/app-state';
 import { ExprInput } from '@/components/ExprInput';
 import { Button, IconButton, Select, TextField } from '@/components/ui';
 import type { DiceTerm, Expr } from '@/types';
@@ -111,6 +111,16 @@ export function DicePoolEditor() {
                 onInput={(v) => updateTerm(i, { tag: v })}
                 className="w-24"
               />
+
+              {showPoolComments.value && (
+                <TextField
+                  ariaLabel="Comment"
+                  value={term.comment}
+                  placeholder="Comment (optional)"
+                  onInput={(v) => updateTerm(i, { comment: v })}
+                  className="flex-1 min-w-[160px]"
+                />
+              )}
 
               {pool.terms.length > 1 && (
                 <div class="ml-auto">

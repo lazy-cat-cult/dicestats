@@ -1,4 +1,4 @@
-import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeCondition, DiceConditionType, ScalarLiteralOp, ScalarCondition, SweepParameters, Expr } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeCondition, DiceConditionType, ScalarCondition, SweepParameters, Expr, ScalarBinaryTerm } from '@/types';
 import { DICE_CONDITION_TYPES } from '@/types';
 import { evalExpr } from '@/utils/expression';
 
@@ -14,10 +14,10 @@ export function isScalarCondition(cond: OutcomeCondition): cond is ScalarConditi
   return !DICE_CONDITION_TYPES.includes(cond.op as DiceConditionType);
 }
 
-function asScalarObjectOp(op: unknown): { fn: string; operand?: string; value?: number | Expr; source2?: string } | null {
+function asScalarObjectOp(op: unknown): { fn: string; terms?: ScalarBinaryTerm[]; operand?: string; source2?: string } | null {
   if (typeof op !== 'object' || op === null) return null;
   if (!('fn' in op)) return null;
-  return op as { fn: string; operand?: string; value?: number | Expr; source2?: string };
+  return op as { fn: string; terms?: ScalarBinaryTerm[]; operand?: string; source2?: string };
 }
 
 export function isBinaryMathLiteral(nv: NamedValue): boolean {
@@ -25,16 +25,20 @@ export function isBinaryMathLiteral(nv: NamedValue): boolean {
   if (!op) return false;
   const fn = op.fn;
   if (fn !== 'add' && fn !== 'subtract' && fn !== 'multiply' && fn !== 'divide') return false;
-  return op.operand === 'literal';
+  if (op.terms && op.terms.length > 0) {
+    return op.terms[0]!.operand === 'literal';
+  }
+  return false;
 }
 
-export function asScalarLiteral(nv: NamedValue): ScalarLiteralOp | null {
+export function asScalarLiteral(nv: NamedValue): ScalarBinaryTerm | null {
   const op = asScalarObjectOp(nv.op);
   if (!op) return null;
-  if (op.operand !== 'literal') return null;
   if (op.fn !== 'add' && op.fn !== 'subtract' && op.fn !== 'multiply' && op.fn !== 'divide') return null;
-  if (typeof op.value !== 'object') return null;
-  return { fn: op.fn, operand: 'literal', value: op.value };
+  if (op.terms && op.terms.length > 0 && op.terms[0]!.operand === 'literal') {
+    return op.terms[0]!;
+  }
+  return null;
 }
 
 function validateExprInContext(expr: Expr, prefix: string, errors: ValidationError[], nextId: () => string): void {
@@ -120,28 +124,32 @@ export function validateConfig(
       if (obj) {
         const fn = obj.fn;
         if (fn === 'add' || fn === 'subtract' || fn === 'multiply' || fn === 'divide') {
-          if (obj.operand === 'named' && obj.source2 === nv.name) {
-            errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" cannot reference itself`, blocking: true });
-          }
-          if (fn === 'divide' && obj.operand === 'literal' && typeof obj.value === 'object') {
-            const litVal = (obj.value as Expr).kind === 'literal' ? (obj.value as { value: number }).value : null;
-            if (litVal === 0) {
-              errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" divides by zero`, blocking: false });
-            }
-          }
-          if (obj.operand === 'literal' && typeof obj.value === 'object') {
-            const expr = obj.value as Expr;
-            const testVars = { x: 1, y: 1 };
-            const v = evalExpr(expr, testVars);
-            if (!Number.isFinite(v)) {
-              errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" literal evaluates to non-finite value`, blocking: true });
+          const terms = obj.terms;
+          if (terms) {
+            for (const term of terms) {
+              if (term.operand === 'named' && term.source2 === nv.name) {
+                errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" cannot reference itself`, blocking: true });
+              }
+              if (fn === 'divide' && term.operand === 'literal') {
+                const litVal = term.value.kind === 'literal' ? term.value.value : null;
+                if (litVal === 0) {
+                  errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" divides by zero`, blocking: false });
+                }
+              }
+              if (term.operand === 'literal') {
+                const testVars = { x: 1, y: 1 };
+                const v = evalExpr(term.value, testVars);
+                if (!Number.isFinite(v)) {
+                  errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" literal evaluates to non-finite value`, blocking: true });
+                }
+              }
             }
           }
         }
       }
     }
 
-    if ((nv.op === 'count' || nv.op === 'sum' || nv.op === 'max' || nv.op === 'min') && nv.source !== 'rolled') {
+    if ((nv.op === 'count' || nv.op === 'sum' || nv.op === 'max' || nv.op === 'min' || nv.op === 'sub') && nv.source !== 'rolled') {
       const sourceVal = pipeline.find((p) => p.name === nv.source);
       if (sourceVal) {
         const sourceType = inferType(sourceVal, pipeline);
@@ -200,7 +208,7 @@ export function validateConfig(
       } else if (!isDice) {
         errors.push({ id: nextId(), message: `Outcome "${outcome.name}" scalar comparison on vector source requires aggregation first`, blocking: true });
       }
-      if ('value' in cond) {
+      if ('value' in cond && cond.value) {
         const testVars = { x: 1, y: 1 };
         const v = evalExpr(cond.value, testVars);
         if (!Number.isFinite(v)) {
@@ -261,7 +269,7 @@ export function inferType(nv: NamedValue, pipeline: NamedValue[]): 'vector' | 's
 
 export function inferTypeFromOp(nv: NamedValue): 'vector' | 'scalar' {
   const op = nv.op;
-  if (op === 'count' || op === 'sum' || op === 'max' || op === 'min') return 'scalar';
+  if (op === 'count' || op === 'sum' || op === 'max' || op === 'min' || op === 'sub') return 'scalar';
   if (typeof op === 'object' && op !== null && 'fn' in op) {
     if (op.fn === 'filter' || op.fn === 'remove') return 'vector';
     return 'scalar';

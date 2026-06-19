@@ -1,7 +1,7 @@
 import {
   outcomes,
   pipeline,
-  showComments,
+  showOutcomeComments,
   sweep,
 } from '@/state/app-state';
 import type {
@@ -69,7 +69,7 @@ function emptyOutcome(): Outcome {
     id: crypto.randomUUID(),
     name: 'New Outcome',
     conditions: [t === 'scalar' ? makeScalarCondition(source) : makeDiceCondition(source)],
-    connector: 'and',
+    connectors: [],
     comment: '',
   };
 }
@@ -149,6 +149,20 @@ export function OutcomeEditor() {
                   const condType = isScalarCondition(cond) ? 'scalar' : 'dice';
                   return (
                     <div key={ci} class="flex items-center gap-1.5 flex-wrap">
+                      {ci === 0 ? (
+                        <span class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute w-14 shrink-0 text-right">when</span>
+                      ) : (
+                        <Select
+                          ariaLabel="Connector"
+                          value={outcome.connectors[ci - 1]!}
+                          onChange={(v) => {
+                            const newConnectors = outcome.connectors.map((c, j) => (j === ci - 1 ? v as 'and' | 'or' : c));
+                            updateOutcome(i, { connectors: newConnectors });
+                          }}
+                          className="w-14"
+                          options={[{ value: 'and', label: 'AND' }, { value: 'or', label: 'OR' }]}
+                        />
+                      )}
                       <Select
                         ariaLabel="Source"
                         value={cond.source}
@@ -198,7 +212,9 @@ export function OutcomeEditor() {
                       {outcome.conditions.length > 1 && (
                         <IconButton onClick={() => {
                           const conditions = outcome.conditions.filter((_, j) => j !== ci);
-                          updateOutcome(i, { conditions });
+                          const connIndex = ci === 0 ? 0 : ci - 1;
+                          const connectors = outcome.connectors.filter((_, j) => j !== connIndex);
+                          updateOutcome(i, { conditions, connectors });
                         }} ariaLabel="Remove condition" variant="danger">
                           <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" fill="none" /></svg>
                         </IconButton>
@@ -207,30 +223,22 @@ export function OutcomeEditor() {
                   );
                 })}
 
-                {outcome.conditions.length > 1 && (
-                  <Select
-                    ariaLabel="Conditions connector"
-                    value={outcome.connector}
-                    onChange={(v) => updateOutcome(i, { connector: v as 'and' | 'or' })}
-                    className="w-16"
-                options={[{ value: 'and', label: 'AND' }, { value: 'or', label: 'OR' }]}
-                  />
-                )}
-
                 {outcome.conditions.length < 5 && (
                   <Button variant="quiet" size="sm" onClick={() => {
                     const source = defaultScalarSource();
                     const t = resolveSourceType(source);
                     const newCond: OutcomeCondition = t === 'scalar' ? makeScalarCondition(source) : makeDiceCondition(source);
                     const conditions = [...outcome.conditions, newCond];
-                    updateOutcome(i, { conditions });
+                    const prevConnector = outcome.connectors.length > 0 ? outcome.connectors[outcome.connectors.length - 1]! : 'and';
+                    const connectors = [...outcome.connectors, prevConnector];
+                    updateOutcome(i, { conditions, connectors });
                   }}>
                     + condition
                   </Button>
                 )}
               </div>
 
-              {showComments.value && (
+              {showOutcomeComments.value && (
                 <div class="mt-2">
                   <TextField
                     ariaLabel="Comment"

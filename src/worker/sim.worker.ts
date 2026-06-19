@@ -1,4 +1,4 @@
-import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeOverlap, MatchSetCount, SimJob, SimResult, DiceTerm, Expr, TaggedDie, NamedValue as NamedValueT, Outcome as OutcomeT, ScalarFunction, VectorFunction, ScalarLiteralOp } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeOverlap, MatchSetCount, SimJob, SimResult, DiceTerm, Expr, TaggedDie, NamedValue as NamedValueT, Outcome as OutcomeT, ScalarFunction, VectorFunction, ScalarBinaryTerm } from '@/types';
 import { NOT_MATCHED_LABEL } from '@/types';
 import { matchConditions, findSides } from '@/domain/matching';
 import { evaluatePipeline } from '@/domain/resolve';
@@ -24,7 +24,7 @@ function rollPool(pool: DicePool, vars: { x: number; y: number }): TaggedDie[] {
   return dice;
 }
 
-function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[], termsSides: { sides: number; tag: string }[]): TaggedDie[] {
+function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[], termsSides: { sides: number; tag: string }[], vars: { x: number; y: number }): TaggedDie[] {
   let result = [...dice];
 
   for (const rc of conditions) {
@@ -33,16 +33,18 @@ function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[],
     for (const die of result) {
       const sides = findSides(die.tag, termsSides);
 
-      if (!matchConditions(die, rc.conditions, termsSides)) {
+      if (!matchConditions(die, rc.conditions, termsSides, vars)) {
         newDice.push(die);
         continue;
       }
 
+      const effectiveTag = rc.tagAs || die.tag;
+
       if (rc.action === 'reroll') {
         let current = die;
         for (let attempt = 0; attempt < rc.repeat; attempt++) {
-          current = { face: rollDie(sides), tag: die.tag };
-          if (!matchConditions(current, rc.conditions, termsSides)) break;
+          current = { face: rollDie(sides), tag: effectiveTag };
+          if (!matchConditions(current, rc.conditions, termsSides, vars)) break;
         }
         newDice.push(current);
       }
@@ -53,8 +55,8 @@ function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[],
         let cascadeDepth = 0;
         let lastExploded = die;
         while (cascadeDepth < rc.repeat && safety-- > 0) {
-          const extra = { face: rollDie(sides), tag: die.tag };
-          if (matchConditions(lastExploded, rc.conditions, termsSides)) {
+          const extra = { face: rollDie(sides), tag: effectiveTag };
+          if (matchConditions(lastExploded, rc.conditions, termsSides, vars)) {
             newDice.push(extra);
             lastExploded = extra;
             cascadeDepth++;
@@ -80,7 +82,7 @@ function simulateOnce(
   vars: { x: number; y: number }
 ): { distributionKey: number; matchedOutcomes: string[] } {
   let dice = rollPool(pool, vars);
-  dice = applyRerollConditions(dice, rerollConditions, termsSides);
+  dice = applyRerollConditions(dice, rerollConditions, termsSides, vars);
 
   const env = evaluatePipeline(dice, pipeline, vars, termsSides);
   env.set('rolled', dice);
@@ -230,9 +232,15 @@ function materializeTerm(term: DiceTerm, vars: { x: number; y: number }): DiceTe
 function materializeScalarOp(op: ScalarFunction, vars: { x: number; y: number }): ScalarFunction {
   if (typeof op === 'string') return op;
   if (op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') {
-    if (op.operand === 'literal') {
-      const lit = op as ScalarLiteralOp;
-      return { fn: lit.fn, operand: 'literal', value: literalExpr(evalExpr(lit.value, vars)) };
+    if ('terms' in op && Array.isArray(op.terms)) {
+      return {
+        fn: op.fn,
+        terms: op.terms.map((t: ScalarBinaryTerm) =>
+          t.operand === 'literal'
+            ? { operand: 'literal', value: literalExpr(evalExpr(t.value, vars)) }
+            : t
+        ),
+      } as ScalarFunction;
     }
     return op;
   }
@@ -251,7 +259,7 @@ function materializeOutcome(o: OutcomeT, vars: { x: number; y: number }): Outcom
   return {
     ...o,
     conditions: o.conditions.map((c) => {
-      if ('value' in c) {
+      if ('value' in c && c.value) {
         return { ...c, value: materializeExpr(c.value, vars) } as OutcomeT['conditions'][number];
       }
       return c;
@@ -269,7 +277,7 @@ function materializeSimJob(job: SimJob, vars: { x: number; y: number }): {
     pool: {
       terms: job.pool.terms.map((t) => materializeTerm(t, vars)),
     },
-    rerollConditions: job.rerollConditions.map((r) => ({ ...r, conditions: { ...r.conditions, clauses: r.conditions.clauses.map((c) => ({ ...c })) } })),
+    rerollConditions: job.rerollConditions.map((r) => ({ ...r, conditions: { clauses: r.conditions.clauses.map((c) => ({ ...c })), connectors: r.conditions.connectors } })),
     pipeline: job.pipeline.map((nv) => materializePipeline(nv, vars)),
     outcomes: job.outcomes.map((o) => materializeOutcome(o, vars)),
   };

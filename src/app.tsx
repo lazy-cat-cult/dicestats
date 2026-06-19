@@ -13,6 +13,9 @@ import {
   confirmedHighCost,
   configDirty,
   showComments,
+  showPoolComments,
+  showRerollComments,
+  showOutcomeComments,
   currentPresetName,
 
 } from '@/state/app-state';
@@ -191,6 +194,13 @@ export function App() {
             eyebrow="Step 01"
             title="Dice Pool"
             description="Which dice are rolled and how many of each. Tag a die set to refer to it by name in later steps."
+            actions={
+              <Checkbox
+                label="Comments"
+                checked={showPoolComments.value}
+                onChange={(v) => { showPoolComments.value = v; }}
+              />
+            }
           >
             <DicePoolEditor />
           </Section>
@@ -198,6 +208,13 @@ export function App() {
             eyebrow="Step 02"
             title="Reroll Conditions"
             description="Re-roll or explode any die whose face matches a value or whose tag matches a name. Optional — leave empty for a plain roll."
+            actions={
+              <Checkbox
+                label="Comments"
+                checked={showRerollComments.value}
+                onChange={(v) => { showRerollComments.value = v; }}
+              />
+            }
           >
             <RerollEditor />
           </Section>
@@ -219,6 +236,13 @@ export function App() {
             eyebrow="Step 04"
             title="Outcomes"
             description="The buckets the roll is sorted into. The probability of each one is what the simulation estimates. Use X or Y in any threshold to make it a sweep variable."
+            actions={
+              <Checkbox
+                label="Comments"
+                checked={showOutcomeComments.value}
+                onChange={(v) => { showOutcomeComments.value = v; }}
+              />
+            }
           >
             <OutcomeEditor />
           </Section>

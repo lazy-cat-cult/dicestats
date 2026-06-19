@@ -10,8 +10,7 @@ import type {
   ConditionChain,
   ScalarBinaryOp,
   Expr,
-  ScalarLiteralOp,
-  ScalarNamedOp,
+  ScalarBinaryTerm,
 } from '@/types';
 import { ExprInput } from '@/components/ExprInput';
 import { ConditionChainEditor } from '@/components/ConditionChainEditor';
@@ -22,7 +21,7 @@ import { Button, IconButton, Select, TextField, BracketedNameInput } from '@/com
 const SCALAR_BINARY_OPS: ScalarBinaryOp[] = ['add', 'subtract', 'multiply', 'divide'];
 
 function emptyCondition(): ConditionChain {
-  return { clauses: [{ field: 'face', operator: '>=', value: 1 }], connector: 'and' };
+  return { clauses: [{ field: 'face', operator: '>=', value: literalExpr(1) }], connectors: [] };
 }
 
 function emptyNamedValue(): NamedValue {
@@ -95,7 +94,7 @@ export function PipelineEditor() {
           const sources = getAvailableSources(pipe, i);
           const currentOp = nv.op;
           const isVectorOp = typeof currentOp === 'object' && 'fn' in currentOp && (currentOp.fn === 'filter' || currentOp.fn === 'remove');
-          const isBinary = typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp);
+          const isBinary = typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp) && 'terms' in currentOp;
           const sourceType = nv.source === 'rolled' ? 'vector' : (() => {
             const src = pipe.find((p) => p.name === nv.source);
             return src ? inferTypeFromOp(src) : 'vector';
@@ -142,7 +141,7 @@ export function PipelineEditor() {
                     })();
                     if (sourceType !== newSourceType) {
                       if (newSourceType === 'scalar') {
-                        updateRow(i, { source: newSource, op: { fn: 'add', operand: 'literal', value: literalExpr(0) } as ScalarFunction });
+                        updateRow(i, { source: newSource, op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(0) }] } as ScalarFunction });
                       } else {
                         updateRow(i, { source: newSource, op: { fn: 'filter', conditions: emptyCondition() } as VectorFunction });
                       }
@@ -161,7 +160,7 @@ export function PipelineEditor() {
                       const fn = v;
                       if (fn === 'filter' || fn === 'remove') {
                         updateRow(i, { op: { fn, conditions: emptyCondition() } as VectorFunction });
-                      } else if (fn === 'count' || fn === 'sum' || fn === 'max' || fn === 'min') {
+                      } else if (fn === 'count' || fn === 'sum' || fn === 'max' || fn === 'min' || fn === 'sub') {
                         updateRow(i, { op: fn as ScalarFunction });
                       }
                     }}
@@ -173,6 +172,7 @@ export function PipelineEditor() {
                       { value: 'sum', label: 'sum' },
                       { value: 'max', label: 'max' },
                       { value: 'min', label: 'min' },
+                      { value: 'sub', label: 'sub' },
                     ]}
                   />
                 ) : (
@@ -184,7 +184,7 @@ export function PipelineEditor() {
                       if (val === 'ceil' || val === 'floor') {
                         updateRow(i, { op: { fn: val } as ScalarFunction });
                       } else if (SCALAR_BINARY_OPS.includes(val as ScalarBinaryOp)) {
-                        updateRow(i, { op: { fn: val as ScalarBinaryOp, operand: 'literal', value: literalExpr(0) } as ScalarFunction });
+                        updateRow(i, { op: { fn: val as ScalarBinaryOp, terms: [{ operand: 'literal', value: literalExpr(0) }] } as ScalarFunction });
                       }
                     }}
                     className="w-24"
@@ -209,54 +209,85 @@ export function PipelineEditor() {
                     onChange={(chain) => {
                       updateRow(i, { op: { ...currentOp, conditions: chain } as VectorFunction });
                     }}
+                    variant="pipeline"
+                    availableVars={availableVars}
                   />
                 </div>
               )}
 
-              {isBinary && typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp) && (() => {
-                const binaryOp = currentOp as ScalarLiteralOp | ScalarNamedOp;
+              {isBinary && typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp) && 'terms' in currentOp && (() => {
+                const binaryOp = currentOp as { fn: ScalarBinaryOp; terms: ScalarBinaryTerm[] };
+                const terms = binaryOp.terms || [];
+                const scalarNames = getScalarNgNames(i);
+
+                function updateTerms(newTerms: ScalarBinaryTerm[]) {
+                  updateRow(i, { op: { fn: binaryOp.fn, terms: newTerms } as ScalarFunction });
+                }
+
+                function updateTerm(ti: number, partial: Partial<ScalarBinaryTerm>) {
+                  const newTerms = terms.map((t, j) => (j === ti ? { ...t, ...partial } as ScalarBinaryTerm : t));
+                  updateTerms(newTerms);
+                }
+
+                function addTerm() {
+                  updateTerms([...terms, { operand: 'literal', value: literalExpr(0) }]);
+                }
+
+                function removeTerm(ti: number) {
+                  if (terms.length <= 1) return;
+                  updateTerms(terms.filter((_, j) => j !== ti));
+                }
+
                 return (
-                  <div class="mt-2 flex items-center gap-2 flex-wrap pl-1 border-l border-rule">
-                    <Select
-                      ariaLabel="Operand"
-                      value={binaryOp.operand}
-                      onChange={(v) => {
-                        const operand = v;
-                        if (operand === 'literal') {
-                          updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: literalExpr(0) } as ScalarFunction });
-                        } else {
-                          const scalarNames = getScalarNgNames(i);
-                          const firstScalar = scalarNames[0] || '';
-                          updateRow(i, { op: { fn: binaryOp.fn, operand: 'named', source2: firstScalar } as ScalarFunction });
-                        }
-                      }}
-                      className="w-24"
-                options={[
-                        { value: 'literal', label: 'literal' },
-                        { value: 'named', label: 'named' },
-                      ]}
-                    />
-                    {binaryOp.operand === 'literal' ? (
-                      <ExprInput
-                        value={(binaryOp as ScalarLiteralOp).value}
-                        onChange={(expr: Expr) => {
-                          updateRow(i, { op: { fn: binaryOp.fn, operand: 'literal', value: expr } as ScalarFunction });
-                        }}
-                        ariaLabel="Literal value"
-                        availableVars={availableVars}
-                        className="w-36"
-                      />
-                    ) : (
-                      <Select
-                        ariaLabel="Source 2"
-                        value={(binaryOp as ScalarNamedOp).source2 || ''}
-                        onChange={(v) => {
-                          updateRow(i, { op: { fn: binaryOp.fn, operand: 'named', source2: v } as ScalarFunction });
-                        }}
-                        className="w-32"
-                        options={getScalarNgNames(i).map((n) => ({ value: n, label: n }))}
-                      />
-                    )}
+                  <div class="mt-2 space-y-1.5 pl-1 border-l border-rule">
+                    {terms.map((term, ti) => (
+                      <div key={ti} class="flex items-center gap-1">
+                        <Select
+                          ariaLabel="Operand"
+                          value={term.operand}
+                          onChange={(v) => {
+                            if (v === 'literal') {
+                              updateTerm(ti, { operand: 'literal', value: literalExpr(0) } as ScalarBinaryTerm);
+                            } else {
+                              const firstScalar = scalarNames[0] || '';
+                              updateTerm(ti, { operand: 'named', source2: firstScalar } as ScalarBinaryTerm);
+                            }
+                          }}
+                          className="w-20"
+                          options={[
+                            { value: 'literal', label: 'literal' },
+                            { value: 'named', label: 'named' },
+                          ]}
+                        />
+                        {term.operand === 'literal' ? (
+                          <ExprInput
+                            value={term.value}
+                            onChange={(expr: Expr) => updateTerm(ti, { value: expr } as ScalarBinaryTerm)}
+                            ariaLabel="Literal value"
+                            availableVars={availableVars}
+                            className="w-36"
+                          />
+                        ) : (
+                          <Select
+                            ariaLabel="Source 2"
+                            value={term.source2 || ''}
+                            onChange={(v) => updateTerm(ti, { source2: v } as ScalarBinaryTerm)}
+                            className="w-32"
+                            options={scalarNames.map((n) => ({ value: n, label: n }))}
+                          />
+                        )}
+                        {terms.length > 1 && (
+                          <IconButton onClick={() => removeTerm(ti)} ariaLabel="Remove term" variant="danger">
+                            <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" fill="none" /></svg>
+                          </IconButton>
+                        )}
+                      </div>
+                    ))}
+                    <div class="flex items-center gap-1">
+                      <Button variant="quiet" size="sm" onClick={addTerm}>
+                        + term
+                      </Button>
+                    </div>
                   </div>
                 );
               })()}
@@ -295,5 +326,3 @@ export function PipelineEditor() {
     </div>
   );
 }
-
-

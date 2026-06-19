@@ -5,7 +5,7 @@ function rollDie(sides: number, tag: string): TaggedDie {
   return { face: ((Math.random() * sides) | 0) + 1, tag };
 }
 
-export function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[], termsSides: { sides: number; tag: string }[]): TaggedDie[] {
+export function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[], termsSides: { sides: number; tag: string }[], vars: { x: number; y: number }): TaggedDie[] {
   let result = [...dice];
 
   for (const rc of conditions) {
@@ -14,16 +14,18 @@ export function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondi
     for (const die of result) {
       const sides = findSides(die.tag, termsSides);
 
-      if (!matchConditions(die, rc.conditions, termsSides)) {
+      if (!matchConditions(die, rc.conditions, termsSides, vars)) {
         newDice.push(die);
         continue;
       }
 
+      const effectiveTag = rc.tagAs || die.tag;
+
       if (rc.action === 'reroll') {
         let current = die;
         for (let attempt = 0; attempt < rc.repeat; attempt++) {
-          current = rollDie(sides, die.tag);
-          if (!matchConditions(current, rc.conditions, termsSides)) break;
+          current = rollDie(sides, effectiveTag);
+          if (!matchConditions(current, rc.conditions, termsSides, vars)) break;
         }
         newDice.push(current);
       }
@@ -34,8 +36,8 @@ export function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondi
         let cascadeDepth = 0;
         let lastExploded = die;
         while (cascadeDepth < rc.repeat && safety-- > 0) {
-          const extra = rollDie(sides, die.tag);
-          if (matchConditions(lastExploded, rc.conditions, termsSides)) {
+          const extra = rollDie(sides, effectiveTag);
+          if (matchConditions(lastExploded, rc.conditions, termsSides, vars)) {
             newDice.push(extra);
             lastExploded = extra;
             cascadeDepth++;
