@@ -1,5 +1,5 @@
 import type { SavedConfig, DicePool, Outcome, RerollCondition, NamedValue, OutcomeCondition, PresetConfig, SweepParameters, Expr, DiceTerm, ScalarBinaryTerm, ConditionChain } from '@/types';
-import { dicePool, outcomes, sweep, rerollConditions, pipeline, configDirty } from './app-state';
+import { dicePool, outcomes, sweep, rerollConditions, pipeline, configDirty, buildSavedConfig } from './app-state';
 import { exportConfigAsYaml, parsePreset, filenameForName } from '@/utils/yaml';
 import { literalExpr } from '@/utils/expression';
 
@@ -85,14 +85,7 @@ interface V7Config {
 }
 
 export function saveConfig() {
-  const config: SavedConfig = {
-    version: 9,
-    pool: dicePool.value,
-    rerollConditions: rerollConditions.value,
-    pipeline: pipeline.value,
-    outcomes: outcomes.value,
-    sweep: sweep.value,
-  };
+  const config = buildSavedConfig();
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
     configDirty.value = false;
