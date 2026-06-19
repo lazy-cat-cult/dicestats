@@ -22,6 +22,7 @@ import {
   sampleX,
   sampleY,
   resetSampleMode,
+  applyPresetConfig,
 } from '@/state/app-state';
 import { PresetSelector } from '@/components/PresetSelector';
 import { DicePoolEditor } from '@/components/DicePoolEditor';
@@ -36,6 +37,7 @@ import { OddsTape } from '@/components/OddsTape';
 import { SampleView } from '@/components/SampleView';
 import { saveConfig, loadConfig } from '@/state/persistence';
 import { validateConfig, canRunSimulation } from '@/utils/validation';
+import { decodeShareUrl } from '@/utils/share';
 import { computed } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { Section, Button, Checkbox } from '@/components/ui';
@@ -73,7 +75,26 @@ const validationErrors = computed(() =>
 const canRun = computed(() => !isSimulating.value && canRunSimulation(validationErrors.value) && outcomes.value.length > 0);
 
 export function App() {
-  useEffect(() => { loadConfig(); }, []);
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      const shared = decodeShareUrl(hash);
+      if (shared) {
+        applyPresetConfig({
+          id: 'shared',
+          name: 'Shared',
+          pool: shared.pool,
+          rerollConditions: shared.rerollConditions,
+          pipeline: shared.pipeline,
+          outcomes: shared.outcomes,
+          sweep: shared.sweep,
+        });
+        configDirty.value = false;
+        return;
+      }
+    }
+    loadConfig();
+  }, []);
 
   useEffect(() => {
     function flush() {
