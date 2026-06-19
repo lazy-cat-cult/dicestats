@@ -46,15 +46,14 @@ describe('buildSampleTrace', () => {
     const pool: DicePool = {
       terms: [{ id: '1', count: literalExpr(1), sides: literalExpr(20), tag: '', comment: '' }],
     };
-    // Retry until we get a face >= 10
     for (let attempt = 0; attempt < 50; attempt++) {
       const trace = makeTrace(pool, [], [
         { id: 'o1', name: 'Hit', conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: literalExpr(10) }], connectors: [], comment: '' },
       ]);
-      if (trace.outcomes[0].name === 'Hit') {
+      const hit = trace.outcomes.find((o) => o.name === 'Hit')!;
+      if (hit.matched) {
         expect(trace.outcomes.length).toBe(2);
-        const hit = trace.outcomes.find((o) => o.name === 'Hit')!;
-        expect(hit.matched).toBe(hit.name === 'Hit');
+        expect(hit.matched).toBe(true);
         break;
       }
     }

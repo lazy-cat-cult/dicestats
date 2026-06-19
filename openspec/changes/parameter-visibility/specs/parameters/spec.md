@@ -181,10 +181,10 @@ If the targeted outcome has zero conditions, OR its `conditions[0]` does not pas
 - AND the `<SweepIndicator>` is not rendered
 
 ### Requirement: Pipeline Literal Targeting (rewritten)
-When a `Parameter` has `target: 'pipeline.literal'`, the targeted `NamedValue` MUST be `{ fn: ScalarBinaryOp; operand: 'literal'; value: number }`. If the targeted row's function is changed to a non-binary-math variant (e.g. `ceil`, `floor`, or any vector function), validation SHALL emit a blocking error: "Pipeline literal target is not a binary-math-literal row. Change the function or pick a different target." The `<SweepIndicator>` SHALL be removed and the parameter card SHALL be rendered in the error state (per "Stale-Target Visibility").
+When a `Parameter` has `target: 'pipeline.literal'`, the targeted `NamedValue` MUST be `{ fn: ScalarBinaryOp; operand: 'val'; value: number }`. If the targeted row's function is changed to a non-binary-math variant (e.g. `ceil`, `floor`, or any vector function), validation SHALL emit a blocking error: "Pipeline literal target is not a binary-math-literal row. Change the function or pick a different target." The `<SweepIndicator>` SHALL be removed and the parameter card SHALL be rendered in the error state (per "Stale-Target Visibility").
 
 #### Scenario: Valid pipeline literal target
-- GIVEN a pipeline row `modified = add rolled by 5` (operand: 'literal')
+- GIVEN a pipeline row `modified = add rolled by 5` (operand: 'val')
 - WHEN a parameter targets this pipeline row
 - THEN the parameter replaces the literal value (5) with each sweep value
 

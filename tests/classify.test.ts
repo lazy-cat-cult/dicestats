@@ -180,8 +180,8 @@ describe('evaluateOutcome', () => {
 
   it('Daggerheart compound outcomes evaluate independently', () => {
     const pipeline: NamedValue[] = [
-      { id: 'p1', name: 'delta', source: 'rolled', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
-      { id: 'p2', name: 'total_mod', source: 'rolled', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(17) }] }, comment: '' },
+      { id: 'p1', name: 'delta', source: 'rolled', op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(2) }] }, comment: '' },
+      { id: 'p2', name: 'total_mod', source: 'rolled', op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(17) }] }, comment: '' },
     ];
     const outcomes: Outcome[] = [
       { id: 'o1', name: 'Critical Success', conditions: [{ source: 'delta', op: '=', value: literalExpr(0) }], connectors: [], comment: '' },
@@ -205,7 +205,7 @@ describe('evaluateOutcome', () => {
   it('AND connector across two different sources', () => {
     const pipeline: NamedValue[] = [
       { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
-      { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(5) }] }, comment: '' },
+      { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(5) }] }, comment: '' },
     ];
     const outcome: Outcome = {
       id: '1',

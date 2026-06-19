@@ -151,8 +151,8 @@ type ScalarFunction =
   | 'sum'                                                // vector → scalar (sum of face values)
   | 'max'                                                // vector → scalar (maximum face value)
   | 'min'                                                // vector → scalar (minimum face value)
-  | { fn: ScalarBinaryOp; operand: 'literal'; value: number }    // scalar op literal → scalar
-  | { fn: ScalarBinaryOp; operand: 'named'; source2: string }     // scalar op named scalar → scalar
+  | { fn: ScalarBinaryOp; operand: 'val'; value: number }    // scalar op literal → scalar
+  | { fn: ScalarBinaryOp; operand: 'ref'; source2: string }     // scalar op named scalar → scalar
   | { fn: 'ceil' }                                              // scalar → scalar
   | { fn: 'floor' };                                             // scalar → scalar
 
@@ -172,7 +172,7 @@ The output type is **derived** from the operation, not stored:
 
 **Rules:**
 - `source` must reference `rolled` (built-in) or a named value defined in a **prior** row.
-- For `{ fn: 'add'|'subtract'|'multiply'|'divide'; operand: 'named'; source2: string }`, `source2` must reference `rolled` or a named value defined in a **prior** row. It must produce a **scalar** type.
+- For `{ fn: 'add'|'subtract'|'multiply'|'divide'; operand: 'ref'; source2: string }`, `source2` must reference `rolled` or a named value defined in a **prior** row. It must produce a **scalar** type.
 - `source` and `source2` must not be the same named value for binary operations (use a literal instead, or restructure the pipeline).
 - If a referenced `source` or `source2` is deleted or moved below the current row, the row becomes **invalid** and must be highlighted in the UI.
 - A simulation **must not run** when any row is invalid.
@@ -581,7 +581,7 @@ Outcomes:
 Parameter: TN sweep 1..5
 ```
 
-**Note:** The `add` operation uses `operand: 'named'` with `source2: 'double_crits'` to add two pipeline values: `success_count` + `double_crits`. The `multiply` and `divide` operations use `operand: 'literal'` with numeric values.
+**Note:** The `add` operation uses `operand: 'ref'` with `source2: 'double_crits'` to add two pipeline values: `success_count` + `double_crits`. The `multiply` and `divide` operations use `operand: 'val'` with numeric values.
 
 ---
 
@@ -804,7 +804,7 @@ Old configs are migrated on load:
 |---|---|---|
 | 1 | Should `all?` require a sub-condition? | **Resolved**: Yes. `all?` includes a sub-condition: `{ op: 'all?'; subCondition: ConditionOperator; value: number }`. All dice in the vector must satisfy the sub-condition. |
 | 2 | Should outcomes be exclusive by default? | **Resolved**: Yes. First matching outcome wins. Add `isDefault` for fallback. |
-| 3 | Can the pipeline combine two named values? | **Resolved**: Yes. Binary scalar operations accept `operand: 'named'` with `source2` field. |
+| 3 | Can the pipeline combine two named values? | **Resolved**: Yes. Binary scalar operations accept `operand: 'ref'` with `source2` field. |
 | 4 | Maximum pipeline rows? | **Resolved**: 20 rows. |
 | 5 | Should presets store full configuration? | **Resolved**: Yes — pool, reroll, pipeline, outcomes, and parameters. |
 | 6 | URL-based config sharing? | **Future**: Not in v2. Consider for v3. |

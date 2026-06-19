@@ -48,10 +48,10 @@ When an outcome has multiple conditions with numeric values, the parameter SHALL
 - THEN only the first condition changes: `[total >= 10, total <= 25]`
 
 ### Requirement: Pipeline Literal Targeting
-When `target` is `'pipeline.literal'`, the targeted pipeline row MUST be a binary math operation with `operand: 'literal'`. The parameter replaces the literal `value` field.
+When `target` is `'pipeline.literal'`, the targeted pipeline row MUST be a binary math operation with `operand: 'val'`. The parameter replaces the literal `value` field.
 
 #### Scenario: Valid pipeline literal target
-- GIVEN a pipeline row: `modified = add rolled by 5` (operand: 'literal')
+- GIVEN a pipeline row: `modified = add rolled by 5` (operand: 'val')
 - WHEN a parameter targets this pipeline row
 - THEN the parameter replaces the literal value (5) with each sweep value
 
