@@ -16,6 +16,7 @@ import {
   importPresetFromYamlText,
   saveCurrentAsYaml,
 } from '@/state/persistence';
+import { buildShareUrl } from '@/utils/share';
 
 export function PresetSelector() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -23,6 +24,7 @@ export function PresetSelector() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
+  const [shareCopied, setShareCopied] = useState(false);
 
   useEffect(() => {
     if (!isEditingName) return;
@@ -77,6 +79,28 @@ export function PresetSelector() {
       const message = err instanceof Error ? err.message : 'Failed to load file';
       loadError.value = message.replace(/^Preset error: /, '').replace(/^YAML error at \d+:\d+: /, 'YAML: ');
     }
+  }
+
+  async function handleShareUrl() {
+    const url = buildShareUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      copyFallback(url);
+    }
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  }
+
+  function copyFallback(text: string) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
   }
 
   const featured = FEATURED_PRESET_IDS
@@ -192,6 +216,9 @@ export function PresetSelector() {
           </Button>
           <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} ariaLabel="Load configuration from YAML file" className="border-gold/50 text-ink hover:border-billiard hover:text-billiard">
             Load
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleShareUrl} ariaLabel="Copy share URL to clipboard" className="border-gold/50 text-ink hover:border-billiard hover:text-billiard">
+            {shareCopied ? 'Copied!' : 'Share URL'}
           </Button>
           <input
             ref={fileInputRef}
