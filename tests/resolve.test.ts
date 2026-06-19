@@ -433,4 +433,127 @@ describe('evaluatePipeline', () => {
     const crits = env.get('crits') as TaggedDie[];
     expect(crits.length).toBe(2);
   });
+
+  describe('switch', () => {
+    it('first matching branch wins', () => {
+      const rolled: TaggedDie[] = [{ face: 10, tag: '' }];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'main_value', source: 'rolled', op: 'max', comment: '' },
+        { id: 'p2', name: 'crithit', source: 'main_value', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
+        { id: 'p3', name: 'critmiss', source: 'main_value', op: { fn: 'subtract', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
+        {
+          id: 'p4', name: 'total', source: 'main_value',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'named', source2: 'crithit' }, condition: { source: 'main_value', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'named', source2: 'critmiss' }, condition: { source: 'main_value', op: '=', value: literalExpr(1) } },
+          ] },
+          comment: '',
+        },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      expect(env.get('total')).toBe(12);
+    });
+
+    it('no branch matches — returns source default', () => {
+      const rolled: TaggedDie[] = [{ face: 5, tag: '' }];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'main_value', source: 'rolled', op: 'max', comment: '' },
+        { id: 'p2', name: 'crithit', source: 'main_value', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
+        {
+          id: 'p3', name: 'total', source: 'main_value',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'named', source2: 'crithit' }, condition: { source: 'main_value', op: '=', value: literalExpr(10) } },
+          ] },
+          comment: '',
+        },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      expect(env.get('total')).toBe(5);
+    });
+
+    it('literal branch value', () => {
+      const rolled: TaggedDie[] = [{ face: 1, tag: '' }];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'main_value', source: 'rolled', op: 'max', comment: '' },
+        {
+          id: 'p2', name: 'total', source: 'main_value',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'literal', value: literalExpr(-2) }, condition: { source: 'main_value', op: '=', value: literalExpr(1) } },
+          ] },
+          comment: '',
+        },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      expect(env.get('total')).toBe(-2);
+    });
+
+    it('is_even condition', () => {
+      const rolled: TaggedDie[] = [{ face: 4, tag: '' }];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'val', source: 'rolled', op: 'max', comment: '' },
+        {
+          id: 'p2', name: 'result', source: 'val',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'val', op: 'is_even' } },
+          ] },
+          comment: '',
+        },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      expect(env.get('result')).toBe(1);
+    });
+
+    it('is_odd condition', () => {
+      const rolled: TaggedDie[] = [{ face: 3, tag: '' }];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'val', source: 'rolled', op: 'max', comment: '' },
+        {
+          id: 'p2', name: 'result', source: 'val',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'literal', value: literalExpr(2) }, condition: { source: 'val', op: 'is_odd' } },
+          ] },
+          comment: '',
+        },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      expect(env.get('result')).toBe(2);
+    });
+
+    it('missing condition source falls through to next branch', () => {
+      const rolled: TaggedDie[] = [{ face: 5, tag: '' }];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'val', source: 'rolled', op: 'max', comment: '' },
+        {
+          id: 'p2', name: 'result', source: 'val',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'literal', value: literalExpr(99) }, condition: { source: 'missing', op: '=', value: literalExpr(1) } },
+            { value: { operand: 'literal', value: literalExpr(42) }, condition: { source: 'val', op: '=', value: literalExpr(5) } },
+          ] },
+          comment: '',
+        },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      expect(env.get('result')).toBe(42);
+    });
+
+    it('later branch matches when earlier does not', () => {
+      const rolled: TaggedDie[] = [{ face: 1, tag: '' }];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'main_value', source: 'rolled', op: 'max', comment: '' },
+        { id: 'p2', name: 'crithit', source: 'main_value', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
+        { id: 'p3', name: 'critmiss', source: 'main_value', op: { fn: 'subtract', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
+        {
+          id: 'p4', name: 'total', source: 'main_value',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'named', source2: 'crithit' }, condition: { source: 'main_value', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'named', source2: 'critmiss' }, condition: { source: 'main_value', op: '=', value: literalExpr(1) } },
+            { value: { operand: 'literal', value: literalExpr(-2) }, condition: { source: 'critmiss', op: '<', value: literalExpr(0) } },
+          ] },
+          comment: '',
+        },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      expect(env.get('total')).toBe(-1);
+    });
+  });
 });

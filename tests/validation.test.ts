@@ -341,6 +341,178 @@ describe('validateConfig', () => {
       expect(errors).toEqual([]);
     });
   });
+
+  describe('switch validation', () => {
+    it('passes validation for valid switch', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'val', source: 'rolled', op: 'max', comment: '' },
+        { id: 'p2', name: 'doubled', source: 'val', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(2) }] }, comment: '' },
+        {
+          id: 'p3', name: 'result', source: 'val',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'named', source2: 'doubled' }, condition: { source: 'val', op: '=', value: literalExpr(10) } },
+            { value: { operand: 'literal', value: literalExpr(0) }, condition: { source: 'val', op: '=', value: literalExpr(1) } },
+          ] },
+          comment: '',
+        },
+      ];
+      const outcome = makeOutcome({ conditions: [{ source: 'result', op: '>=', value: literalExpr(1) }] });
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [outcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('switch'))).toBe(false);
+    });
+
+    it('reports error for switch on vector source', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
+        { id: 'p2', name: 'hits', source: 'rolled', op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: literalExpr(5) }], connectors: [] } }, comment: '' },
+        {
+          id: 'p3', name: 'result', source: 'hits',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'total', op: '=', value: literalExpr(10) } },
+          ] },
+          comment: '',
+        },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('Cannot apply switch to vector'))).toBe(true);
+    });
+
+    it('reports error for switch on rolled (vector)', () => {
+      const pipeline: NamedValue[] = [
+        {
+          id: 'p1', name: 'result', source: 'rolled',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'rolled', op: '=', value: literalExpr(10) } },
+          ] },
+          comment: '',
+        },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('Cannot apply switch'))).toBe(true);
+    });
+
+    it('reports error for undefined condition source', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'val', source: 'rolled', op: 'max', comment: '' },
+        {
+          id: 'p2', name: 'result', source: 'val',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'nonexistent', op: '=', value: literalExpr(10) } },
+          ] },
+          comment: '',
+        },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('is not defined'))).toBe(true);
+    });
+
+    it('reports error for condition source after switch row', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'val', source: 'rolled', op: 'max', comment: '' },
+        {
+          id: 'p2', name: 'result', source: 'val',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'later', op: '=', value: literalExpr(10) } },
+          ] },
+          comment: '',
+        },
+        { id: 'p3', name: 'later', source: 'rolled', op: 'max', comment: '' },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('appears after switch row'))).toBe(true);
+    });
+
+    it('reports error for condition source as vector', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'hits', source: 'rolled', op: { fn: 'filter', conditions: { clauses: [{ field: 'face', operator: '>=', value: literalExpr(5) }], connectors: [] } }, comment: '' },
+        { id: 'p2', name: 'val', source: 'rolled', op: 'max', comment: '' },
+        {
+          id: 'p3', name: 'result', source: 'val',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'hits', op: '=', value: literalExpr(10) } },
+          ] },
+          comment: '',
+        },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('must be a scalar'))).toBe(true);
+    });
+
+    it('reports error for invalid operator is_min', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'val', source: 'rolled', op: 'max', comment: '' },
+        {
+          id: 'p2', name: 'result', source: 'val',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'literal', value: literalExpr(1) }, condition: { source: 'val', op: 'is_min' as any, value: literalExpr(10) } },
+          ] },
+          comment: '',
+        },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('not valid for switch'))).toBe(true);
+    });
+
+    it('reports error for branch self-reference', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'val', source: 'rolled', op: 'max', comment: '' },
+        {
+          id: 'p2', name: 'result', source: 'val',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'named', source2: 'result' }, condition: { source: 'val', op: '=', value: literalExpr(10) } },
+          ] },
+          comment: '',
+        },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('cannot reference itself'))).toBe(true);
+    });
+
+    it('reports error for branch value source after switch row', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'val', source: 'rolled', op: 'max', comment: '' },
+        {
+          id: 'p2', name: 'result', source: 'val',
+          op: { fn: 'switch', branches: [
+            { value: { operand: 'named', source2: 'later' }, condition: { source: 'val', op: '=', value: literalExpr(10) } },
+          ] },
+          comment: '',
+        },
+        { id: 'p3', name: 'later', source: 'rolled', op: 'max', comment: '' },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('appears after switch row'))).toBe(true);
+    });
+
+    it('reports error for zero branches', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'val', source: 'rolled', op: 'max', comment: '' },
+        {
+          id: 'p2', name: 'result', source: 'val',
+          op: { fn: 'switch', branches: [] },
+          comment: '',
+        },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('at least 1 branch'))).toBe(true);
+    });
+
+    it('reports error for more than 10 branches', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'val', source: 'rolled', op: 'max', comment: '' },
+        {
+          id: 'p2', name: 'result', source: 'val',
+          op: { fn: 'switch', branches: Array.from({ length: 11 }, (_, i) => ({
+            value: { operand: 'literal', value: literalExpr(i) },
+            condition: { source: 'val', op: '=', value: literalExpr(i) },
+          })) },
+          comment: '',
+        },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('at most 10 branches'))).toBe(true);
+    });
+  });
 });
 
 describe('canRunSimulation', () => {
