@@ -30,9 +30,9 @@ The simulation core remains unchanged — `switch` evaluation happens once per p
 
 ### 1. Branch value reuses `ScalarBinaryTerm`
 
-**Decision:** Each branch's `value` is a `ScalarBinaryTerm` — `{ operand: 'literal'; value: Expr }` or `{ operand: 'named'; source2: string }`. This is the exact same type used by `add`/`subtract`/`multiply`/`divide` terms.
+**Decision:** Each branch's `value` is a `ScalarBinaryTerm` — `{ operand: 'val'; value: Expr }` or `{ operand: 'ref'; source2: string }`. This is the exact same type used by `add`/`subtract`/`multiply`/`divide` terms.
 
-**Rationale:** No new type needed. The runtime resolves `named` terms against the pipeline environment and `literal` terms against the expression evaluator — exactly the same path. The UI can reuse the existing term editor components.
+**Rationale:** No new type needed. The runtime resolves `ref` terms against the pipeline environment and `val` terms against the expression evaluator — exactly the same path. The UI can reuse the existing term editor components.
 
 **Alternatives:** Create a separate `SwitchValue` type — rejected, duplicates logic with no benefit.
 

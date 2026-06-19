@@ -51,20 +51,20 @@ Each branch's `condition.source` SHALL reference a named value that produces a s
 
 ### Requirement: Branch Named Value Ordering
 
-When a branch's `value` has `operand: 'named'`, its `source2` SHALL reference a named value defined in a pipeline row that appears **before** the current `switch` row. Self-references SHALL be rejected.
+When a branch's `value` has `operand: 'ref'`, its `source2` SHALL reference a named value defined in a pipeline row that appears **before** the current `switch` row. Self-references SHALL be rejected.
 
 #### Scenario: valid named value reference
-- GIVEN `bonus = sum rolled` at row 1, then `result = base switch` at row 2 with branch value `{ operand: 'named', source2: 'bonus' }`
+- GIVEN `bonus = sum rolled` at row 1, then `result = base switch` at row 2 with branch value `{ operand: 'ref', source2: 'bonus' }`
 - WHEN validation runs
 - THEN no error is raised
 
 #### Scenario: self-reference in branch value
-- GIVEN `result = base switch` with branch value `{ operand: 'named', source2: 'result' }`
+- GIVEN `result = base switch` with branch value `{ operand: 'ref', source2: 'result' }`
 - WHEN validation runs
 - THEN the branch is flagged with error "Switch branch cannot reference itself"
 
 #### Scenario: forward reference in branch value
-- GIVEN `result = base switch` at row 1 with branch value `{ operand: 'named', source2: 'later_val' }`, and `later_val = max rolled` at row 2
+- GIVEN `result = base switch` at row 1 with branch value `{ operand: 'ref', source2: 'later_val' }`, and `later_val = max rolled` at row 2
 - WHEN validation runs
 - THEN the branch is flagged with error "Branch value source 'later_val' references a value defined after this row"
 

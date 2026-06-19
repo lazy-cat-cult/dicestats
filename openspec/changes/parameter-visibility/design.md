@@ -156,7 +156,7 @@ Extend rule 11 with three sub-conditions. Each emits a blocking error with a dis
 1. **Target must exist**: `targetTermId` / `targetOutcomeId` / `targetPipelineId` references an existing entity. *(Current behaviour, unchanged wording.)*
 2. **Outcome sweep requires ≥1 condition**: if `target === 'outcome.value'`, the outcome's `conditions.length` MUST be ≥1. If zero, blocking error: "Sweep target outcome has no conditions. Add a condition first."
 3. **Outcome sweep requires scalar first condition**: if `target === 'outcome.value'`, `conditions[0]` MUST pass the existing `isScalarCondition` predicate (an `OutcomeCondition` whose `op` is a `ConditionOperator` and whose `value` is a `number`). Otherwise, blocking error: "Cannot sweep vector condition. Add a numeric condition first."
-4. **Pipeline literal sweep requires binary-math-literal function**: if `target === 'pipeline.literal'`, the targeted `NamedValue` MUST be `{ fn: ScalarBinaryOp; operand: 'literal'; value: number }`. Otherwise, blocking error: "Pipeline literal target is not a binary-math-literal row. Change the function or pick a different target."
+4. **Pipeline literal sweep requires binary-math-literal function**: if `target === 'pipeline.literal'`, the targeted `NamedValue` MUST be `{ fn: ScalarBinaryOp; operand: 'val'; value: number }`. Otherwise, blocking error: "Pipeline literal target is not a binary-math-literal row. Change the function or pick a different target."
 
 The `isScalarCondition` predicate is extracted from `src/components/OutcomeEditor.tsx:190-196` into `src/utils/validation.ts` (or `src/domain/matching.ts` if a domain-level predicate is preferred — see "Open questions"). It is reused by the new validation rule and remains available to the outcome editor.
 

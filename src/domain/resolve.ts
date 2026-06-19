@@ -26,7 +26,7 @@ function applyScalarBinaryMultiTerm(sourceVal: number, fn: ScalarBinaryOp, terms
   if (terms.length === 0) return sourceVal;
   const firstTerm = terms[0]!;
   let result: number;
-  if (firstTerm.operand === 'literal') {
+  if (firstTerm.operand === 'val') {
     result = applyScalarBinary(sourceVal, fn, evalExpr(firstTerm.value, vars));
   } else {
     const rightVal = env.get(firstTerm.source2);
@@ -35,7 +35,7 @@ function applyScalarBinaryMultiTerm(sourceVal: number, fn: ScalarBinaryOp, terms
   }
   for (let i = 1; i < terms.length; i++) {
     const term = terms[i]!;
-    if (term.operand === 'literal') {
+    if (term.operand === 'val') {
       result = applyScalarBinary(result, fn, evalExpr(term.value, vars));
     } else {
       const rightVal = env.get(term.source2);
@@ -70,7 +70,7 @@ function applySwitch(
 
     if (!matched) continue;
 
-    if (branch.value.operand === 'literal') {
+    if (branch.value.operand === 'val') {
       return evalExpr(branch.value.value, vars);
     }
     const namedVal = env.get(branch.value.source2);
@@ -86,7 +86,7 @@ function isScalarCeilFloorOp(op: ScalarFunction): op is ScalarCeilFloorOp {
 }
 
 function isScalarMaxMinNamedOp(op: ScalarFunction): op is ScalarMaxMinNamedOp {
-  return typeof op === 'object' && op !== null && 'operand' in op && op.operand === 'named' && (op.fn === 'max' || op.fn === 'min');
+  return typeof op === 'object' && op !== null && 'operand' in op && op.operand === 'ref' && (op.fn === 'max' || op.fn === 'min');
 }
 
 function isScalarSwitchOp(op: ScalarFunction): op is { fn: 'switch'; branches: SwitchBranch[] } {

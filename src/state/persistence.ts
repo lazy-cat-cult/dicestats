@@ -134,13 +134,13 @@ function literalizePipeline(pipeline: NamedValue[]): NamedValue[] {
   return pipeline.map((nv) => {
     if (typeof nv.op === 'object' && nv.op !== null && 'fn' in nv.op) {
       const op = nv.op as { fn: string; operand?: string; value?: number | Expr; source2?: string; terms?: ScalarBinaryTerm[] };
-      if ((op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') && op.operand === 'literal') {
+      if ((op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') && (op.operand === 'literal' || op.operand === 'val')) {
         if (typeof op.value === 'number') {
-          return { ...nv, op: { fn: op.fn, terms: [{ operand: 'literal', value: literalExpr(op.value) }] } as NamedValue['op'] } as NamedValue;
+          return { ...nv, op: { fn: op.fn, terms: [{ operand: 'val', value: literalExpr(op.value) }] } as NamedValue['op'] } as NamedValue;
         }
       }
-      if ((op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') && op.operand === 'named') {
-        return { ...nv, op: { fn: op.fn, terms: [{ operand: 'named', source2: op.source2 || '' }] } as NamedValue['op'] } as NamedValue;
+      if ((op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') && (op.operand === 'named' || op.operand === 'ref')) {
+        return { ...nv, op: { fn: op.fn, terms: [{ operand: 'ref', source2: op.source2 || '' }] } as NamedValue['op'] } as NamedValue;
       }
     }
     return nv;
@@ -213,8 +213,8 @@ function migrateV7ToV8(config: V7Config): SavedConfig {
         const nv = pipeline.find((n) => n.id === p.targetPipelineId);
         if (nv && typeof nv.op === 'object' && nv.op !== null && 'fn' in nv.op) {
           const op = nv.op as { fn: string; operand?: string; terms?: ScalarBinaryTerm[] };
-          if (op.operand === 'literal' && (op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide')) {
-            nv.op = { fn: op.fn, terms: [{ operand: 'literal', value: { kind: 'ref', name: 'X' } }] } as NamedValue['op'];
+          if ((op.operand === 'literal' || op.operand === 'val') && (op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide')) {
+            nv.op = { fn: op.fn, terms: [{ operand: 'val', value: { kind: 'ref', name: 'X' } }] } as NamedValue['op'];
           }
         }
       }
@@ -249,11 +249,11 @@ function migrateV8ToV9(config: SavedConfig): SavedConfig {
         return { ...nv, op: { ...op, conditions: migratedConditions } as NamedValue['op'] } as NamedValue;
       }
       if ((op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') && !op.terms) {
-        if (op.operand === 'literal') {
-          return { ...nv, op: { fn: op.fn, terms: [{ operand: 'literal', value: op.value || literalExpr(0) }] } as NamedValue['op'] } as NamedValue;
+        if (op.operand === 'literal' || op.operand === 'val') {
+          return { ...nv, op: { fn: op.fn, terms: [{ operand: 'val', value: op.value || literalExpr(0) }] } as NamedValue['op'] } as NamedValue;
         }
-        if (op.operand === 'named') {
-          return { ...nv, op: { fn: op.fn, terms: [{ operand: 'named', source2: op.source2 || '' }] } as NamedValue['op'] } as NamedValue;
+        if (op.operand === 'named' || op.operand === 'ref') {
+        return { ...nv, op: { fn: op.fn, terms: [{ operand: 'ref', source2: op.source2 || '' }] } as NamedValue['op'] } as NamedValue;
         }
       }
     }

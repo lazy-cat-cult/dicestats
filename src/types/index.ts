@@ -52,8 +52,8 @@ export type VectorFunction =
 export type ScalarBinaryOp = 'add' | 'subtract' | 'multiply' | 'divide';
 
 export type ScalarBinaryTerm =
-  | { operand: 'literal'; value: Expr }
-  | { operand: 'named'; source2: string };
+  | { operand: 'val'; value: Expr }
+  | { operand: 'ref'; source2: string };
 
 export const SWITCH_CONDITION_OPERATORS: readonly ConditionOperator[] = ['>', '>=', '<', '<=', '=', '!=', 'is_even', 'is_odd'];
 
@@ -77,12 +77,12 @@ export type ScalarFunction =
   | { fn: ScalarBinaryOp; terms: ScalarBinaryTerm[] }
   | { fn: 'ceil' }
   | { fn: 'floor' }
-  | { fn: 'max'; operand: 'named'; source2: string }
-  | { fn: 'min'; operand: 'named'; source2: string }
+  | { fn: 'max'; operand: 'ref'; source2: string }
+  | { fn: 'min'; operand: 'ref'; source2: string }
   | { fn: 'switch'; branches: SwitchBranch[] };
 
 export type ScalarCeilFloorOp = { fn: 'ceil' | 'floor' };
-export type ScalarMaxMinNamedOp = { fn: 'max' | 'min'; operand: 'named'; source2: string };
+export type ScalarMaxMinNamedOp = { fn: 'max' | 'min'; operand: 'ref'; source2: string };
 export type ScalarObjectFunction =
   | { fn: ScalarBinaryOp; terms: ScalarBinaryTerm[] }
   | ScalarCeilFloorOp
