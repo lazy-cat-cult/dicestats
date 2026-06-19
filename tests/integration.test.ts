@@ -113,7 +113,7 @@ describe('dice mechanics: compound outcomes (per-condition source)', () => {
     };
     const pipeline: NamedValue[] = [
       { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
-      { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(0) }] }, comment: '' },
+      { id: 'p2', name: 'delta', source: 'rolled', op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(0) }] }, comment: '' },
     ];
     const outcomes: Outcome[] = [
       { id: 'o1', name: 'Critical Hit', conditions: [{ source: 'total', op: '>=', value: literalExpr(15) }, { source: 'delta', op: '>=', value: literalExpr(0) }], connectors: ['and'], comment: '' },

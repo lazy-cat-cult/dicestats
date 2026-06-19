@@ -11,7 +11,9 @@ import type {
   ScalarBinaryOp,
   Expr,
   ScalarBinaryTerm,
+  SwitchBranch,
 } from '@/types';
+import { SWITCH_CONDITION_OPERATORS } from '@/types';
 import { ExprInput } from '@/components/ExprInput';
 import { ConditionChainEditor } from '@/components/ConditionChainEditor';
 import { literalExpr } from '@/utils/expression';
@@ -31,6 +33,13 @@ function emptyNamedValue(): NamedValue {
     source: 'rolled',
     op: { fn: 'filter', conditions: emptyCondition() },
     comment: '',
+  };
+}
+
+function emptySwitchBranch(): SwitchBranch {
+  return {
+    value: { operand: 'val', value: literalExpr(0) },
+    condition: { source: '', op: '=', value: literalExpr(1) },
   };
 }
 
@@ -95,6 +104,7 @@ export function PipelineEditor() {
           const currentOp = nv.op;
           const isVectorOp = typeof currentOp === 'object' && 'fn' in currentOp && (currentOp.fn === 'filter' || currentOp.fn === 'remove');
           const isBinary = typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp) && 'terms' in currentOp;
+          const isSwitch = typeof currentOp === 'object' && 'fn' in currentOp && currentOp.fn === 'switch' && 'branches' in currentOp;
           const sourceType = nv.source === 'rolled' ? 'vector' : (() => {
             const src = pipe.find((p) => p.name === nv.source);
             return src ? inferTypeFromOp(src) : 'vector';
@@ -141,7 +151,7 @@ export function PipelineEditor() {
                     })();
                     if (sourceType !== newSourceType) {
                       if (newSourceType === 'scalar') {
-                        updateRow(i, { source: newSource, op: { fn: 'add', terms: [{ operand: 'literal', value: literalExpr(0) }] } as ScalarFunction });
+                        updateRow(i, { source: newSource, op: { fn: 'add', terms: [{ operand: 'val', value: literalExpr(0) }] } as ScalarFunction });
                       } else {
                         updateRow(i, { source: newSource, op: { fn: 'filter', conditions: emptyCondition() } as VectorFunction });
                       }
@@ -184,7 +194,9 @@ export function PipelineEditor() {
                       if (val === 'ceil' || val === 'floor') {
                         updateRow(i, { op: { fn: val } as ScalarFunction });
                       } else if (SCALAR_BINARY_OPS.includes(val as ScalarBinaryOp)) {
-                        updateRow(i, { op: { fn: val as ScalarBinaryOp, terms: [{ operand: 'literal', value: literalExpr(0) }] } as ScalarFunction });
+                        updateRow(i, { op: { fn: val as ScalarBinaryOp, terms: [{ operand: 'val', value: literalExpr(0) }] } as ScalarFunction });
+                      } else if (val === 'switch') {
+                        updateRow(i, { op: { fn: 'switch', branches: [emptySwitchBranch()] } as ScalarFunction });
                       }
                     }}
                     className="w-24"
@@ -192,6 +204,7 @@ export function PipelineEditor() {
                       ...SCALAR_BINARY_OPS.map((op) => ({ value: op, label: op })),
                       { value: 'ceil', label: 'ceil' },
                       { value: 'floor', label: 'floor' },
+                      { value: 'switch', label: 'switch' },
                     ]}
                   />
                 )}
@@ -230,7 +243,7 @@ export function PipelineEditor() {
                 }
 
                 function addTerm() {
-                  updateTerms([...terms, { operand: 'literal', value: literalExpr(0) }]);
+                  updateTerms([...terms, { operand: 'val', value: literalExpr(0) }]);
                 }
 
                 function removeTerm(ti: number) {
@@ -246,20 +259,20 @@ export function PipelineEditor() {
                           ariaLabel="Operand"
                           value={term.operand}
                           onChange={(v) => {
-                            if (v === 'literal') {
-                              updateTerm(ti, { operand: 'literal', value: literalExpr(0) } as ScalarBinaryTerm);
+                            if (v === 'val') {
+                              updateTerm(ti, { operand: 'val', value: literalExpr(0) } as ScalarBinaryTerm);
                             } else {
                               const firstScalar = scalarNames[0] || '';
-                              updateTerm(ti, { operand: 'named', source2: firstScalar } as ScalarBinaryTerm);
+                              updateTerm(ti, { operand: 'ref', source2: firstScalar } as ScalarBinaryTerm);
                             }
                           }}
                           className="w-20"
                           options={[
-                            { value: 'literal', label: 'literal' },
-                            { value: 'named', label: 'named' },
+                            { value: 'val', label: 'val' },
+                            { value: 'ref', label: 'ref' },
                           ]}
                         />
-                        {term.operand === 'literal' ? (
+                        {term.operand === 'val' ? (
                           <ExprInput
                             value={term.value}
                             onChange={(expr: Expr) => updateTerm(ti, { value: expr } as ScalarBinaryTerm)}
@@ -286,6 +299,116 @@ export function PipelineEditor() {
                     <div class="flex items-center gap-1">
                       <Button variant="quiet" size="sm" onClick={addTerm}>
                         + term
+                      </Button>
+                    </div>
+                  </div>
+                );
+              }              )()}
+
+              {isSwitch && typeof currentOp === 'object' && 'fn' in currentOp && currentOp.fn === 'switch' && 'branches' in currentOp && (() => {
+                const switchOp = currentOp as { fn: 'switch'; branches: SwitchBranch[] };
+                const branches = switchOp.branches || [];
+                const scalarNames = getScalarNgNames(i);
+
+                function updateBranches(newBranches: SwitchBranch[]) {
+                  updateRow(i, { op: { fn: 'switch', branches: newBranches } as ScalarFunction });
+                }
+
+                function updateBranchValue(bi: number, partial: Partial<ScalarBinaryTerm>) {
+                  const newBranches = branches.map((b, j) => (j === bi ? { ...b, value: { ...b.value, ...partial } as ScalarBinaryTerm } : b));
+                  updateBranches(newBranches);
+                }
+
+                function updateBranchCondition(bi: number, partial: Partial<SwitchBranch['condition']>) {
+                  const newBranches = branches.map((b, j) => (j === bi ? { ...b, condition: { ...b.condition, ...partial } as SwitchBranch['condition'] } : b));
+                  updateBranches(newBranches);
+                }
+
+                function addBranch() {
+                  if (branches.length >= 10) return;
+                  updateBranches([...branches, emptySwitchBranch()]);
+                }
+
+                function removeBranch(bi: number) {
+                  if (branches.length <= 1) return;
+                  updateBranches(branches.filter((_, j) => j !== bi));
+                }
+
+                return (
+                  <div class="mt-2 space-y-1.5 pl-1 border-l border-rule">
+                    {branches.map((branch, bi) => (
+                      <div key={bi} class="flex flex-col gap-1 py-1">
+                        <div class="flex items-center gap-1">
+                          <span class="font-mono text-[11px] text-ink-soft w-4 shrink-0">{bi + 1}.</span>
+                          <Select
+                            ariaLabel="Branch value type"
+                            value={branch.value.operand}
+                            onChange={(v) => {
+                              if (v === 'val') {
+                                updateBranchValue(bi, { operand: 'val', value: literalExpr(0) } as ScalarBinaryTerm);
+                              } else {
+                                const firstScalar = scalarNames[0] || '';
+                                updateBranchValue(bi, { operand: 'ref', source2: firstScalar } as ScalarBinaryTerm);
+                              }
+                            }}
+                            className="w-16"
+                            options={[
+                              { value: 'val', label: 'val' },
+                              { value: 'ref', label: 'ref' },
+                            ]}
+                          />
+                          {branch.value.operand === 'val' ? (
+                            <ExprInput
+                              value={branch.value.value}
+                              onChange={(expr: Expr) => updateBranchValue(bi, { value: expr } as ScalarBinaryTerm)}
+                              ariaLabel="Branch literal value"
+                              availableVars={availableVars}
+                              className="w-24"
+                            />
+                          ) : (
+                            <Select
+                              ariaLabel="Branch named value"
+                              value={branch.value.source2}
+                              onChange={(v) => updateBranchValue(bi, { source2: v } as ScalarBinaryTerm)}
+                              className="w-28"
+                              options={scalarNames.map((n) => ({ value: n, label: n }))}
+                            />
+                          )}
+                          <span class="font-mono text-[11px] text-ink-soft">if</span>
+                          <Select
+                            ariaLabel="Condition source"
+                            value={branch.condition.source}
+                            onChange={(v) => updateBranchCondition(bi, { source: v })}
+                            className="w-24"
+                            options={scalarNames.map((n) => ({ value: n, label: n }))}
+                          />
+                          <Select
+                            ariaLabel="Condition operator"
+                            value={branch.condition.op}
+                            onChange={(v) => updateBranchCondition(bi, { op: v as '>' | '>=' | '<' | '<=' | '=' | '!=' | 'is_even' | 'is_odd' })}
+                            className="w-20"
+                            options={SWITCH_CONDITION_OPERATORS.map((op) => ({ value: op, label: op }))}
+                          />
+                          {(branch.condition.op !== 'is_even' && branch.condition.op !== 'is_odd') && (
+                            <ExprInput
+                              value={branch.condition.value || literalExpr(1)}
+                              onChange={(expr: Expr) => updateBranchCondition(bi, { value: expr })}
+                              ariaLabel="Condition value"
+                              availableVars={availableVars}
+                              className="w-24"
+                            />
+                          )}
+                          {branches.length > 1 && (
+                            <IconButton onClick={() => removeBranch(bi)} ariaLabel="Remove branch" variant="danger">
+                              <svg viewBox="0 0 12 12" class="w-3 h-3" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" fill="none" /></svg>
+                            </IconButton>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <div class="flex items-center gap-1">
+                      <Button variant="quiet" size="sm" onClick={addBranch}>
+                        + branch
                       </Button>
                     </div>
                   </div>

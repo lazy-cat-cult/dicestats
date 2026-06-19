@@ -1,4 +1,5 @@
-import type { NamedValue, TaggedDie, PipelineValue, VectorFunction, ScalarFunction, ScalarBinaryOp, ScalarBinaryTerm, ScalarCeilFloorOp, ScalarMaxMinNamedOp } from '@/types';
+import type { NamedValue, TaggedDie, PipelineValue, VectorFunction, ScalarFunction, ScalarBinaryOp, ScalarBinaryTerm, ScalarCeilFloorOp, ScalarMaxMinNamedOp, SwitchBranch } from '@/types';
+import { compare } from '@/types';
 import { matchConditions } from '@/domain/matching';
 import { evalExpr } from '@/utils/expression';
 
@@ -25,7 +26,7 @@ function applyScalarBinaryMultiTerm(sourceVal: number, fn: ScalarBinaryOp, terms
   if (terms.length === 0) return sourceVal;
   const firstTerm = terms[0]!;
   let result: number;
-  if (firstTerm.operand === 'literal') {
+  if (firstTerm.operand === 'val') {
     result = applyScalarBinary(sourceVal, fn, evalExpr(firstTerm.value, vars));
   } else {
     const rightVal = env.get(firstTerm.source2);
@@ -34,7 +35,7 @@ function applyScalarBinaryMultiTerm(sourceVal: number, fn: ScalarBinaryOp, terms
   }
   for (let i = 1; i < terms.length; i++) {
     const term = terms[i]!;
-    if (term.operand === 'literal') {
+    if (term.operand === 'val') {
       result = applyScalarBinary(result, fn, evalExpr(term.value, vars));
     } else {
       const rightVal = env.get(term.source2);
@@ -45,12 +46,51 @@ function applyScalarBinaryMultiTerm(sourceVal: number, fn: ScalarBinaryOp, terms
   return result;
 }
 
+function applySwitch(
+  sourceVal: number,
+  branches: SwitchBranch[],
+  env: Map<string, PipelineValue>,
+  vars: { x: number; y: number }
+): number {
+  for (const branch of branches) {
+    const condValue = env.get(branch.condition.source);
+    if (typeof condValue !== 'number') continue;
+
+    let matched = false;
+    const op = branch.condition.op;
+
+    if (op === 'is_even') {
+      matched = condValue % 2 === 0;
+    } else if (op === 'is_odd') {
+      matched = condValue % 2 !== 0;
+    } else if (branch.condition.value) {
+      const exprVal = evalExpr(branch.condition.value, vars);
+      matched = compare(condValue, op, exprVal);
+    }
+
+    if (!matched) continue;
+
+    if (branch.value.operand === 'val') {
+      return evalExpr(branch.value.value, vars);
+    }
+    const namedVal = env.get(branch.value.source2);
+    if (typeof namedVal !== 'number') continue;
+    return namedVal;
+  }
+
+  return sourceVal;
+}
+
 function isScalarCeilFloorOp(op: ScalarFunction): op is ScalarCeilFloorOp {
   return typeof op === 'object' && op !== null && (op.fn === 'ceil' || op.fn === 'floor');
 }
 
 function isScalarMaxMinNamedOp(op: ScalarFunction): op is ScalarMaxMinNamedOp {
-  return typeof op === 'object' && op !== null && 'operand' in op && op.operand === 'named' && (op.fn === 'max' || op.fn === 'min');
+  return typeof op === 'object' && op !== null && 'operand' in op && op.operand === 'ref' && (op.fn === 'max' || op.fn === 'min');
+}
+
+function isScalarSwitchOp(op: ScalarFunction): op is { fn: 'switch'; branches: SwitchBranch[] } {
+  return typeof op === 'object' && op !== null && 'fn' in op && op.fn === 'switch' && 'branches' in op;
 }
 
 function isScalarBinaryTermsOp(op: ScalarFunction): op is { fn: ScalarBinaryOp; terms: ScalarBinaryTerm[] } {
@@ -101,6 +141,8 @@ export function evaluatePipeline(
         const rightVal = env.get(op.source2);
         if (typeof rightVal !== 'number') continue;
         env.set(nv.name, op.fn === 'max' ? Math.max(sourceVal, rightVal) : Math.min(sourceVal, rightVal));
+      } else if (isScalarSwitchOp(op)) {
+        env.set(nv.name, applySwitch(sourceVal, op.branches, env, vars));
       } else if (isScalarBinaryTermsOp(op)) {
         env.set(nv.name, applyScalarBinaryMultiTerm(sourceVal, op.fn, op.terms, env, vars));
       }

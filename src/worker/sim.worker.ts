@@ -249,8 +249,8 @@ function materializeScalarOp(op: ScalarFunction, vars: { x: number; y: number })
       return {
         fn: op.fn,
         terms: op.terms.map((t: ScalarBinaryTerm) =>
-          t.operand === 'literal'
-            ? { operand: 'literal', value: literalExpr(evalExpr(t.value, vars)) }
+          t.operand === 'val'
+            ? { operand: 'val', value: literalExpr(evalExpr(t.value, vars)) }
             : t
         ),
       } as ScalarFunction;
