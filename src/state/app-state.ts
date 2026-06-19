@@ -1,5 +1,5 @@
 import { signal, computed, effect } from '@preact/signals';
-import type { DicePool, Outcome, PresetConfig, RerollCondition, NamedValue, SweepParameters, Expr, SampleTrace } from '@/types';
+import type { DicePool, Outcome, PresetConfig, RerollCondition, NamedValue, SweepParameters, Expr, SampleTrace, SavedConfig } from '@/types';
 import { exprToString } from '@/utils/expression';
 import { PRESETS } from '@/domain/presets';
 import { loadUiPrefs, saveUiPrefs } from '@/state/persistence';
@@ -196,6 +196,17 @@ function formatExprForNotation(expr: Expr, sw: SweepParameters): string {
     return `{${values.join(', ')}}`;
   }
   return exprToString(expr);
+}
+
+export function buildSavedConfig(): SavedConfig {
+  return {
+    version: 9,
+    pool: dicePool.value,
+    rerollConditions: rerollConditions.value,
+    pipeline: pipeline.value,
+    outcomes: outcomes.value,
+    sweep: sweep.value,
+  };
 }
 
 export const dicePoolNotation = computed(() => {
