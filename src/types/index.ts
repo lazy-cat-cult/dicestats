@@ -55,6 +55,19 @@ export type ScalarBinaryTerm =
   | { operand: 'literal'; value: Expr }
   | { operand: 'named'; source2: string };
 
+export const SWITCH_CONDITION_OPERATORS: readonly ConditionOperator[] = ['>', '>=', '<', '<=', '=', '!=', 'is_even', 'is_odd'];
+
+export type SwitchCondition = {
+  source: string;
+  op: '>' | '>=' | '<' | '<=' | '=' | '!=' | 'is_even' | 'is_odd';
+  value?: Expr;
+};
+
+export type SwitchBranch = {
+  value: ScalarBinaryTerm;
+  condition: SwitchCondition;
+};
+
 export type ScalarFunction =
   | 'count'
   | 'sum'
@@ -65,14 +78,16 @@ export type ScalarFunction =
   | { fn: 'ceil' }
   | { fn: 'floor' }
   | { fn: 'max'; operand: 'named'; source2: string }
-  | { fn: 'min'; operand: 'named'; source2: string };
+  | { fn: 'min'; operand: 'named'; source2: string }
+  | { fn: 'switch'; branches: SwitchBranch[] };
 
 export type ScalarCeilFloorOp = { fn: 'ceil' | 'floor' };
 export type ScalarMaxMinNamedOp = { fn: 'max' | 'min'; operand: 'named'; source2: string };
 export type ScalarObjectFunction =
   | { fn: ScalarBinaryOp; terms: ScalarBinaryTerm[] }
   | ScalarCeilFloorOp
-  | ScalarMaxMinNamedOp;
+  | ScalarMaxMinNamedOp
+  | { fn: 'switch'; branches: SwitchBranch[] };
 
 export type NamedValue =
   | { id: string; name: string; source: string; op: VectorFunction; comment: string }

@@ -1,5 +1,5 @@
-import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeCondition, DiceConditionType, ScalarCondition, SweepParameters, Expr, ScalarBinaryTerm } from '@/types';
-import { DICE_CONDITION_TYPES } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, OutcomeCondition, DiceConditionType, ScalarCondition, SweepParameters, Expr, ScalarBinaryTerm, SwitchBranch } from '@/types';
+import { DICE_CONDITION_TYPES, SWITCH_CONDITION_OPERATORS } from '@/types';
 import { evalExpr } from '@/utils/expression';
 
 export interface ValidationError {
@@ -146,6 +146,70 @@ export function validateConfig(
             }
           }
         }
+
+        if (fn === 'switch') {
+          const branches = (op as { fn: 'switch'; branches: SwitchBranch[] }).branches;
+          if (!branches || branches.length === 0) {
+            errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" switch requires at least 1 branch`, blocking: true });
+          } else if (branches.length > 10) {
+            errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" switch supports at most 10 branches`, blocking: true });
+          } else {
+            const switchRowIndex = pipeline.findIndex((p) => p.name === nv.name);
+            for (let bi = 0; bi < branches.length; bi++) {
+              const branch = branches[bi]!;
+              const cond = branch.condition;
+              const condSourceIndex = pipeline.findIndex((p) => p.name === cond.source);
+              if (!SWITCH_CONDITION_OPERATORS.includes(cond.op)) {
+                errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: "${cond.op}" is not valid for switch conditions`, blocking: true });
+              }
+              if (cond.source === 'rolled') {
+                errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: condition source "rolled" is a vector, not a scalar`, blocking: true });
+              } else if (cond.source && condSourceIndex === -1) {
+                errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: condition source "${cond.source}" is not defined`, blocking: true });
+              } else if (cond.source && condSourceIndex >= switchRowIndex) {
+                errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: condition source "${cond.source}" appears after switch row`, blocking: true });
+              }
+              if (cond.source && cond.source !== 'rolled' && condSourceIndex >= 0 && condSourceIndex < switchRowIndex) {
+                const condSource = pipeline[condSourceIndex];
+                if (condSource) {
+                  const condSourceType = inferType(condSource, pipeline);
+                  if (condSourceType === 'vector') {
+                    errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: condition source "${cond.source}" must be a scalar value`, blocking: true });
+                  }
+                }
+              }
+              if (cond.op !== 'is_even' && cond.op !== 'is_odd' && !cond.value) {
+                errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: condition requires a value for "${cond.op}" operator`, blocking: true });
+              }
+              if (cond.value) {
+                const testVars = { x: 1, y: 1 };
+                const v = evalExpr(cond.value, testVars);
+                if (!Number.isFinite(v)) {
+                  errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: condition value evaluates to non-finite value`, blocking: false });
+                }
+              }
+              if (branch.value.operand === 'named') {
+                const branchVal = branch.value;
+                if (branchVal.source2 === nv.name) {
+                  errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: cannot reference itself`, blocking: true });
+                }
+                const valSourceIndex = pipeline.findIndex((p) => p.name === branchVal.source2);
+                if (valSourceIndex === -1) {
+                  errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: branch value source "${branchVal.source2}" is not defined`, blocking: true });
+                } else if (valSourceIndex >= switchRowIndex) {
+                  errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: branch value source "${branchVal.source2}" appears after switch row`, blocking: true });
+                }
+              }
+              if (branch.value.operand === 'literal') {
+                const testVars = { x: 1, y: 1 };
+                const v = evalExpr(branch.value.value, testVars);
+                if (!Number.isFinite(v)) {
+                  errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: branch value evaluates to non-finite value`, blocking: true });
+                }
+              }
+            }
+          }
+        }
       }
     }
 
@@ -156,6 +220,20 @@ export function validateConfig(
         if (sourceType === 'scalar') {
           errors.push({ id: nextId(), message: `Cannot apply ${nv.op} to scalar source "${nv.source}"`, blocking: true });
         }
+      }
+    }
+
+    if (typeof nv.op === 'object' && nv.op !== null && 'fn' in nv.op && nv.op.fn === 'switch') {
+      if (nv.source !== 'rolled') {
+        const srcVal = pipeline.find((p) => p.name === nv.source);
+        if (srcVal) {
+          const srcType = inferType(srcVal, pipeline);
+          if (srcType === 'vector') {
+            errors.push({ id: nextId(), message: `Cannot apply switch to vector source "${nv.source}"`, blocking: true });
+          }
+        }
+      } else {
+        errors.push({ id: nextId(), message: `Cannot apply switch to rolled (vector)`, blocking: true });
       }
     }
   }

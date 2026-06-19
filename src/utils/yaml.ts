@@ -16,6 +16,8 @@ import type {
   DiceConditionType,
   Expr,
   ScalarBinaryTerm,
+  SwitchBranch,
+  SwitchCondition,
 } from '@/types';
 import { parseExpr, exprToString, literalExpr } from '@/utils/expression';
 
@@ -466,6 +468,70 @@ function parseExprFromText(text: string, label: string): Expr {
   return result.expr;
 }
 
+function parseSwitchBranch(text: string): SwitchBranch {
+  const ifIdx = text.indexOf(' if ');
+  if (ifIdx < 0) {
+    throw new PresetError(`Invalid switch branch: "${text}" (expected "value if condition")`);
+  }
+
+  const valueText = text.slice(0, ifIdx).trim();
+  const conditionText = text.slice(ifIdx + 4).trim();
+
+  let value: ScalarBinaryTerm;
+  if (/^-?\d/.test(valueText)) {
+    value = { operand: 'literal', value: parseExprFromText(valueText, 'Switch branch value') };
+  } else {
+    value = { operand: 'named', source2: valueText };
+  }
+
+  const parts = conditionText.split(/\s+/);
+  if (parts.length < 2) {
+    throw new PresetError(`Invalid switch condition: "${conditionText}"`);
+  }
+
+  const source = parts[0]!;
+  const op = parts[1]!;
+
+  if (op === 'is_even' || op === 'is_odd') {
+    return { value, condition: { source, op } as SwitchCondition };
+  }
+
+  if (parts.length < 3) {
+    throw new PresetError(`Condition "${conditionText}" requires a value for operator "${op}"`);
+  }
+
+  const valueExpr = parts.slice(2).join(' ');
+  return {
+    value,
+    condition: {
+      source,
+      op: operatorFromToken(op) as '>' | '>=' | '<' | '<=' | '=' | '!=' | 'is_even' | 'is_odd',
+      value: parseExprFromText(valueExpr, 'Switch condition value'),
+    },
+  };
+}
+
+function serializeSwitchBranch(branch: SwitchBranch): string {
+  let valueStr: string;
+  if (branch.value.operand === 'literal') {
+    valueStr = exprToString(branch.value.value);
+  } else {
+    valueStr = branch.value.source2;
+  }
+
+  const cond = branch.condition;
+  let condStr: string;
+  if (cond.op === 'is_even' || cond.op === 'is_odd') {
+    condStr = `${cond.source} ${cond.op}`;
+  } else if (cond.value) {
+    condStr = `${cond.source} ${cond.op} ${exprToString(cond.value)}`;
+  } else {
+    condStr = `${cond.source} ${cond.op}`;
+  }
+
+  return `${valueStr} if ${condStr}`;
+}
+
 function parsePool(poolNode: YamlNode): DicePool {
   const items: { value: string; comment: string }[] = [];
   if (typeof poolNode === 'string') {
@@ -559,13 +625,23 @@ function serializeRerollEntry(rc: RerollCondition): YamlNode {
   return rc.comment ? { _value: v, _comment: rc.comment } : v;
 }
 
-function parsePipelineEntry(text: string, comment: string): { name: string; op: ScalarFunction | VectorFunction; source: string; comment: string } {
+function parsePipelineEntry(text: string, comment: string, branches?: string[]): { name: string; op: ScalarFunction | VectorFunction; source: string; comment: string } {
   const m = new RegExp('^([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.+)$').exec(text);
   if (!m) {
     throw new PresetError(`Invalid pipeline entry: "${text}"`);
   }
   const name = m[1]!;
   const expr = m[2]!.trim();
+
+  if (branches && branches.length > 0) {
+    const switchM = /^([A-Za-z_][A-Za-z0-9_]*)\s+switch$/i.exec(expr);
+    if (switchM) {
+      const source = switchM[1]!;
+      const parsedBranches = branches.map(parseSwitchBranch);
+      return { name, source, op: { fn: 'switch', branches: parsedBranches }, comment };
+    }
+    throw new PresetError(`Switch branches provided but expression is not switch: "${expr}"`);
+  }
 
   const filterM = /^(filter|remove)\s+([A-Za-z_][A-Za-z0-9_]*)\s+where\s+(.+)$/i.exec(expr);
   if (filterM) {
@@ -626,6 +702,9 @@ function serializePipelineEntry(nv: NamedValue): YamlNode {
   let v: string;
   if (typeof op === 'string') {
     v = `${nv.name} = ${op} ${nv.source}`;
+  } else if (op.fn === 'switch') {
+    const branchStrings = op.branches.map(serializeSwitchBranch);
+    return { [`${nv.name} = ${nv.source} switch`]: branchStrings };
   } else if (op.fn === 'filter' || op.fn === 'remove') {
     const clauses = op.conditions.clauses.map((c) => {
       const sv = serializeClauseValue(c);
@@ -840,8 +919,44 @@ function astToPreset(ast: YamlNode): PresetConfig {
       throw new PresetError('"pipeline:" must be a list');
     }
     for (const item of ast['pipeline']) {
-      const { value, comment } = unwrapListItem(item);
-      const entry = parsePipelineEntry(value, comment);
+      let value: string;
+      let comment: string;
+      let branches: string[] | undefined;
+
+      if (typeof item === 'string') {
+        value = item;
+        comment = '';
+        branches = undefined;
+      } else if (isMapping(item)) {
+        if ('_value' in item) {
+          const uw = unwrapListItem(item);
+          value = uw.value;
+          comment = uw.comment;
+          branches = undefined;
+        } else {
+          const keys = Object.keys(item);
+          if (keys.length === 1) {
+            const key = keys[0]!;
+            value = key;
+            comment = '';
+            const val = item[key]!;
+            if (isList(val)) {
+              branches = val.map((b) => {
+                const { value: bv } = unwrapListItem(b);
+                return bv;
+              });
+            } else {
+              throw new PresetError('Switch branches must be a list');
+            }
+          } else {
+            throw new PresetError(`Unexpected pipeline entry structure`);
+          }
+        }
+      } else {
+        throw new PresetError(`Invalid pipeline entry`);
+      }
+
+      const entry = parsePipelineEntry(value, comment, branches);
       if (pipelineNames.has(entry.name)) {
         throw new PresetError(`Duplicate pipeline name "${entry.name}"`);
       }
@@ -895,8 +1010,19 @@ function resolveReferences(config: PresetConfig): PresetConfig {
       throw new PresetError(`Pipeline "${nv.name}" references unknown source "${nv.source}"`);
     }
     if (typeof nv.op === 'object' && nv.op !== null && 'fn' in nv.op) {
-      const op = nv.op as { fn: string; operand?: string; source2?: string; terms?: ScalarBinaryTerm[] };
-      if (op.operand === 'named' && op.source2) {
+      const op = nv.op as { fn: string; operand?: string; source2?: string; terms?: ScalarBinaryTerm[]; branches?: SwitchBranch[] };
+      if (op.fn === 'switch' && op.branches) {
+        for (const branch of op.branches) {
+          if (branch.condition.source !== 'rolled' && !pipelineByName.has(branch.condition.source)) {
+            throw new PresetError(`Pipeline "${nv.name}" switch branch references unknown condition source "${branch.condition.source}"`);
+          }
+          if (branch.value.operand === 'named' && branch.value.source2) {
+            if (!pipelineByName.has(branch.value.source2)) {
+              throw new PresetError(`Pipeline "${nv.name}" switch branch references unknown value source "${branch.value.source2}"`);
+            }
+          }
+        }
+      } else if (op.operand === 'named' && op.source2) {
         if (!pipelineByName.has(op.source2)) {
           throw new PresetError(`Pipeline "${nv.name}" references unknown source "${op.source2}"`);
         }
