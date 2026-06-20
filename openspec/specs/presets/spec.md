@@ -3,51 +3,53 @@
 ## Purpose
 
 Presets provide quick-start configurations that fill in all steps with pre-configured values for common TTRPG scenarios. All UI strings SHALL be in English.
+
 ## Requirements
+
 ### Requirement: Preset Configurations
-The application SHALL provide the following presets, each containing complete configuration for pool, reroll conditions, pipeline, outcomes, and parameters (where applicable):
+The application SHALL provide the following presets, each containing complete configuration for pool, reroll conditions, pipeline, outcomes, and sweep (where applicable):
 
 #### Preset: D&D 5e — d20
 ```
 Pool: 1d20
 Reroll: none
-Pipeline: (none)
-Outcomes: "Hit" when rolled >= DC
-Parameters: DC sweep 5, 10, 15, 20
+Pipeline: total = sum rolled
+Outcomes: "Hit" when total >= X
+Sweep: X ∈ {5, 10, 15, 20}
 ```
 
-#### Preset: D&D 5e — Advantage
+#### Preset: D&D 5e — Advantage 2d20 best
 ```
 Pool: 2d20
 Reroll: none
 Pipeline: best = max rolled
-Outcomes: "Hit" when best >= DC
-Parameters: DC sweep 5, 10, 15, 20
+Outcomes: "Hit" when best >= X
+Sweep: X ∈ {5, 10, 15, 20}
 ```
 
 #### Preset: PbtA — 2d6
 ```
 Pool: 2d6
 Reroll: none
-Pipeline: (none)
+Pipeline:
+  total = sum rolled
+  total_mod = add total by X
 Outcomes:
-  "Miss" when rolled <= 6
-  "Partial" when rolled >= 7 AND rolled <= 9
-  "Full" when rolled >= 10
-Parameters: (none)
+  "Success" when total_mod >= Y
+  "Partial" when total_mod >= 7 AND total_mod <= 9
+  "Failure" when total_mod <= 6
+Sweep: X ∈ {-2, -1, 0, 1, 2}, Y ∈ {10, 15}
 ```
 
 #### Preset: Shadowrun — Xd6
 ```
-Pool: 5d6
+Pool: Xd6
 Reroll: none
-Pipeline:
-  hits = filter rolled where face >= 5
-  hit_count = count hits
+Pipeline: none
 Outcomes:
-  "1+ hits" when hit_count >= 1
-  "Glitch" when hit_count = 0
-Parameters: dice count sweep 1..10
+  "1+ hits" when any rolled >= 5
+  "No hits" when none rolled >= 5
+Sweep: X ∈ {1..10}
 ```
 
 #### Preset: Vampire V5
@@ -63,18 +65,13 @@ Pipeline:
   rounded_crits = floor half_crits
   double_crits = multiply rounded_crits by 2
   total_successes = add success_count by double_crits
-  hunger_crits = filter rolled where tag = hunger AND face >= 10
-  hunger_crit_count = count hunger_crits
-  bestial_faces = filter rolled where tag = hunger AND face <= 1
-  bestial_count = count bestial_faces
 Outcomes:
-  "Success" when total_successes >= TN AND total_successes > 0
-  "Critical Success" when crit_count >= 2
-  "Bestial Failure" when bestial_count >= 1 AND total_successes = 0
-Parameters: TN sweep 1..5
+  "Success" when total_successes >= 1
+  "Failure" when total_successes = 0
+Sweep: none
 ```
 
-#### Preset: Daggerheart — Duality
+#### Preset: Daggerheart — Duality (2d12)
 ```
 Pool: 1d12 tag:hope + 1d12 tag:fear
 Reroll: none
@@ -84,40 +81,64 @@ Pipeline:
   hope_value = max hope_face
   fear_value = max fear_face
   delta = subtract hope_value by fear_value
+  total = sum rolled
+  total_mod = add total by X
 Outcomes:
-  "Hope" when delta > 0
-  "Fear" when delta < 0
   "Critical Success" when delta = 0
-Parameters: (none)
+  "Success with Hope" when delta > 0 AND total_mod >= 15
+  "Success with Fear" when delta < 0 AND total_mod >= 15
+  "Failure with Hope" when delta > 0 AND total_mod < 15
+  "Failure with Fear" when delta < 0 AND total_mod < 15
+Sweep: X ∈ {-2, -1, 0, 1, 2, 3, 4, 5}
+```
+
+#### Preset: Daggerheart — Compound Outcomes (2d12)
+```
+Pool: 1d12 tag:hope + 1d12 tag:fear
+Reroll: none
+Pipeline:
+  hope_face = filter rolled where tag = hope
+  fear_face = filter rolled where tag = fear
+  total = sum rolled
+  hope_value = max hope_face
+  fear_value = max fear_face
+  delta = subtract hope_value by fear_value
+Outcomes:
+  "Critical Hit" when total >= 15 AND delta >= 0
+  "Critical Miss" when total <= 5 AND delta < 0
+  "Hope" when delta > 0
+Sweep: none
 ```
 
 #### Preset: Cyberpunk RED — d10 + Skill (2d10)
 ```
 Pool: 2d10
 Reroll: none
-Pipeline: (none)
-Outcomes: "Success" when rolled >= DV
-Parameters: DV sweep 10, 13, 15, 17, 20, 22, 25, 28, 30
+Pipeline: total = sum rolled
+Outcomes: "Success" when total >= X
+Sweep: X ∈ {10, 13, 15, 17, 20, 22, 25, 28, 30}
 ```
 
 #### Preset: Blades in the Dark — Xd6 action
 ```
-Pool: 2d6 (default), sweeps 1..8
+Pool: Xd6
 Reroll: none
 Pipeline:
   best = max rolled
-  six_count = filter rolled where face = 6
+  sixes = filter rolled where face is_max
+  six_count = count sixes
 Outcomes:
   "Critical" when six_count >= 2
-  "Success" when best >= 4
-  "Partial" when best in 1..3
-Parameters: dice count sweep 1..8
+  "Success" when best = 6
+  "Partial" when best >= 4 AND best <= 5
+  "Failure" when best <= 3
+Sweep: X ∈ {1..8}
 ```
 
-#### Preset: Savage Worlds — Trait + Wild die
+#### Preset: Savage Worlds — Trait (d8) + Wild (d6)
 ```
-Pool: 1dN tag:trait (default d8) + 1d6 tag:wild
-Reroll: explode when face = max_value (both dice), repeat 5
+Pool: 1dX tag:trait (default d8) + 1d6 tag:wild
+Reroll: explode when face is_max (both dice), repeat 5
 Pipeline:
   trait_only = filter rolled where tag = trait
   wild_only = filter rolled where tag = wild
@@ -126,22 +147,43 @@ Pipeline:
   effective = max trait_best by wild_best
 Outcomes:
   "Raise" when effective >= 8
-  "Success" when effective in 4..7
-Parameters: trait die sides sweep 4, 6, 8, 10, 12
+  "Success" when effective >= 4 AND effective <= 7
+  "Failure" when effective < 4
+Sweep: X ∈ {4, 6, 8, 10, 12} (trait sides)
+```
+
+#### Preset: World of Darkness — Xd10 explode
+```
+Pool: Xd10
+Reroll: explode when face is_max, repeat 3
+Pipeline: none
+Outcomes:
+  "Success" when any rolled >= 8
+  "Failure" when none rolled >= 8
+Sweep: X ∈ {1..10}
 ```
 
 #### Scenario: Applying D&D preset
 - GIVEN the user selects "D&D 5e — d20" preset
 - WHEN the preset is applied
-- THEN the pool is set to 1d20, outcomes include "Hit" with condition rolled >= DC, and a DC parameter with values [5, 10, 15, 20]
+- THEN the pool is set to 1d20, the pipeline has `total = sum rolled`, outcomes include "Hit" with condition `total >= X`, and a sweep with X values [5, 10, 15, 20]
 
 ### Requirement: Preset Coverage
-Presets MUST be updated when adding new features (reroll conditions, pipeline operations, outcome format) to maintain full coverage of all domain features.
+Presets MUST be updated when adding new features (reroll conditions, pipeline operations, outcome format) to maintain full coverage of all domain features. The following features SHALL be demonstrated across presets:
+- `filter`/`remove` vector operations (Shadowrun, Vampire V5, Daggerheart, Savage Worlds)
+- `count`, `sum`, `max`, `min` scalar ops (all presets)
+- binary math add/subtract/multiply/divide (Vampire V5, Daggerheart)
+- `ceil`/`floor` scalar ops (Vampire V5)
+- `switch` pipeline operation — not yet covered in any preset
+- exploding rerolls (Savage Worlds, World of Darkness)
+- dice conditions (`any`/`all`/`none`) in outcomes (Shadowrun, World of Darkness)
+- X/Y dual-axis sweep (PbtA)
+- expression-based dice count and sides via X variable (Shadowrun, Blades, World of Darkness)
 
 #### Scenario: New feature requires preset update
-- GIVEN a new pipeline operation "ceil" is added
+- GIVEN a new pipeline operation `switch` is added
 - WHEN a preset is reviewed
-- THEN at least one preset SHALL demonstrate the use of "ceil"
+- THEN at least one preset SHALL demonstrate the use of `switch`
 
 ### Requirement: English Only
 All preset UI strings (names, descriptions, outcome labels) SHALL be in English. Existing non-English strings are legacy and MUST be replaced.

@@ -7,19 +7,22 @@ The dice pool defines what dice to roll — a flat list of dice terms, each repr
 ## Requirements
 
 ### Requirement: DiceTerm Identity and Stability
-Each `DiceTerm` SHALL have a stable unique identifier (`id`) generated via `crypto.randomUUID()`. This `id` persists across reorderings and edits, ensuring that references from parameters, pipeline rows, and outcomes remain valid.
+Each `DiceTerm` SHALL have a stable unique identifier (`id`) generated via `crypto.randomUUID()`. This `id` persists across reorderings and edits, ensuring that references from pipeline rows and outcomes remain valid.
 
 #### Scenario: Term stability across reorderings
 - GIVEN a dice pool with terms [A (id "abc"), B (id "def")]
 - WHEN the user reorders terms so B appears first
 - THEN term A retains id "abc" and term B retains id "def"
-- AND references from parameters targeting these terms remain valid
+- AND references from pipeline rows or outcomes targeting these terms remain valid
 
 ### Requirement: DiceTerm Field Constraints
 Each `DiceTerm` SHALL enforce:
-- `count`: integer >= 1 and <= 99, default 1
-- `sides`: integer >= 1 and <= 999; standard options in UI: d4, d6, d8, d10, d12, d20, d100; custom option for arbitrary values
+- `count`: `Expr` (integer expression >= 1 and <= 99 at runtime), default `1`
+- `sides`: `Expr` (integer expression >= 1 and <= 999 at runtime); standard options in UI: d4, d6, d8, d10, d12, d20, d100; custom option for arbitrary values
 - `tag`: free-text label, maximum 30 characters, default ""; tags are NOT required to be unique across terms
+- `comment`: optional free-text description, maximum 100 characters, default ""
+
+`Expr` fields SHALL accept an expression that may reference sweep variables `X` and `Y` (when defined) or a literal integer (`{ kind: 'literal', value: N }`).
 
 #### Scenario: Default term creation
 - GIVEN the user adds a new dice term
@@ -75,13 +78,16 @@ The UI SHALL display a live dice notation preview showing count, sides, and tag-
 - THEN it shows "2d20 ●adv + 4d6"
 
 ### Requirement: DicePool TypeScript Type
-The `DicePool` type SHALL be:
+The `DicePool` and `DiceTerm` types SHALL be:
 ```typescript
+import type { Expr } from '@/utils/expression';
+
 interface DiceTerm {
   id: string;       // crypto.randomUUID(), stable across reorderings
-  count: number;    // 1..99, default 1
-  sides: number;    // 1..999, standard options or custom
+  count: Expr;      // integer expression >= 1, default literal 1
+  sides: Expr;      // integer expression >= 1, default literal 20
   tag: string;      // max 30 chars, default ""
+  comment: string;  // max 100 chars, default ""
 }
 
 interface DicePool {
