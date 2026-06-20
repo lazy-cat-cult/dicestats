@@ -14,9 +14,6 @@ context: |
   OpenSpec specs in openspec/specs/ are the source of truth for all data models, algorithms, and behavior.
 
 rules:
-  proposal:
-    - Reference spec section numbers from doc/spec.md
-    - Include impact analysis on existing domain types
   specs:
     - Use Given/When/Then format for scenarios
     - Use SHALL/MUST/SHOULD/MAY from RFC 2119
