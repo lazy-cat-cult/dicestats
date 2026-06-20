@@ -1,8 +1,9 @@
 import { signal, computed, effect } from '@preact/signals';
-import type { DicePool, Outcome, PresetConfig, RerollCondition, NamedValue, SweepParameters, Expr, SampleTrace, SavedConfig } from '@/types';
+import type { DicePool, Outcome, PresetConfig, RerollCondition, NamedValue, SweepParameters, Expr, SampleTrace, SavedConfig, MyPreset } from '@/types';
 import { exprToString } from '@/utils/expression';
 import { PRESETS } from '@/domain/presets';
 import { loadUiPrefs, saveUiPrefs } from '@/state/persistence';
+import { loadMyPresets, saveMyPresets, loadFavorites, saveFavorites, toggleFavorite as toggleFavoriteId } from '@/state/my-presets';
 
 function defaultPool(): DicePool {
   return {
@@ -35,7 +36,7 @@ export function resetSampleMode() {
 }
 
 export function resetToPreset(presetId: string) {
-  const preset = [...PRESETS, ...userPresets.value].find((p) => p.id === presetId);
+  const preset = allPresets.value.find((p) => p.id === presetId);
   if (!preset) return;
   applyPresetConfig(preset);
 }
@@ -46,13 +47,14 @@ export function mergeOrStagePreset(config: PresetConfig): 'merged' | 'staged' {
     PRESETS[idx] = { ...config, id: PRESETS[idx]!.id };
     return 'merged';
   }
-  const userIdx = userPresets.value.findIndex((p) => p.name === config.name);
-  if (userIdx >= 0) {
-    const existing = userPresets.value[userIdx]!;
-    userPresets.value = userPresets.value.map((p) => (p === existing ? { ...config, id: existing.id } : p));
+  const myIdx = myPresets.value.findIndex((p) => p.name === config.name);
+  if (myIdx >= 0) {
+    const existing = myPresets.value[myIdx]!;
+    myPresets.value = myPresets.value.map((p) => (p.id === existing.id ? { ...config, id: existing.id, createdAt: existing.createdAt, updatedAt: new Date().toISOString() } as MyPreset : p));
     return 'staged';
   }
-  userPresets.value = [config, ...userPresets.value];
+  const newPreset = { ...config, id: config.id || crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as MyPreset;
+  myPresets.value = [newPreset, ...myPresets.value];
   return 'staged';
 }
 
@@ -101,8 +103,10 @@ export const confirmedHighCost = signal<boolean>(false);
 export const highlightTargetId = signal<string | null>(null);
 export const highlightTargetKind = signal<'term' | 'outcome' | 'pipeline' | null>(null);
 
-export const userPresets = signal<PresetConfig[]>([]);
-export const allPresets = computed<PresetConfig[]>(() => [...PRESETS, ...userPresets.value]);
+export const myPresets = signal<MyPreset[]>(loadMyPresets());
+export const allPresets = computed<PresetConfig[]>(() => [...myPresets.value, ...PRESETS]);
+export const favoriteIds = signal<Set<string>>(loadFavorites());
+export const lastAppliedPresetId = signal<string | null>(null);
 export const currentPresetName = signal<string | null>(null);
 
 export function setCurrentPresetName(name: string | null): void {
@@ -119,6 +123,7 @@ export function applyPresetConfig(preset: PresetConfig) {
     y: preset.sweep.y ? [...preset.sweep.y] : null,
   };
   currentPresetName.value = preset.name;
+  lastAppliedPresetId.value = preset.id;
 }
 
 export function resetUiForPresetApply() {
@@ -159,6 +164,34 @@ effect(() => {
 });
 
 export const configDirty = signal<boolean>(false);
+
+function debouncedPersist<T>(getSnapshot: () => T, persist: (v: T) => void, ms: number): () => void {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => persist(getSnapshot()), ms);
+  };
+}
+
+const flushMyPresets = debouncedPersist(() => myPresets.value, saveMyPresets, 300);
+const flushFavorites = debouncedPersist(() => favoriteIds.value, saveFavorites, 300);
+
+effect(() => { void myPresets.value; flushMyPresets(); });
+effect(() => { void favoriteIds.value; flushFavorites(); });
+
+let pendingFlushTimer: ReturnType<typeof setTimeout> | null = null;
+export function flushPendingPresetWrites(): void {
+  if (pendingFlushTimer) {
+    clearTimeout(pendingFlushTimer);
+    pendingFlushTimer = null;
+  }
+  saveMyPresets(myPresets.value);
+  saveFavorites(favoriteIds.value);
+}
+
+export function toggleFavorite(id: string): void {
+  favoriteIds.value = toggleFavoriteId(id, favoriteIds.value);
+}
 
 let lastConfigFingerprint = '';
 effect(() => {
