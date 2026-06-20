@@ -176,6 +176,11 @@ export interface PresetConfig {
   sweep: SweepParameters;
 }
 
+export interface MyPreset extends PresetConfig {
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SampleRerollEvent {
   conditionIndex: number;
   action: 'reroll' | 'explode';
