@@ -54,7 +54,12 @@ src/
 │   ├── PresetSelector.tsx       — Preset dropdown
 │   ├── PresetLibraryModal.tsx   — Preset management modal
 │   ├── SampleView.tsx           — Single-throw trace with face overrides
-│   └── ... (SweepPopover, SweepIndicator, etc.)
+│   ├── ConditionChainEditor.tsx  — Shared condition chain UI
+│   ├── ExprInput.tsx             — Expression input with X/Y sweep variables
+│   ├── SweepCostChip.tsx         — Computational cost indicator
+│   ├── PresetSaveDialog.tsx      — Save preset prompt dialog
+│   ├── MyPresetsContextMenu.tsx  — Context menu for user presets
+│   └── ResultDetailsModal.tsx    — Detailed statistics modal
 └── utils/
     ├── expression.ts            — Expr AST: parse, eval, format, sweep range parsing
     ├── format.ts                — Number formatting
@@ -93,6 +98,9 @@ The entire simulation config (`DicePool + RerollCondition[] + NamedValue[] + Out
 
 ### 7. Spec-Driven Development
 All data models, algorithms, and UI behavior are defined in `openspec/specs/` (11 spec directories). Changes must follow the OpenSpec process: propose → apply → archive.
+
+### 8. Worker Isolation
+Worker (`src/worker/sim.worker.ts`) imports only pure domain functions.
 
 ## Communication Protocol
 

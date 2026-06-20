@@ -264,20 +264,20 @@ Up to 10 outcomes are allowed. Empty state is a dashed-border card: "No outcomes
 - THEN no "Default" checkbox is present
 - AND no "default" pill is shown
 
-### Requirement: ParameterEditor
-The ParameterEditor SHALL display a list of parameter rows, each a card on `bg-paper-deep/30` with:
+### Requirement: SweepEditor
+The SweepEditor SHALL display the sweep configuration as a simple form (Step 5 of the wizard), not a parameter card list. The form contains:
 
-- A 4-column grid: Label, Target, contextual selector (Dice Term / Outcome / Pipeline Step), and a delete button.
-- A "Values" field accepting comma-separated values or `start..end` range notation (e.g. `1..5`).
+- An "X values" field accepting comma-separated numbers or `start..end` range notation (e.g. `1..5`).
+- A "Y values" field accepting the same notation (disabled when X is empty; enables dual-axis sweep).
 
-A global sweep cost chip below the list shows the total simulation count and emits a warning at >50M rolls, requiring explicit user confirmation via a "Confirm run" button before the simulation starts. There is no warning at the 10M threshold.
+A `SweepCostChip` below the form shows the total simulation count and emits a warning at >50M rolls, requiring explicit user confirmation via a "Confirm run" button before the simulation starts. There is no warning at the 10M threshold.
 
-Up to 3 parameters are allowed. Empty state is a dashed-border card: "No sweeps. Add a parameter to run the same setup across a range of values."
+Empty state is a dashed-border card: "No sweep values. Enter X and optionally Y to run the same setup across a range."
 
 #### Scenario: Range values
-- GIVEN the user enters `1..5` in the values field
+- GIVEN the user enters `1..5` in the X values field
 - WHEN the field commits
-- THEN the parameter is set to values `[1, 2, 3, 4, 5]`
+- THEN the sweep X is set to values `[1, 2, 3, 4, 5]`
 
 ### Requirement: OddsTape
 The result canvas SHALL include a signature "OddsTape" component rendered as the primary result display for single simulations. The OddsTape is a `bg-paper` panel with a 2px gold drop shadow and a 1px billiard top edge. It contains:
@@ -335,7 +335,7 @@ When no simulation has been run yet, the result canvas SHALL show a dashed-borde
 ### Requirement: Save and Load YAML Presets
 The application SHALL provide "Save" and "Load" buttons. Save SHALL serialize the current configuration to a YAML file. When the browser supports the File System Access API (Chromium-based), Save SHALL open the OS-native "Save As" dialog via `window.showSaveFilePicker` so the user can pick both a directory and a filename; otherwise Save SHALL fall back to the `Blob` + `<a download>` path. The suggested filename SHALL be `filenameForName(currentPresetName.value ?? 'dice-roll')`. Load SHALL open a file picker accepting `.yaml`/`.yml` files, parse them with the hand-rolled YAML parser, and apply the configuration to the editor. Loading a preset whose `name` matches a built-in preset updates the built-in; otherwise the preset is added to the user preset list. Loading a YAML file SHALL also set `currentPresetName.value` to the loaded preset's `name`.
 
-The configuration SHALL also auto-save to `localStorage` under key `dice-calc-config` on every change (debounced to every 2s while the tab is visible, and immediately on `visibilitychange: hidden` and `pagehide`). The localStorage payload includes a `version` field (currently `7`) for forward migration.
+The configuration SHALL also auto-save to `localStorage` under key `dice-calc-config` on every change (debounced to every 2s while the tab is visible, and immediately on `visibilitychange: hidden` and `pagehide`). The localStorage payload includes a `version` field (currently `9`) for forward migration.
 
 #### Scenario: Save uses native dialog when API is available
 - **WHEN** `window.showSaveFilePicker` is available
@@ -415,48 +415,40 @@ Dice-pool tags and any other tag-derived swatch (left border on a dice term row,
 - `teal` `#14B8A6`
 - `orange` `#F97316`
 
-A tag's colour is its index in the alphabetical list of distinct non-empty pool tags, modulo the palette length. An unknown / empty tag falls back to neutral grey `#6B7280`. The palette is consulted only for visual styling; the underlying tag string is the source of truth.
+A tag's colour is its index in the list of distinct non-empty pool tags in first-appearance order, modulo the palette length. An unknown / empty tag falls back to neutral grey `#6B7280`. The palette is consulted only for visual styling; the underlying tag string is the source of truth.
 
 #### Scenario: Tag colour stability
-- GIVEN two distinct tags "blue" and "red" are used in the pool
+- GIVEN two distinct tags "red" and "blue" are used in the pool (in that order)
 - WHEN each tag is rendered with its swatch
-- THEN "blue" maps to `#3B82F6` and "red" maps to `#EF4444`
+- THEN "red" maps to `#EF4444` and "blue" maps to `#3B82F6`
 - AND the mapping is stable across re-renders
 
-### Requirement: Sweep Indicator
-A `SweepIndicator` (rendered as a `Pill`) SHALL appear inline in place of a "↻ Sweep" affordance once a sweep parameter targets that row, in the DicePool, the binary-math-literal row of the Pipeline, and the first scalar condition of an Outcome. The indicator text is `↻ <label> <range>` (e.g. `↻ Count 1..5`) and its colour is `hashIdToColor(parameter.id)` so each sweep parameter reads in its own hue. The indicator is non-interactive by default; when rendered with an `onJump` prop it becomes a button that calls `onJump()` (used by the "Retarget" affordance to scroll the sweep editor into view). The element exposes an `aria-label` of the form `Swept by <label> over <range>.`
+### Requirement: Sweep Editor
+The SweepEditor SHALL replace the old ParameterEditor, SweepPopover, and SweepIndicator components. Swept cells show their expression text (e.g. `X + 2`) inside an `ExprInput`, which serves as the visible sweep affordance. There SHALL be no per-cell "↻ Sweep" button, no `SweepPopover` modal, and no parameter card list.
 
-#### Scenario: Sweep indicator replaces Sweep button
-- GIVEN a dice term whose count is targeted by a parameter labeled "Count" with values 1..5
-- WHEN the dice row renders
-- THEN the "↻ Sweep" button is replaced by a Pill reading `↻ Count 1..5` in the parameter's hashed colour
-- AND no "↻ Sweep" button is shown for that field
+The "Sweep Parameters" step SHALL render, in order:
+- A description sentence explaining X and Y variables.
+- An "X values" `TextField` with placeholder `1, 2, 3, 4, 5`.
+- A "Y values" `TextField` with placeholder `10, 15, 20` (disabled when X is empty).
+- A live cost readout showing the total simulation count.
+- A `SweepCostChip` below the readout.
 
-### Requirement: Sweep Popover
-Creating a new sweep parameter is performed through a `SweepPopover` modal (rendered in a Preact portal at `document.body`). The dialog SHALL contain:
+Expression cells (`ExprInput`) in the DicePool (count, sides), Pipeline (binary math literal value), and Outcomes (scalar condition value) SHALL accept expressions referencing `X` and `Y` as variables. The cell's text (e.g. `X + 2`, `Y * 2`) is the sweep indicator — there is no separate pill or badge on the cell.
 
-- A "Label" text input pre-filled with a context-derived default (`"Count"`, `"Sides"`, `"Modifier"`, or `"DC"` depending on the field that opened it).
-- A "Values" text input pre-filled with a context-derived default (e.g. `"1, 2, 3, 4, 5"` for a Count sweep, `"4, 6, 8, 10, 12, 20"` for a Sides sweep, `"-2, -1, 0, 1, 2"` for a Pipeline literal, `"5, 10, 15, 20"` for an Outcome DC).
-- A live readout under the Values input: `→ N simulation(s) · M rolls` where `M = N × 1,000,000`. The readout shows `Enter at least one value` when the parsed list is empty.
-- "Cancel" and "Create" buttons; Create is disabled when the parsed value list is empty or when the global `maxSimulationsReached` flag is true (i.e. 3 parameters are already defined).
-- Values are parsed by splitting on `,` and accepting either a single integer or a `start..end` range (inclusive on both ends); a reversed range `end..start` is also accepted and expanded in ascending order.
-- The dialog has `role="dialog"`, an `aria-label` of `"Add sweep"`, traps Tab focus between its first and last focusable elements, closes on Escape, and restores focus to the previously focused element on close.
-- On viewports narrower than 480px the dialog docks to the bottom of the viewport (full width, `top: auto`); otherwise it is centred with a `transform: translate(-50%, -50%)`.
-- A gold accent shadow (`shadow-[6px_6px_0_0_var(--color-gold)]`) and a backdrop with `bg-paper-deep/40 backdrop-blur-[2px]` distinguishes the dialog from the page; clicking the backdrop cancels the dialog.
-
-#### Scenario: Create sweep from dice count
-- GIVEN a dice term with no count sweep
-- WHEN the user clicks the count "↻ Sweep" button, enters label "Count", values "1..5", and clicks Create
-- THEN a new parameter with `target = 'pool.count'`, `targetTermId = <term id>`, and `values = [1,2,3,4,5]` is appended to `parameters`
-- AND the SweepIndicator appears next to the count input
+#### Scenario: Sweep via ExprInput
+- GIVEN a dice term with count = `X`
+- AND sweep X ∈ {1, 2, 3, 4, 5}
+- WHEN the simulation runs
+- THEN 5 independent simulations run with count = 1, 2, 3, 4, 5 respectively
+- AND the count input shows the expression text `X`
 
 ### Requirement: Sweep Cost Chip
-Below the Parameter list, a `SweepCostChip` SHALL display the total computational cost of the current configuration:
+In the Sweep Editor and on the Results Step, a `SweepCostChip` SHALL display the total computational cost of the current sweep configuration:
 
-- When no parameters are defined, the chip is a dashed-border placeholder reading `Single simulation · 1,000,000 rolls` in `font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute`.
-- When one or more parameters are defined, the chip shows a `Pill` reading `<N> simulation(s) · <total rolls> rolls` (e.g. `4 simulations · 4,000,000 rolls`) preceded by a `⚠` glyph and rendered in the `accent` (gold) variant when `totalRolls > 50,000,000`. A muted `Total computational cost` label sits to the right of the pill.
+- When neither X nor Y values are defined, the chip reads `Single simulation · 1,000,000 rolls` in `font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute`.
+- When one or both axes have values, the chip shows a `Pill` reading `<N> simulation(s) · <total rolls> rolls` (e.g. `4 simulations · 4,000,000 rolls`) preceded by a `⚠` glyph and rendered in the `accent` (gold) variant when `totalRolls > 50,000,000`. A muted `Total computational cost` label sits to the right of the pill.
 - When `totalRolls > 50,000,000` AND the high-cost run has not yet been confirmed, a `primary` "Confirm run" button is shown on the right of the chip. Pressing it sets the `confirmedHighCost` flag; the next click on the primary run button will then start the simulation. The `SweepCostChip` border switches to `border-billiard` while awaiting confirmation. As soon as `confirmedHighCost` is set, the chip's "Confirm run" button is hidden (the chip is now in the "confirmed, awaiting run" state); the simulation only starts on a subsequent click of the primary run button.
-- A parameter change after confirmation clears `confirmedHighCost` (the simulation count must be re-confirmed).
+- A sweep change after confirmation clears `confirmedHighCost` (the simulation count must be re-confirmed).
 
 #### Scenario: Confirm 50M run (via primary run button)
 - GIVEN the configuration totals more than 50,000,000 rolls and `confirmedHighCost` is false

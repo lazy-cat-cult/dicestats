@@ -16,7 +16,7 @@ The pipeline SHALL consist of an ordered list of `NamedValue` entries. Each entr
 
 There are two categories:
 - **VectorFunction**: `filter` or `remove` — each with a `ConditionChain` and produces a vector
-- **ScalarFunction**: `count`, `sum`, `max`, `min`, `sub`, binary math (`add`/`subtract`/`multiply`/`divide` with terms array), `ceil`, `floor` — produces a scalar
+- **ScalarFunction**: `count`, `sum`, `max`, `min`, `sub`, binary math (`add`/`subtract`/`multiply`/`divide` with terms array), `ceil`, `floor`, `switch` — produces a scalar
 
 ```typescript
 type VectorFunction =
@@ -39,7 +39,19 @@ type ScalarFunction =
   | { fn: 'ceil' }
   | { fn: 'floor' }
   | { fn: 'max'; operand: 'ref'; source2: string }
-  | { fn: 'min'; operand: 'ref'; source2: string };
+  | { fn: 'min'; operand: 'ref'; source2: string }
+  | { fn: 'switch'; branches: SwitchBranch[] };
+
+type SwitchCondition = {
+  source: string;
+  op: '>' | '>=' | '<' | '<=' | '=' | '!=' | 'is_even' | 'is_odd';
+  value?: Expr;
+};
+
+type SwitchBranch = {
+  value: ScalarBinaryTerm;
+  condition: SwitchCondition;
+};
 
 type NamedValue =
   | { id: string; name: string; source: string; op: VectorFunction; comment: string }
@@ -164,7 +176,7 @@ A pipeline row's `source` and `source2` (for named operand) SHALL reference `rol
 ### Requirement: Type Derivation
 The output type of each pipeline row SHALL be derived from the operation:
 - `filter`, `remove` → **vector**
-- `count`, `sum`, `max`, `min`, `sub`, binary math, `ceil`, `floor` → **scalar**
+- `count`, `sum`, `max`, `min`, `sub`, binary math, `ceil`, `floor`, `switch` → **scalar**
 
 #### Scenario: Type mismatch — count on scalar
 - GIVEN a pipeline row referencing a scalar named value as source with `op: 'count'`
@@ -182,6 +194,23 @@ A `divide` operation where the divisor is zero SHALL produce 0 (not Infinity or 
 #### Scenario: Runtime divide by zero
 - GIVEN `average = divide total by count` where `count` is 0
 - THEN `average` is 0
+
+### Requirement: Switch Function
+The pipeline SHALL support a `switch` function that evaluates a source scalar against ordered branches and returns the first matching branch's value. Each branch defines a `SwitchCondition` and a `value`. If no branch matches, the source value is returned unchanged.
+
+Supported `SwitchCondition` operators are `>`, `>=`, `<`, `<=`, `=`, `!=`, `is_even`, `is_odd`. The `value` field is optional (not used for `is_even`/`is_odd`). The branch `value` follows the same `ScalarBinaryTerm` format as binary math (supports `val` with expression or `ref` to a prior scalar).
+
+#### Scenario: Switch with inequality conditions
+- GIVEN a pipeline with `category = switch total: if > 15 value 'crit', if > 10 value 'hit', if > 5 value 'partial'`
+- WHEN `total` is 12
+- THEN `category` is `hit` (second branch matches first)
+- WHEN `total` is 3
+- THEN `category` is 3 (no branch matches, source returned)
+
+#### Scenario: Switch with is_even
+- GIVEN a pipeline with `parity = switch total: if is_even value 1`
+- WHEN `total` is 4
+- THEN `parity` is 1
 
 ### Requirement: Max/Min on Empty Vector
 When `max`, `min`, or `sub` is applied to an empty vector, the result SHALL be `0`.

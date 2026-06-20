@@ -1,133 +1,17 @@
-# Dice Probability Calculator — Agent Instructions
+# dice — Agent Instructions
 
-## Project Overview
+Monte Carlo dice probability calculator (Vite + Preact + Tailwind + Chart.js, 1M iterations in a Web Worker).
 
-Single-page web application for calculating dice roll outcome probabilities in tabletop RPGs using Monte Carlo simulation (1,000,000 iterations). Built with **Vite + Preact + Tailwind CSS + Chart.js**, running simulation in a **Web Worker**.
+## Spec-Driven Development
 
-**Specification**: OpenSpec specs in `openspec/specs/` — the source of truth for all data models, algorithms, UI, and behavior. Use OpenSpec CLI commands and skills (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`, etc.) to manage changes.
-- **Architecture**: `doc/ARCH.md` — technical architecture diagram (partially outdated, OpenSpec specs take precedence)
+- **OpenSpec** (`openspec/specs/`) is the source of truth for models, algorithms, UI, and behavior.
+- Use `/opsx:propose` before changing types (`src/types/index.ts`), data models, or algorithms.
+- `doc/ARCH.md` — architecture reference.
 
-## Tech Stack
+## Mandatory Process
 
-| Layer | Technology |
-|---|---|
-| Build | Vite 8.x |
-| UI | Preact 10.x |
-| Reactivity | Preact Signals 2.x |
-| Styles | Tailwind CSS 4.x |
-| Charts | Chart.js 4.x |
-| Simulation | Web Worker |
-| Tests | Vitest 4.x |
-| Language | TypeScript 6.x |
-
-## Commands
-
-```bash
-npm run dev          # Start dev server with HMR
-npm run build        # Type-check (tsc --noEmit) and build
-npm run preview      # Preview production build
-npm run test         # Run tests once
-npm run test:watch   # Run tests in watch mode
-npm run typecheck    # Type-check only (tsc --noEmit)
-npm run lint         # Run ESLint (flat config, see eslint.config.js)
-```
-
-## Project Structure
-
-```
-dev/dice/
-├── doc/
-│   ├── ARCH.md             # Architecture documentation
-│   └── user_guide.md       # User guide
-├── src/
-│   ├── main.tsx            # Entry point
-│   ├── app.tsx             # Root component + Worker management
-│   ├── style.css            # Tailwind imports + theme + fonts
-│   ├── vite-env.d.ts        # Vite type declarations
-│   ├── types/
-│   │   └── index.ts        # Domain types + compare()
-│   ├── domain/
-│   │   ├── roller.ts       # Dice rolling (rollPool, rollDie)
-│   │   ├── matching.ts     # Shared: matchClause(), matchConditions(), findSides()
-│   │   ├── reroll.ts       # applyRerollConditions()
-│   │   ├── resolve.ts      # evaluatePipeline()
-│   │   ├── classify.ts     # evaluateOutcome(), evaluateOutcomes()
-│   │   └── presets.ts      # Preset configurations
-│   ├── worker/
-│   │   └── sim.worker.ts    # Web Worker simulation (imports from matching, resolve, classify)
-│   ├── state/
-│   │   ├── app-state.ts    # Preact Signals (global state)
-│   │   └── persistence.ts  # localStorage save/load/migrate (v1→v6 migration)
-│   ├── components/
-│   │   ├── ui.tsx                # Shared UI primitives (Section, Button, TextField, Select, Pill, etc.)
-│   │   ├── DicePoolEditor.tsx
-│   │   ├── RerollEditor.tsx
-│   │   ├── PipelineEditor.tsx
-│   │   ├── OutcomeEditor.tsx
-│   │   ├── ParameterEditor.tsx
-│   │   ├── ResultView.tsx
-│   │   ├── PresetSelector.tsx
-│   │   ├── PresetLibraryModal.tsx
-│   │   ├── DistributionChart.tsx  # OutcomeChart + ParameterChart
-│   │   ├── OddsTape.tsx
-│   │   ├── SweepCostChip.tsx
-│   │   ├── SweepIndicator.tsx
-│   │   └── SweepPopover.tsx
-│   └── utils/
-│       ├── format.ts       # Number formatting
-│       ├── validation.ts   # validateConfig(), canRunSimulation(), inferType()
-│       └── yaml.ts         # YAML parse/serialize for presets
-├── tests/
-│   ├── roller.test.ts
-│   ├── reroll.test.ts
-│   ├── resolve.test.ts
-│   ├── classify.test.ts
-│   ├── matching.test.ts
-│   ├── presets.test.ts
-│   ├── integration.test.ts
-│   ├── validation.test.ts
-│   ├── app-state.test.ts
-│   ├── format.test.ts
-│   └── yaml.test.ts
-└── public/
-    └── favicon.svg
-```
-
-## Design Decision: max/min vs keep_highest/keep_lowest
-
-The original spec defined `keep_highest` and `keep_lowest` as **vector** operations (keeping N dice). The implementation replaces these with `max` and `min` as **scalar** operations returning a single value.
-
-- **Old**: `kept = keep_highest rolled count=1` (two-step: vector→scalar)
-- **New**: `best = max rolled` (one-step: directly scalar)
-
-This is simpler for the common case ("roll 2d20, take the best"). The `keep_highest`/`keep_lowest` pattern of keeping N dice cannot be exactly replicated; `filter` conditions can approximate it for specific face-value conditions.
-
-## Code Conventions
-
-- **Language**: TypeScript with strict mode (`strict: true` in tsconfig)
-- **Path aliases**: `@/` maps to `./src/`
-- **State management**: Preact Signals (not React hooks). Use `signal()` for mutable state, `computed()` for derived values.
-- **Component style**: Function components with Preact JSX. No class components.
-- **CSS**: Tailwind utility classes only. No custom CSS files except `style.css` for Tailwind imports.
-- **Types**: All domain types live in `src/types/index.ts`. Domain logic files should import from `@/types`.
-- **Shared matching logic**: `matchClause()`, `matchConditions()`, and `findSides()` are centralized in `src/domain/matching.ts`. Domain modules (`reroll.ts`, `classify.ts`, `resolve.ts`) import from this shared module. The worker also imports from `matching.ts` since it has no Preact dependencies.
-- **Worker**: The simulation worker imports `matchConditions` and `findSides` from `@/domain/matching`, and `evaluatePipeline`/`evaluateOutcomes` from domain modules. It inlines `rollDie`, `rollPool`, and `applyRerollConditions` since these need local implementations for the simulation loop.
-- **Presets**: All UI strings must be in **English** (no Russian). Existing Russian strings are legacy and must be replaced during migration.
-- **No comments** in code unless explicitly requested.
-
-## Important Rules
-
-1. **Use OpenSpec for spec-driven development.** Before making changes to data models, algorithms, or UI behavior, consult the specs in `openspec/specs/`. Use OpenSpec CLI (`openspec validate`, `openspec list --specs`) and skills (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`) to propose and manage changes. The OpenSpec specs are the source of truth.
-2. **Never modify domain types** (`src/types/index.ts`) without updating the relevant OpenSpec spec first or confirming consistency with it. Use `/opsx:propose` to create a change for type modifications.
-3. **Worker isolation**: Domain modules imported by the worker must not use Preact, DOM, or Node APIs. `matching.ts`, `resolve.ts`, and `classify.ts` are safe to import — they are pure functions with no side dependencies.
-4. **Run `npm run typecheck`** after code changes to verify TypeScript compilation.
-5. **Run `npm run test`** after changes to domain logic to verify existing tests pass.
-6. **English only** in all UI strings and code comments.
-7. **No comments** in code unless explicitly requested.
-8. **Presets** must be updated when adding new features (reroll conditions, pipeline, outcome format) to maintain full preset coverage.
-9. **`max` and `min` are scalar functions** — they return a single number from a vector, not a subset of dice. Do not confuse them with `keep_highest`/`keep_lowest`.
-10. **After every code change, run the `verification-loop` skill** (`.kilocode/skills/verification-loop/SKILL.md`) before considering the work done. The skill runs build, type-check, lint, test, security, and diff review, and produces a `VERIFICATION REPORT`. Fix all issues and re-run until `Overall: READY for PR`.
-11. **ESLint is strict — do not suppress rules.** `npm run lint` runs with `no-unused-vars`, `no-explicit-any`, `no-console` (allow `warn`/`error` only), and `no-debugger` as errors. New and modified code must pass with zero new lint errors. Pre-existing lint errors are tracked as tech debt and must be fixed in dedicated commits, never by lowering rule severity.
-12. **Use the `git-workflow` skill** (`.kilocode/skills/git-workflow/SKILL.md`) for branch creation, commit messages (Conventional Commits), PR workflow, conflict resolution, and release tagging. Follow GitHub Flow: feature branches off `main`, PR + merge after CI passes. Commit messages must use `<type>(<scope>): <subject>` (e.g. `feat(roller): add d100 support`). Never commit directly to `main`, never rewrite published history with force-push.
-13. **Use the `frontend-design` skill** (`.kilocode/skills/frontend-design/SKILL.md`) when building new UI or reshaping existing UI components. Follow its two-pass process: brainstorm a distinctive design plan (palette, type, layout, signature) grounded in the dice/TTRPG subject matter, critique against generic AI defaults (cream+serif, near-black+acid-green, broadsheet rules), then build. One real aesthetic risk justified by the brief; restraint everywhere else.
-14. **Use the `web-interface-guidelines` skill** (`.kilocode/skills/web-interface-guidelines/SKILL.md`) to review UI files for accessibility, focus, forms, animation, typography, content handling, performance, navigation, touch, theming, i18n, hydration safety, and anti-patterns. Invoke on component files before/after UI changes; flag and fix issues with `file:line` references.
+1. After every code change, run **`verification-loop`** skill until `Overall: READY for PR`.
+2. `npm run typecheck && npm run test && npm run lint` — zero new errors.
+3. **English only** in UI strings and comments.
+4. **No comments** in code unless explicitly requested.
+5. When adding features (reroll, pipeline, outcomes), update YAML presets in `yaml/` to maintain coverage.

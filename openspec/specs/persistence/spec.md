@@ -60,6 +60,12 @@ If `version` is missing, `1`–`8`, the loader SHALL migrate from the old format
 - v6: Strip `isDefault` from all outcomes.
 - v5-1: Progressive migration maintaining compatibility.
 
+#### Scenario: Migration from v8 to v9
+- GIVEN a saved config with version 8 containing `parameters[]`
+- WHEN the config is loaded
+- THEN the `parameters[]` array is converted to `sweep.x`/`sweep.y`
+- AND the version is updated to 9
+
 ### Requirement: localStorage Full Handling
 If localStorage is full or unavailable, the save operation SHALL silently fail and display a toast message "Could not save configuration".
 
