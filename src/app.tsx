@@ -23,6 +23,7 @@ import {
   sampleY,
   resetSampleMode,
   applyPresetConfig,
+  flushPendingPresetWrites,
 } from '@/state/app-state';
 import { PresetSelector } from '@/components/PresetSelector';
 import { DicePoolEditor } from '@/components/DicePoolEditor';
@@ -110,7 +111,7 @@ export function App() {
     function onVisibility() {
       if (document.visibilityState === 'hidden') flush();
     }
-    function onPageHide() { flush(); }
+    function onPageHide() { flush(); flushPendingPresetWrites(); }
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('pagehide', onPageHide);
     return () => {
