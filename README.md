@@ -1,102 +1,54 @@
-# Dicestats — Dice Probability Calculator
+# Dice Probability Calculator
 
-A Monte Carlo dice probability calculator for tabletop RPGs. Runs 1,000,000 simulations per sweep in a Web Worker.
-
-## Features
-
-- **Dice pool**: arbitrary NdN combinations (d4, d6, d8, d10, d12, d20, d100) with tags
-- **Reroll conditions**: reroll or explode on face value or tag match, with configurable repeat count
-- **Resolution pipeline**: named-value pipeline with filter, remove, count, sum, max, min, binary math, ceil, floor
-- **Outcomes**: scalar comparisons and dice conditions (any/all/none), AND/OR connectors, default fallback
-- **Parameter sweep**: vary modifier, dice count, dice sides, or threshold — with dependency charts
-- **Presets**: D&D 5e, PbtA, Shadowrun, Vampire V5, Daggerheart, Cyberpunk RED, Blades in the Dark, Savage Worlds, WoD
-- **YAML import/export**: save and share presets as human-readable YAML files
-- **Persistence**: configuration auto-saved to localStorage
+SPA for calculating dice roll outcome probabilities in tabletop RPGs via Monte Carlo simulation (1M iterations). Built with **Vite + Preact + Signals + Tailwind CSS + Chart.js**, simulation runs in a **Web Worker**.
 
 ## Tech Stack
 
-| Layer | Technology |
+| Layer | |
 |---|---|
-| Build | Vite 8 |
-| UI | Preact 10 + Signals |
-| Styles | Tailwind CSS 4 |
-| Charts | Chart.js 4 |
-| Simulation | Web Worker |
-| Tests | Vitest |
-| Language | TypeScript 6 |
+| Build | Vite 8.x |
+| UI | Preact 10.x, Signals 2.x |
+| Style | Tailwind CSS 4.x |
+| Charts | Chart.js 4.x |
+| Tests | Vitest 4.x |
+| Lang | TypeScript 6.x (strict) |
 
-## Setup
+## Commands
 
-```bash
-cd dev/dice
-npm install
-npm run dev
-```
-
-Open http://localhost:5173
-
-## Scripts
-
-| Command | Description |
+| `npm run` | |
 |---|---|
-| `npm run dev` | Dev server with HMR |
-| `npm run build` | Production build (tsc + vite build) |
-| `npm run preview` | Preview production build |
-| `npm run test` | Run tests |
-| `npm run test:watch` | Tests in watch mode |
-| `npm run typecheck` | Type checking |
-| `npm run lint` | ESLint |
+| `dev` | Dev server with HMR |
+| `build` | `tsc --noEmit && vite build` |
+| `test` | Run tests once |
+| `typecheck` | Type-check only |
+| `lint` | ESLint (flat config) |
 
-## Usage Scenarios
-
-### D&D 5e: d20 vs difficulty class
-
-1. Select "D&D 5e — d20" preset
-2. Adjust modifier and DC threshold
-3. Run simulation → get success probability
-
-### D&D 5e: advantage with modifier
-
-1. Select "D&D 5e — Advantage 2d20 best" preset
-2. Add "DC" parameter with values 5–20
-3. Run → get probability curve by DC
-
-### PbtA: 2d6 miss / partial / full success
-
-1. Select "PbtA — 2d6" preset
-2. Run → three outcome probabilities
-
-### Shadowrun: Xd6 pool
-
-1. Select "Shadowrun — Xd6" preset
-2. "Dice count" parameter with values 1–10
-3. Run → probability of at least 1 hit per pool size
-
-## Architecture
-
-See [doc/architecture.md](doc/architecture.md) for the full architecture diagram.
+## Project Structure
 
 ```
-UI (Preact Signals) → SimJob → Web Worker → SimResult[] → UI
-     ↑                                    ↓
-  localStorage ← persistence ← simResults
+src/
+├── main.tsx                  # Entry point
+├── app.tsx                   # Root + Worker management
+├── types/index.ts            # Domain types + compare()
+├── domain/                   # Core logic (roller, matching, reroll, resolve, classify, presets)
+├── worker/sim.worker.ts      # Simulation loop
+├── state/                    # Preact Signals (app-state, persistence)
+├── components/               # UI (editors, chart, odds, preset, sweep)
+└── utils/                    # format, validation, yaml
+tests/                        # Vitest — 14 test suites
+yaml/                         # RPG system presets (dnd_5e, pbta, daggerheart, blades)
+openspec/specs/               # Spec-driven development — source of truth for data/behavior
 ```
 
-Domain types: `src/types/index.ts`
-Rolling & classification: `src/domain/`
-Web Worker: `src/worker/sim.worker.ts`
-Components: `src/components/`
+## Key Conventions
 
-## Tests
+- **Spec-first**: Consult `openspec/specs/` before modifying types, algorithms, or UI. Use `/opsx:propose` / `/opsx:apply` for changes.
+- **`@/`** maps to `./src/`.
+- **Pure domain**: `matching.ts`, `resolve.ts`, `classify.ts` are side-effect-free, shared with the Worker.
+- **`max`/`min`** are scalar (single value), not vector (keep N dice).
+- **English only** in UI. No code comments unless requested.
+- **Run `typecheck` + `test` + `lint` after every change.**
 
-183 tests across 11 test files covering:
+## OpenSpec Specs
 
-- Dice rolling (1d20, 2d6, modifiers, explode, reroll)
-- Condition matching (face, tag, compound clauses)
-- Pipeline resolution (filter, remove, count, sum, max, min, binary math)
-- Outcome classification (scalar, dice conditions, AND/OR, default)
-- Presets (validation, application, YAML round-trip)
-- Integration scenarios (D&D, PbtA, Shadowrun, Vampire V5 — probabilities within expected ranges)
-- Validation rules
-- Format utilities
-- App state management
+`openspec/specs/` — 11 spec directories covering dice-pool, reroll, pipeline, outcomes, parameters, presets, persistence, simulation, validation, UI, code-quality.

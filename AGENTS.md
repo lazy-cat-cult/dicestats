@@ -5,7 +5,7 @@
 Single-page web application for calculating dice roll outcome probabilities in tabletop RPGs using Monte Carlo simulation (1,000,000 iterations). Built with **Vite + Preact + Tailwind CSS + Chart.js**, running simulation in a **Web Worker**.
 
 **Specification**: OpenSpec specs in `openspec/specs/` — the source of truth for all data models, algorithms, UI, and behavior. Use OpenSpec CLI commands and skills (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`, etc.) to manage changes.
-- **Architecture**: `doc/architecture.md` — technical architecture diagram (partially outdated, OpenSpec specs take precedence)
+- **Architecture**: `doc/ARCH.md` — technical architecture diagram (partially outdated, OpenSpec specs take precedence)
 
 ## Tech Stack
 
@@ -37,9 +37,8 @@ npm run lint         # Run ESLint (flat config, see eslint.config.js)
 ```
 dev/dice/
 ├── doc/
-│   ├── spec.md             # Historical spec (superseded by OpenSpec specs)
-│   ├── spec_draft.md       # Original draft (historical)
-│   └── architecture.md     # Architecture diagram
+│   ├── ARCH.md             # Architecture documentation
+│   └── user_guide.md       # User guide
 ├── src/
 │   ├── main.tsx            # Entry point
 │   ├── app.tsx             # Root component + Worker management
