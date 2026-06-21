@@ -1,0 +1,17 @@
+id: vampire-v5
+name: Vampire V5
+pool:
+  - 3d10<normal>
+  - 2d10<hunger>
+pipeline:
+  - successes = filter rolled where face >= 6
+  - success_count = count successes
+  - crit_faces = filter rolled where face = 10
+  - crit_count = count crit_faces
+  - half_crits = crit_count / 2
+  - rounded_crits = floor half_crits
+  - double_crits = rounded_crits * 2
+  - total_successes = success_count + double_crits
+outcomes:
+  - Success when total_successes >= 1
+  - Failure when total_successes = 0

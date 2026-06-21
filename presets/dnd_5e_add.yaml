@@ -1,0 +1,31 @@
+
+name: Dice Roll
+pool:
+  - 1d20<normal>
+  - 1d20<additional>
+pipeline:
+  - normal = filter rolled where tag = normal
+  - with_advantage = max rolled
+  - with_disadvantage = min rolled
+  - total_normal = sum normal
+  - total_bonus = total_normal + {Bonus}
+  - total_bonus_adv = with_advantage + {Bonus}
+  - total_bonus_dis = with_disadvantage + {Bonus}
+outcomes:
+  - Hit normal when total_bonus >= {DC} or total_normal = 20 and total_normal != 1
+  - Hit advantage when total_bonus_adv >= {DC} or with_advantage = 20 and with_advantage != 1
+  - Hit disadvantage when total_bonus_dis >= {DC} or with_disadvantage = 20 and with_disadvantage != 1
+sweep:
+  x:
+    - 2
+    - 5
+    - 7
+    - 10
+    - 12
+    - 15
+  xName: Bonus
+  yName: DC
+  y:
+    - 10
+    - 15
+    - 20

@@ -3,14 +3,14 @@ import { PRESETS, getPreset } from '@/domain/presets';
 
 describe('PRESETS', () => {
   it('has D&D preset', () => {
-    const dnd = getPreset('dnd-d20');
+    const dnd = PRESETS.find((p) => p.name === 'D&D 5e');
     expect(dnd).toBeDefined();
     expect(dnd!.name).toContain('D&D');
     expect(dnd!.pool.terms[0]!.sides).toEqual({ kind: 'literal', value: 20 });
   });
 
   it('has PbtA preset', () => {
-    const pbta = getPreset('pbta-2d6');
+    const pbta = PRESETS.find((p) => p.name === 'PbtA');
     expect(pbta).toBeDefined();
     expect(pbta!.pool.terms[0]!.sides).toEqual({ kind: 'literal', value: 6 });
     expect(pbta!.pool.terms[0]!.count).toEqual({ kind: 'literal', value: 2 });
@@ -18,11 +18,11 @@ describe('PRESETS', () => {
   });
 
   it('has advantage preset with max pipeline', () => {
-    const adv = getPreset('dnd-advantage');
+    const adv = PRESETS.find((p) => p.name === 'D&D 5e - Advantage');
     expect(adv).toBeDefined();
     expect(adv!.pipeline.length).toBeGreaterThan(0);
     const maxStep = adv!.pipeline[0]!;
-    expect(maxStep.name).toBe('best');
+    expect(maxStep.name).toBe('rolled_value');
     expect(maxStep.op).toBe('max');
   });
 
@@ -42,8 +42,8 @@ describe('PRESETS', () => {
     expect(v!.pipeline.length).toBeGreaterThan(3);
   });
 
-  it('has Daggerheart Duality preset', () => {
-    const dh = getPreset('daggerheart-duality');
+  it('has Daggerheart preset', () => {
+    const dh = PRESETS.find((p) => p.name === 'Daggerheart');
     expect(dh).toBeDefined();
     expect(dh!.pool.terms).toHaveLength(2);
     expect(dh!.pool.terms.some((t) => t.tag === 'hope')).toBe(true);
@@ -51,16 +51,16 @@ describe('PRESETS', () => {
     expect(dh!.outcomes.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('has Cyberpunk RED check preset', () => {
-    const cp = getPreset('cyberpunk-red-check');
+  it('has Cyberpunk RED preset', () => {
+    const cp = PRESETS.find((p) => p.name === 'Cyberpunk RED');
     expect(cp).toBeDefined();
-    expect(cp!.pool.terms[0]!.sides).toEqual({ kind: 'literal', value: 10 });
-    expect(cp!.pool.terms[0]!.count).toEqual({ kind: 'literal', value: 2 });
+    expect(cp!.pool.terms.some((t) => t.tag === 'main')).toBe(true);
+    expect(cp!.pool.terms.some((t) => t.tag === 'crit')).toBe(true);
     expect(cp!.sweep.x.length).toBeGreaterThan(0);
   });
 
   it('has Blades in the Dark preset with critical detection', () => {
-    const b = getPreset('blades-in-the-dark');
+    const b = PRESETS.find((p) => p.name === 'Blades in the Dark');
     expect(b).toBeDefined();
     expect(b!.pool.terms[0]!.sides).toEqual({ kind: 'literal', value: 6 });
     const crit = b!.outcomes.find((o) => o.name === 'Critical');

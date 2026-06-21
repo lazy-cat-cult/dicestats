@@ -445,7 +445,8 @@ describe('yaml inline comments', () => {
 
 describe('yaml daggerheart template', () => {
   const daggerheartYaml = [
-    'name: Daggerheart',
+    'id: daggerheart-duality',
+    'name: Daggerheart — Duality (2d12)',
     'pool:',
     '  - 1d12<hope>',
     '  - 1d12<fear>',
@@ -456,17 +457,16 @@ describe('yaml daggerheart template', () => {
     '  - fear_value = max fear_face',
     '  - delta = hope_value - fear_value',
     '  - total = sum rolled',
-    '  - total_mod = total + 0',
+    '  - total_mod = total + X',
     'outcomes:',
     '  - Critical Success when delta = 0',
-    '  - Success when total_mod >= 15 and delta = 0',
-    '  - Failure when total_mod < 15',
     '  - Success with Hope when delta > 0 and total_mod >= 15',
     '  - Success with Fear when delta < 0 and total_mod >= 15',
-    '  - Failure with Hope when delta >= 0 and total_mod < 15',
+    '  - Failure with Hope when delta > 0 and total_mod < 15',
     '  - Failure with Fear when delta < 0 and total_mod < 15',
     'sweep:',
     '  x: [-2, -1, 0, 1, 2, 3, 4, 5]',
+    '  xName: mod',
   ].join('\n');
 
   it('parses without error', () => {
@@ -475,7 +475,7 @@ describe('yaml daggerheart template', () => {
 
   it('has correct pool (1d12<hope>, 1d12<fear>)', () => {
     const cfg = parsePreset(daggerheartYaml);
-    expect(cfg.name).toBe('Daggerheart');
+    expect(cfg.name).toBe('Daggerheart — Duality (2d12)');
     expect(cfg.pool.terms).toHaveLength(2);
     expect(cfg.pool.terms[0]?.sides).toEqual({ kind: 'literal', value: 12 });
     expect(cfg.pool.terms[0]?.tag).toBe('hope');
@@ -483,7 +483,7 @@ describe('yaml daggerheart template', () => {
     expect(cfg.pool.terms[1]?.tag).toBe('fear');
   });
 
-  it('pipeline includes total_mod with literal operand', () => {
+  it('pipeline includes total_mod with X reference', () => {
     const cfg = parsePreset(daggerheartYaml);
     const totalMod = cfg.pipeline.find((p) => p.name === 'total_mod');
     expect(totalMod).toBeDefined();
@@ -491,13 +491,19 @@ describe('yaml daggerheart template', () => {
     const op = totalMod?.op as { fn: string; terms: { operand: string; value: { kind: string; value: number } }[] };
     expect(op.fn).toBe('add');
     expect(op.terms[0]!.operand).toBe('val');
-    expect(op.terms[0]!.value).toEqual({ kind: 'literal', value: 0 });
+    expect(op.terms[0]!.value).toEqual({ kind: 'ref', name: 'X' });
   });
 
-  it('sweep x resolves to configured values', () => {
+  it('preserves id from YAML', () => {
+    const cfg = parsePreset(daggerheartYaml);
+    expect(cfg.id).toBe('daggerheart-duality');
+  });
+
+  it('sweep x resolves to configured values with xName', () => {
     const cfg = parsePreset(daggerheartYaml);
     expect(cfg.sweep.x).toEqual([-2, -1, 0, 1, 2, 3, 4, 5]);
     expect(cfg.sweep.y).toBeNull();
+    expect(cfg.sweep.xName).toBe('mod');
   });
 
   it('round-trips through serializer', () => {

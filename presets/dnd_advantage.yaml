@@ -1,0 +1,24 @@
+
+name: D&D 5e - Advantage
+pool:
+  - 1d20
+pipeline:
+  - rolled_value = max rolled
+  - total_bonus = rolled_value + {Bonus}
+outcomes:
+  - Hit when total_bonus >= {DC} or rolled_value = 20 and rolled_value != 1
+  - Miss when total_bonus < {DC} or rolled_value = 1 and rolled_value != 20
+sweep:
+  x:
+    - 2
+    - 5
+    - 7
+    - 10
+    - 12
+    - 15
+  xName: Bonus
+  yName: DC
+  y:
+    - 10
+    - 15
+    - 20
