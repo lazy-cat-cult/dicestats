@@ -215,15 +215,15 @@ function migrateV7ToV8(config: V7Config): SavedConfig {
   }
 
   const xSorted = Array.from(xAccumulator).sort((a, b) => a - b);
-  const sweep: SweepParameters = { x: xSorted, y: null };
+  const sweepVal: SweepParameters = { x: xSorted, y: null, xName: 'X', yName: 'Y' };
 
   return {
-    version: 8 as unknown as 9,
+    version: 9 as unknown as 10,
     pool: literalizeNumberInPool(rawPool),
     rerollConditions: config.rerollConditions || [],
     pipeline,
     outcomes,
-    sweep,
+    sweep: sweepVal,
   } as SavedConfig;
 }
 
@@ -264,7 +264,7 @@ function migrateV8ToV9(config: SavedConfig): SavedConfig {
   });
 
   return {
-    version: 9,
+    version: 9 as unknown as 10,
     pool: config.pool,
     rerollConditions: reroll,
     pipeline: pipe,
@@ -298,18 +298,33 @@ function migrateConditionChain(chain: ConditionChain & { connector?: string }): 
   return { clauses, connectors: clauses.length > 1 ? Array(clauses.length - 1).fill(oldConnector) as ('and' | 'or')[] : [] };
 }
 
+function migrateV9ToV10(config: SavedConfig): SavedConfig {
+  return {
+    ...config,
+    version: 10,
+    sweep: {
+      ...config.sweep,
+      xName: (config.sweep as { xName?: string }).xName || 'X',
+      yName: (config.sweep as { yName?: string }).yName || 'Y',
+    },
+  };
+}
+
 function migrateConfig(config: V7Config | SavedConfig): SavedConfig {
   const ver: number = config.version;
-  if (ver === 9) {
+  if (ver === 10) {
     return config as SavedConfig;
   }
+  if (ver === 9) {
+    return migrateV9ToV10(config as SavedConfig);
+  }
   if (ver === 8) {
-    return migrateV8ToV9(config as SavedConfig);
+    return migrateV9ToV10(migrateV8ToV9(config as SavedConfig));
   }
   if (ver === 7) {
-    return migrateV8ToV9(migrateV7ToV8(config as V7Config));
+    return migrateV9ToV10(migrateV8ToV9(migrateV7ToV8(config as V7Config)));
   }
-  return migrateV8ToV9(migrateV7ToV8({ ...config, version: 7 } as V7Config));
+  return migrateV9ToV10(migrateV8ToV9(migrateV7ToV8({ ...config, version: 7 } as V7Config)));
 }
 
 export function loadConfig(): boolean {

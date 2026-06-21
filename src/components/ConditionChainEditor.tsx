@@ -3,11 +3,12 @@ import { existingTags, getTagColor } from '@/state/app-state';
 import { Button, IconButton, Select } from '@/components/ui';
 import { ExprInput } from '@/components/ExprInput';
 import { literalExpr } from '@/utils/expression';
+import type { VarOption } from '@/components/ExprInput';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!=', 'is_min', 'is_max', 'is_even', 'is_odd'];
 const TAG_OPERATORS: ('=' | '!=')[] = ['=', '!='];
 
-export function ConditionChainEditor({ chain, onChange, variant, availableVars }: { chain: ConditionChain; onChange: (chain: ConditionChain) => void; variant: 'pipeline' | 'reroll'; availableVars?: { x: boolean; y: boolean } }) {
+export function ConditionChainEditor({ chain, onChange, variant, availableVars }: { chain: ConditionChain; onChange: (chain: ConditionChain) => void; variant: 'pipeline' | 'reroll'; availableVars?: VarOption[] }) {
   function addClause() {
     if (chain.clauses.length >= 10) return;
     const prevConnector = chain.connectors.length > 0 ? chain.connectors[chain.connectors.length - 1]! : 'and';

@@ -41,7 +41,7 @@ describe('totalIterations', () => {
 
   it('multiplies value counts and then by 1,000,000', () => {
     resetToDefaults();
-    sweep.value = { x: [1, 2, 3], y: [10, 20] };
+    sweep.value = { x: [1, 2, 3], y: [10, 20], xName: 'X', yName: 'Y' };
     expect(totalIterations.value).toBe(3 * 2 * 1_000_000);
   });
 });
@@ -58,7 +58,7 @@ describe('dicePoolNotation with sweeps', () => {
     dicePool.value = {
       terms: [{ ...term, count: { kind: 'ref', name: 'X' } }],
     };
-    sweep.value = { x: [1, 2, 3, 4, 5], y: null };
+    sweep.value = { x: [1, 2, 3, 4, 5], y: null, xName: 'X', yName: 'Y' };
     expect(dicePoolNotation.value).toBe('1..5d20');
   });
 
@@ -68,7 +68,7 @@ describe('dicePoolNotation with sweeps', () => {
     dicePool.value = {
       terms: [{ ...term, sides: { kind: 'ref', name: 'X' } }],
     };
-    sweep.value = { x: [4, 6, 8], y: null };
+    sweep.value = { x: [4, 6, 8], y: null, xName: 'X', yName: 'Y' };
     expect(dicePoolNotation.value).toBe('1d{4, 6, 8}');
   });
 });

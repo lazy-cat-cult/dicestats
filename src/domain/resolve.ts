@@ -3,7 +3,7 @@ import { compare } from '@/types';
 import { matchConditions } from '@/domain/matching';
 import { evalExpr } from '@/utils/expression';
 
-function applyVectorOp(source: TaggedDie[], op: VectorFunction, termsSides: { sides: number; tag: string }[], vars: { x: number; y: number }): TaggedDie[] {
+function applyVectorOp(source: TaggedDie[], op: VectorFunction, termsSides: { sides: number; tag: string }[],   vars: Record<string, number>): TaggedDie[] {
   if (op.fn === 'filter') {
     return source.filter((die) => matchConditions(die, op.conditions, termsSides, vars));
   }
@@ -22,7 +22,7 @@ function applyScalarBinary(left: number, op: ScalarBinaryOp, right: number): num
   }
 }
 
-function applyScalarBinaryMultiTerm(sourceVal: number, fn: ScalarBinaryOp, terms: ScalarBinaryTerm[], env: Map<string, PipelineValue>, vars: { x: number; y: number }): number {
+function applyScalarBinaryMultiTerm(sourceVal: number, fn: ScalarBinaryOp, terms: ScalarBinaryTerm[], env: Map<string, PipelineValue>,   vars: Record<string, number>): number {
   if (terms.length === 0) return sourceVal;
   const firstTerm = terms[0]!;
   let result: number;
@@ -50,7 +50,7 @@ function applySwitch(
   sourceVal: number,
   branches: SwitchBranch[],
   env: Map<string, PipelineValue>,
-  vars: { x: number; y: number }
+  vars: Record<string, number>
 ): number {
   for (const branch of branches) {
     const condValue = env.get(branch.condition.source);
@@ -100,7 +100,7 @@ function isScalarBinaryTermsOp(op: ScalarFunction): op is { fn: ScalarBinaryOp; 
 export function evaluatePipeline(
   rolled: TaggedDie[],
   pipeline: NamedValue[],
-  vars: { x: number; y: number } = { x: 0, y: 0 },
+  vars: Record<string, number> = {},
   termsSides: { sides: number; tag: string }[] = []
 ): Map<string, PipelineValue> {
   const env = new Map<string, PipelineValue>();

@@ -67,7 +67,7 @@ function normalizeIds(config: PresetConfig): PresetConfig {
     rerollConditions: config.rerollConditions.map((r) => ({ ...r, id: 'NORMALIZED' })),
     pipeline: newPipeline,
     outcomes: newOutcomes,
-    sweep: { x: [...config.sweep.x], y: config.sweep.y ? [...config.sweep.y] : null },
+    sweep: { x: [...config.sweep.x], y: config.sweep.y ? [...config.sweep.y] : null, xName: config.sweep.xName, yName: config.sweep.yName },
   };
 }
 

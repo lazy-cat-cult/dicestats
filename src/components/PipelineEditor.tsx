@@ -57,7 +57,10 @@ function getAvailableSources(pipe: NamedValue[], currentIndex: number): { id: st
 export function PipelineEditor() {
   const pipe = pipeline.value;
   const sw = sweep.value;
-  const availableVars = { x: sw.x.length > 0, y: sw.y !== null && sw.y.length > 0 };
+  const availableVars = [
+    { name: sw.xName, label: `${sw.xName}${sw.x.length > 0 ? '' : ' (not set)'}`, available: sw.x.length > 0 },
+    { name: sw.yName, label: `${sw.yName}${sw.y !== null && sw.y.length > 0 ? '' : ' (not set)'}`, available: sw.y !== null && sw.y.length > 0 },
+  ];
 
   function addRow() {
     if (pipe.length >= 20) return;

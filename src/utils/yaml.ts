@@ -461,7 +461,8 @@ function parseExprFromText(text: string, label: string): Expr {
   if (trimmed === '') {
     throw new PresetError(`${label}: empty expression`);
   }
-  const result = parseExpr(trimmed);
+  const processed = trimmed.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, '$1');
+  const result = parseExpr(processed);
   if ('error' in result) {
     throw new PresetError(`${label}: ${result.error}`);
   }
@@ -514,7 +515,7 @@ function parseSwitchBranch(text: string): SwitchBranch {
 function serializeSwitchBranch(branch: SwitchBranch): string {
   let valueStr: string;
   if (branch.value.operand === 'val') {
-    valueStr = exprToString(branch.value.value);
+    valueStr = exprToString(branch.value.value, 'yaml');
   } else {
     valueStr = branch.value.source2;
   }
@@ -524,7 +525,7 @@ function serializeSwitchBranch(branch: SwitchBranch): string {
   if (cond.op === 'is_even' || cond.op === 'is_odd') {
     condStr = `${cond.source} ${cond.op}`;
   } else if (cond.value) {
-    condStr = `${cond.source} ${cond.op} ${exprToString(cond.value)}`;
+    condStr = `${cond.source} ${cond.op} ${exprToString(cond.value, 'yaml')}`;
   } else {
     condStr = `${cond.source} ${cond.op}`;
   }
@@ -577,7 +578,7 @@ function parsePool(poolNode: YamlNode): DicePool {
 
 function serializePool(pool: DicePool): YamlNode {
   return pool.terms.map((t) => {
-    const v = `${exprToString(t.count)}d${exprToString(t.sides)}${t.tag ? `<${t.tag}>` : ''}`;
+    const v = `${exprToString(t.count, 'yaml')}d${exprToString(t.sides, 'yaml')}${t.tag ? `<${t.tag}>` : ''}`;
     return t.comment ? { _value: v, _comment: t.comment } : v;
   });
 }
@@ -605,7 +606,7 @@ function parseRerollEntry(text: string, comment: string): RerollCondition {
 function serializeClauseValue(c: ConditionClause): string {
   if (c.field === 'face') {
     if (c.value === undefined) return '';
-    return exprToString(c.value);
+    return exprToString(c.value, 'yaml');
   }
   return String(c.value);
 }
@@ -657,7 +658,7 @@ function parsePipelineEntry(text: string, comment: string, branches?: string[]):
     const opChar = binaryM[2]!;
     const right = binaryM[3]!;
     const opMap: Record<string, ScalarBinaryOp> = { '+': 'add', '-': 'subtract', '*': 'multiply', '/': 'divide' };
-    if (/^-?[\d.]/.test(right) || right === 'X' || right === 'Y' || /[+\-*/]/.test(right)) {
+    if (/^-?[\d.]/.test(right) || /^\{[a-zA-Z_][a-zA-Z0-9_]*\}$/.test(right) || right === 'X' || right === 'Y' || /[+\-*/]/.test(right)) {
       return {
         name,
         source: left,
@@ -724,7 +725,7 @@ function serializePipelineEntry(nv: NamedValue): YamlNode {
       if (first.operand === 'ref' && first.source2) {
         v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${first.source2}`;
       } else if (first.operand === 'val') {
-        v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${exprToString(first.value)}`;
+        v = `${nv.name} = ${nv.source} ${sym[op.fn]} ${exprToString(first.value, 'yaml')}`;
       } else {
         v = `${nv.name} = ${JSON.stringify(op)}`;
       }
@@ -733,7 +734,7 @@ function serializePipelineEntry(nv: NamedValue): YamlNode {
         if (t.operand === 'ref' && t.source2) {
           v += ` ${sym[op.fn]} ${t.source2}`;
         } else if (t.operand === 'val') {
-          v += ` ${sym[op.fn]} ${exprToString(t.value)}`;
+          v += ` ${sym[op.fn]} ${exprToString(t.value, 'yaml')}`;
         }
       }
     } else {
@@ -823,9 +824,9 @@ function parseSingleOutcomeCondition(tokens: string[]): OutcomeCondition {
 function serializeOutcomeEntry(o: Outcome): YamlNode {
   const conds = o.conditions.map((c) => {
     if (c.op === 'any' || c.op === 'all' || c.op === 'none') {
-      return `${c.op} ${c.source} ${c.subCondition} ${exprToString(c.value)}`;
+      return `${c.op} ${c.source} ${c.subCondition} ${exprToString(c.value, 'yaml')}`;
     }
-    return `${c.source} ${c.op} ${exprToString(c.value)}`;
+    return `${c.source} ${c.op} ${exprToString(c.value, 'yaml')}`;
   });
   let condStr = conds[0] || '';
   for (let i = 0; i < o.connectors.length; i++) {
@@ -837,7 +838,7 @@ function serializeOutcomeEntry(o: Outcome): YamlNode {
 
 function parseSweep(node: YamlNode | undefined): SweepParameters {
   if (node === undefined || node === null) {
-    return { x: [], y: null };
+    return { x: [], y: null, xName: 'X', yName: 'Y' };
   }
   if (!isMapping(node)) {
     throw new PresetError('"sweep:" must be a mapping with optional x and y lists');
@@ -850,7 +851,13 @@ function parseSweep(node: YamlNode | undefined): SweepParameters {
     y = parseSweepList(yNode, 'sweep.y');
     if (y.length === 0) y = null;
   }
-  return { x, y };
+  const xName = typeof node['xName'] === 'string' && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(node['xName'])
+    ? String(node['xName'])
+    : 'X';
+  const yName = typeof node['yName'] === 'string' && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(node['yName'])
+    ? String(node['yName'])
+    : 'Y';
+  return { x, y, xName, yName };
 }
 
 function parseSweepList(node: YamlNode, label: string): number[] {
@@ -877,6 +884,8 @@ function parseSweepList(node: YamlNode, label: string): number[] {
 function serializeSweep(sweep: SweepParameters): YamlNode {
   const obj: { [k: string]: YamlNode } = {
     x: sweep.x,
+    xName: sweep.xName,
+    yName: sweep.yName,
   };
   if (sweep.y && sweep.y.length > 0) {
     obj['y'] = sweep.y;

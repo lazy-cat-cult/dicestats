@@ -9,6 +9,12 @@ function inferMode(expr: Expr): ExprMode {
   return 'num';
 }
 
+export interface VarOption {
+  name: string;
+  label: string;
+  available: boolean;
+}
+
 interface ExprInputProps {
   value: Expr;
   onChange: (expr: Expr) => void;
@@ -19,14 +25,13 @@ interface ExprInputProps {
   integerOnly?: boolean;
   min?: number;
   max?: number;
-  availableVars?: { x: boolean; y: boolean };
+  availableVars?: VarOption[];
 }
 
 export function ExprInput({ value, onChange, label, ariaLabel, className = '', placeholder, integerOnly, min, max, availableVars }: ExprInputProps) {
   const mode = inferMode(value);
   const [localMode, setLocalMode] = useState<ExprMode>(mode);
-  const hasX = availableVars?.x ?? false;
-  const hasY = availableVars?.y ?? false;
+  const vars = availableVars ?? [];
 
   useEffect(() => {
     setLocalMode(inferMode(value));
@@ -40,13 +45,15 @@ export function ExprInput({ value, onChange, label, ariaLabel, className = '', p
         onChange(literalExpr(fallback));
       }
     } else {
-      onChange({ kind: 'ref', name: 'X' });
+      const first = vars.find((v) => v.available) ?? vars[0];
+      onChange({ kind: 'ref', name: first?.name ?? 'X' });
     }
   }
 
   if (localMode === 'var') {
-    const selectedVar = value.kind === 'ref' ? value.name : 'X';
-    const varMissing = selectedVar === 'X' ? !hasX : !hasY;
+    const selectedVar = value.kind === 'ref' ? value.name : vars[0]?.name ?? 'X';
+    const currentOption = vars.find((v) => v.name === selectedVar);
+    const varMissing = currentOption && !currentOption.available;
 
     return (
       <div class={className}>
@@ -62,12 +69,15 @@ export function ExprInput({ value, onChange, label, ariaLabel, className = '', p
             class={`flex-1 border border-l-0 ${varMissing ? 'border-billiard bg-billiard/5' : 'border-rule bg-paper'} px-2 py-1.5 text-[13px] font-mono tabular ${varMissing ? 'text-billiard' : 'text-billiard'} outline-none focus:border-billiard transition-colors`}
             value={selectedVar}
             onChange={(e) => {
-              const name = (e.target as HTMLSelectElement).value as 'X' | 'Y';
+              const name = (e.target as HTMLSelectElement).value;
               onChange({ kind: 'ref', name });
             }}
           >
-            <option value="X" disabled={!hasX}>X{hasX ? '' : ' (not set)'}</option>
-            <option value="Y" disabled={!hasY}>Y{hasY ? '' : ' (not set)'}</option>
+            {vars.map((v) => (
+              <option key={v.name} value={v.name} disabled={!v.available}>
+                {v.label}
+              </option>
+            ))}
           </select>
         </div>
         {varMissing && (

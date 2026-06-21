@@ -13,7 +13,7 @@ export function decodeShareUrl(hash: string): SavedConfig | null {
     const json = LZString.decompressFromEncodedURIComponent(hash);
     if (!json) return null;
     const config = JSON.parse(json) as SavedConfig;
-    if (typeof config !== 'object' || config === null || config.version !== 9) {
+    if (typeof config !== 'object' || config === null || config.version < 9) {
       return null;
     }
     if (!config.pool || typeof config.pool !== 'object' || !Array.isArray(config.pool.terms)) {
@@ -29,8 +29,10 @@ export function decodeShareUrl(hash: string): SavedConfig | null {
       config.pipeline = [];
     }
     if (!config.sweep || typeof config.sweep !== 'object') {
-      config.sweep = { x: [], y: null };
+      config.sweep = { x: [], y: null, xName: 'X', yName: 'Y' };
     }
+    if (!config.sweep.xName) config.sweep.xName = 'X';
+    if (!config.sweep.yName) config.sweep.yName = 'Y';
     return config;
   } catch {
     return null;
