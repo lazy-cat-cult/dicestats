@@ -27,7 +27,7 @@ export const PRESETS: PresetConfig[] = [
         comment: '',
       },
     ],
-    sweep: { x: [5, 10, 15, 20], y: null },
+    sweep: { x: [5, 10, 15, 20], y: null, xName: 'DC', yName: 'Y' },
   },
   {
     id: 'dnd-advantage',
@@ -54,7 +54,7 @@ export const PRESETS: PresetConfig[] = [
         comment: '',
       },
     ],
-    sweep: { x: [5, 10, 15, 20], y: null },
+    sweep: { x: [5, 10, 15, 20], y: null, xName: 'DC', yName: 'Y' },
   },
   {
     id: 'pbta-2d6',
@@ -102,7 +102,7 @@ export const PRESETS: PresetConfig[] = [
         comment: '',
       },
     ],
-    sweep: { x: [-2, -1, 0, 1, 2], y: [10, 15] },
+    sweep: { x: [-2, -1, 0, 1, 2], y: [10, 15], xName: 'mod', yName: 'DC' },
   },
   {
     id: 'shadowrun-xd6',
@@ -128,7 +128,7 @@ export const PRESETS: PresetConfig[] = [
         comment: '',
       },
     ],
-    sweep: { x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], y: null },
+    sweep: { x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], y: null, xName: 'dice', yName: 'Y' },
   },
   {
     id: 'vampire-v5',
@@ -226,7 +226,7 @@ export const PRESETS: PresetConfig[] = [
         comment: '',
       },
     ],
-    sweep: { x: [], y: null },
+    sweep: { x: [], y: null, xName: 'X', yName: 'Y' },
   },
   {
     id: 'daggerheart-duality',
@@ -338,7 +338,7 @@ export const PRESETS: PresetConfig[] = [
         comment: '',
       },
     ],
-    sweep: { x: [-2, -1, 0, 1, 2, 3, 4, 5], y: null },
+    sweep: { x: [-2, -1, 0, 1, 2, 3, 4, 5], y: null, xName: 'mod', yName: 'Y' },
   },
   {
     id: 'daggerheart-compound',
@@ -435,7 +435,7 @@ export const PRESETS: PresetConfig[] = [
         comment: '',
       },
     ],
-    sweep: { x: [], y: null },
+    sweep: { x: [], y: null, xName: 'X', yName: 'Y' },
   },
   {
     id: 'cyberpunk-red-check',
@@ -462,7 +462,7 @@ export const PRESETS: PresetConfig[] = [
         comment: '',
       },
     ],
-    sweep: { x: [10, 13, 15, 17, 20, 22, 25, 28, 30], y: null },
+    sweep: { x: [10, 13, 15, 17, 20, 22, 25, 28, 30], y: null, xName: 'DC', yName: 'Y' },
   },
   {
     id: 'blades-in-the-dark',
@@ -530,7 +530,7 @@ export const PRESETS: PresetConfig[] = [
         comment: '',
       },
     ],
-    sweep: { x: [1, 2, 3, 4, 5, 6, 7, 8], y: null },
+    sweep: { x: [1, 2, 3, 4, 5, 6, 7, 8], y: null, xName: 'dice', yName: 'Y' },
   },
   {
     id: 'savage-worlds',
@@ -623,7 +623,7 @@ export const PRESETS: PresetConfig[] = [
         comment: '',
       },
     ],
-    sweep: { x: [4, 6, 8, 10, 12], y: null },
+    sweep: { x: [4, 6, 8, 10, 12], y: null, xName: 'sides', yName: 'Y' },
   },
   {
     id: 'wod-explode',
@@ -658,7 +658,7 @@ export const PRESETS: PresetConfig[] = [
         comment: '',
       },
     ],
-    sweep: { x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], y: null },
+    sweep: { x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], y: null, xName: 'dice', yName: 'Y' },
   },
 ];
 

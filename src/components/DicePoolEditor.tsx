@@ -10,7 +10,10 @@ const DIE_SIDES = [4, 6, 8, 10, 12, 20, 100];
 export function DicePoolEditor() {
   const pool = dicePool.value;
   const sw = sweep.value;
-  const availableVars = { x: sw.x.length > 0, y: sw.y !== null && sw.y.length > 0 };
+  const availableVars = [
+    { name: sw.xName, label: `${sw.xName}${sw.x.length > 0 ? '' : ' (not set)'}`, available: sw.x.length > 0 },
+    { name: sw.yName, label: `${sw.yName}${sw.y !== null && sw.y.length > 0 ? '' : ' (not set)'}`, available: sw.y !== null && sw.y.length > 0 },
+  ];
   const [customSides, setCustomSides] = useState<Set<number>>(new Set());
 
   function updateTerm(index: number, partial: Partial<DiceTerm>) {

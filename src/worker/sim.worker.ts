@@ -13,7 +13,7 @@ function rollDie(sides: number): number {
   return ((Math.random() * sides) | 0) + 1;
 }
 
-function rollPool(pool: DicePool, vars: { x: number; y: number }): TaggedDie[] {
+function rollPool(pool: DicePool, vars: Record<string, number>): TaggedDie[] {
   const dice: TaggedDie[] = [];
   for (const term of pool.terms) {
     const count = exprToInteger(term.count, vars, { min: 1, max: 99 });
@@ -25,7 +25,7 @@ function rollPool(pool: DicePool, vars: { x: number; y: number }): TaggedDie[] {
   return dice;
 }
 
-function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[], termsSides: { sides: number; tag: string }[], vars: { x: number; y: number }): TaggedDie[] {
+function applyRerollConditions(dice: TaggedDie[], conditions: RerollCondition[], termsSides: { sides: number; tag: string }[], vars: Record<string, number>): TaggedDie[] {
   let result = [...dice];
 
   for (const rc of conditions) {
@@ -80,7 +80,7 @@ function simulateOnce(
   pipeline: NamedValue[],
   outcomes: Outcome[],
   termsSides: { sides: number; tag: string }[],
-  vars: { x: number; y: number }
+  vars: Record<string, number>
 ): { distributionKey: number; matchedOutcomes: string[] } {
   let dice = rollPool(pool, vars);
   dice = applyRerollConditions(dice, rerollConditions, termsSides, vars);
@@ -113,10 +113,12 @@ function runSimulation(
   pipeline: NamedValue[],
   outcomes: Outcome[],
   iterations: number,
-  vars: { x: number; y: number },
+  vars: Record<string, number>,
   taskName?: string,
   sweepX: number | null = null,
-  sweepY: number | null = null
+  sweepY: number | null = null,
+  xName?: string,
+  yName?: string
 ): SimResult {
   const termsSides = pool.terms.map((t) => ({ sides: exprToInteger(t.sides, vars, { min: 1, max: 999 }), tag: t.tag }));
   const outcomeCounts = new Map<string, number>();
@@ -187,8 +189,10 @@ function runSimulation(
   matchSets.sort((a, b) => b.count - a.count);
   const matchSetsCapped = matchSets.slice(0, MATCH_SET_CAP);
 
-  const xPart = sweepX === null ? '' : `X=${sweepX}`;
-  const yPart = sweepY === null ? '' : `Y=${sweepY}`;
+  const xn = xName ?? 'X';
+  const yn = yName ?? 'Y';
+  const xPart = sweepX === null ? '' : `${xn}=${sweepX}`;
+  const yPart = sweepY === null ? '' : `${yn}=${sweepY}`;
   const label = sweepX === null && sweepY === null
     ? (taskName ?? '')
     : (sweepY === null ? xPart : `${yPart} · ${xPart}`);
@@ -216,7 +220,7 @@ function runSimulation(
   };
 }
 
-function materializeExpr(expr: Expr, vars: { x: number; y: number }): Expr {
+function materializeExpr(expr: Expr, vars: Record<string, number>): Expr {
   return literalExpr(evalExpr(expr, vars));
 }
 
@@ -226,13 +230,13 @@ function sampleOnce(
   pipeline: NamedValue[],
   outcomes: Outcome[],
   termsSides: { sides: number; tag: string }[],
-  vars: { x: number; y: number },
+  vars: Record<string, number>,
   overrides?: { termIndex: number; faces: number[] }[]
 ): SampleTrace {
   return buildSampleTrace(pool, rerollConditions, pipeline, outcomes, termsSides, vars, overrides);
 }
 
-function materializeTerm(term: DiceTerm, vars: { x: number; y: number }): DiceTerm {
+function materializeTerm(term: DiceTerm,   vars: Record<string, number>): DiceTerm {
   return {
     id: term.id,
     count: literalExpr(exprToInteger(term.count, vars, { min: 1, max: 99 })),
@@ -242,7 +246,7 @@ function materializeTerm(term: DiceTerm, vars: { x: number; y: number }): DiceTe
   };
 }
 
-function materializeScalarOp(op: ScalarFunction, vars: { x: number; y: number }): ScalarFunction {
+function materializeScalarOp(op: ScalarFunction,   vars: Record<string, number>): ScalarFunction {
   if (typeof op === 'string') return op;
   if (op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') {
     if ('terms' in op && Array.isArray(op.terms)) {
@@ -260,7 +264,7 @@ function materializeScalarOp(op: ScalarFunction, vars: { x: number; y: number })
   return op;
 }
 
-function materializePipeline(nv: NamedValueT, vars: { x: number; y: number }): NamedValueT {
+function materializePipeline(nv: NamedValueT,   vars: Record<string, number>): NamedValueT {
   const op = nv.op;
   if (typeof op === 'object' && op !== null && 'fn' in op && (op.fn === 'filter' || op.fn === 'remove')) {
     return { ...nv, op: { ...op } as VectorFunction } as NamedValueT;
@@ -268,7 +272,7 @@ function materializePipeline(nv: NamedValueT, vars: { x: number; y: number }): N
   return { ...nv, op: materializeScalarOp(op as ScalarFunction, vars) } as NamedValueT;
 }
 
-function materializeOutcome(o: OutcomeT, vars: { x: number; y: number }): OutcomeT {
+function materializeOutcome(o: OutcomeT,   vars: Record<string, number>): OutcomeT {
   return {
     ...o,
     conditions: o.conditions.map((c) => {
@@ -280,7 +284,7 @@ function materializeOutcome(o: OutcomeT, vars: { x: number; y: number }): Outcom
   };
 }
 
-function materializeSimJob(job: SimJob, vars: { x: number; y: number }): {
+function materializeSimJob(job: SimJob,   vars: Record<string, number>): {
   pool: DicePool;
   rerollConditions: RerollCondition[];
   pipeline: NamedValue[];
@@ -296,10 +300,10 @@ function materializeSimJob(job: SimJob, vars: { x: number; y: number }): {
   };
 }
 
-function buildSweepList(sweep: { x: number[]; y: number[] | null }): { xList: number[]; yList: number[] | null } {
+function buildSweepList(sweep: { x: number[]; y: number[] | null; xName: string; yName: string }): { xList: number[]; yList: number[] | null; xName: string; yName: string } {
   const xList = sweep.x.length > 0 ? sweep.x : [0];
   const yList = sweep.y && sweep.y.length > 0 ? sweep.y : null;
-  return { xList, yList };
+  return { xList, yList, xName: sweep.xName, yName: sweep.yName };
 }
 
 export type WorkerMessage =
@@ -329,18 +333,20 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
     const { iterations, taskName, sweep } = msg.job;
 
     try {
-      const { xList, yList } = buildSweepList(sweep);
+      const { xList, yList, xName, yName } = buildSweepList(sweep);
       const yOuter: number[] = yList ?? [0];
       const totalSteps = yOuter.length * xList.length;
       const results: SimResult[] = [];
       let stepIndex = 0;
 
-      for (const y of yOuter) {
+      for (const yVal of yOuter) {
         if (cancelled) break;
-        for (const x of xList) {
+        for (const xVal of xList) {
           if (cancelled) break;
           stepIndex++;
-          const vars = { x, y };
+          const vars: Record<string, number> = {};
+          vars[xName] = xVal;
+          if (yList !== null) vars[yName] = yVal;
           const materialized = materializeSimJob(msg.job, vars);
           const result = runSimulation(
             materialized.pool,
@@ -350,8 +356,10 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             iterations,
             vars,
             taskName,
-            yList === null ? x : x,
-            yList === null ? null : y
+            yList === null ? xVal : xVal,
+            yList === null ? null : yVal,
+            xName,
+            yName
           );
           results.push(result);
           self.postMessage({ type: 'progress', completed: stepIndex, total: totalSteps } as WorkerResponse);
@@ -368,7 +376,10 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
   if (msg.type === 'sample') {
     cancelled = false;
     try {
-      const vars = { x: msg.x ?? 0, y: msg.y ?? 0 };
+      const { xName, yName } = msg.job.sweep;
+      const vars: Record<string, number> = {};
+      vars[xName] = msg.x ?? 0;
+      if (msg.y !== undefined) vars[yName] = msg.y;
       const materialized = materializeSimJob(msg.job, vars);
       const termsSides = materialized.pool.terms.map((t) => ({ sides: exprToInteger(t.sides, vars, { min: 1, max: 999 }), tag: t.tag }));
       const trace = sampleOnce(

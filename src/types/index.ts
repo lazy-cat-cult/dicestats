@@ -125,6 +125,8 @@ export interface Outcome {
 export interface SweepParameters {
   x: number[];
   y: number[] | null;
+  xName: string;
+  yName: string;
 }
 
 export interface OutcomeResult {
@@ -215,7 +217,7 @@ export interface SampleTrace {
 }
 
 export interface SavedConfig {
-  version: 9;
+  version: 10;
   pool: DicePool;
   rerollConditions: RerollCondition[];
   pipeline: NamedValue[];

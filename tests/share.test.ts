@@ -3,7 +3,7 @@ import { encodeShareUrl, decodeShareUrl } from '@/utils/share';
 import type { SavedConfig } from '@/types';
 
 const mockConfig: SavedConfig = {
-  version: 9,
+  version: 10,
   pool: {
     terms: [
       { id: 't1', count: { kind: 'literal', value: 1 }, sides: { kind: 'literal', value: 20 }, tag: '', comment: '' },
@@ -14,7 +14,7 @@ const mockConfig: SavedConfig = {
   outcomes: [
     { id: 'o1', name: 'Hit', conditions: [{ source: 'rolled', op: '>=', value: { kind: 'literal', value: 10 } }], connectors: [], comment: '' },
   ],
-  sweep: { x: [], y: null },
+  sweep: { x: [], y: null, xName: 'X', yName: 'Y' },
 };
 
 describe('share URL encode/decode', () => {
@@ -22,7 +22,7 @@ describe('share URL encode/decode', () => {
     const encoded = encodeShareUrl(mockConfig);
     const decoded = decodeShareUrl(encoded);
     expect(decoded).not.toBeNull();
-    expect(decoded!.version).toBe(9);
+    expect(decoded!.version).toBe(10);
     expect(decoded!.pool.terms).toHaveLength(1);
     expect(decoded!.outcomes).toHaveLength(1);
     expect(decoded!.outcomes[0]!.name).toBe('Hit');
@@ -51,7 +51,7 @@ describe('share URL encode/decode', () => {
 
   it('handles config with all fields populated', () => {
     const fullConfig: SavedConfig = {
-      version: 9,
+      version: 10,
       pool: {
         terms: [
           { id: 't1', count: { kind: 'literal', value: 2 }, sides: { kind: 'literal', value: 10 }, tag: 'atk', comment: 'attack dice' },
@@ -68,7 +68,7 @@ describe('share URL encode/decode', () => {
         { id: 'o1', name: 'Crit', conditions: [{ source: 'best', op: '>=', value: { kind: 'literal', value: 18 } }], connectors: [], comment: '' },
         { id: 'o2', name: 'Miss', conditions: [{ source: 'best', op: '<', value: { kind: 'literal', value: 10 } }], connectors: [], comment: '' },
       ],
-      sweep: { x: [1, 2, 3], y: [10, 20] },
+      sweep: { x: [1, 2, 3], y: [10, 20], xName: 'X', yName: 'Y' },
     };
     const encoded = encodeShareUrl(fullConfig);
     const decoded = decodeShareUrl(encoded);

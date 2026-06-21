@@ -2,7 +2,7 @@ export type ExprOp = '+' | '-' | '*' | '/';
 
 export type Expr =
   | { kind: 'literal'; value: number }
-  | { kind: 'ref'; name: 'X' | 'Y' }
+  | { kind: 'ref'; name: string }
   | { kind: 'binop'; op: ExprOp; left: Expr; right: Expr };
 
 export interface ExprParseError {
@@ -18,12 +18,12 @@ export function literalExpr(n: number): Expr {
   return { kind: 'literal', value: n };
 }
 
-export function refX(): Expr {
-  return { kind: 'ref', name: 'X' };
+export function refX(name = 'X'): Expr {
+  return { kind: 'ref', name };
 }
 
-export function refY(): Expr {
-  return { kind: 'ref', name: 'Y' };
+export function refY(name = 'Y'): Expr {
+  return { kind: 'ref', name };
 }
 
 function isDigit(ch: string): boolean {
@@ -34,15 +34,6 @@ function skipWs(text: string, i: number): number {
   while (i < text.length && (text[i] === ' ' || text[i] === '\t')) i++;
   return i;
 }
-
-function matchKeyword(text: string, i: number, kw: string): number | null {
-  if (i + kw.length > text.length) return null;
-  for (let k = 0; k < kw.length; k++) {
-    if (text[i + k] !== kw[k]) return null;
-  }
-  return i + kw.length;
-}
-
 function parseNumber(text: string, i: number): ExprParseResult {
   const start = i;
   if (text[i] === '+' || text[i] === '-') i++;
@@ -88,10 +79,21 @@ function parseFactor(text: string, i: number): ExprParseResult {
     }
     return operand;
   }
-  const xPos = matchKeyword(text, i, 'X');
-  if (xPos !== null) return { expr: { kind: 'ref', name: 'X' }, end: xPos };
-  const yPos = matchKeyword(text, i, 'Y');
-  if (yPos !== null) return { expr: { kind: 'ref', name: 'Y' }, end: yPos };
+  if (text[i] === '{') {
+    const endBrace = text.indexOf('}', i);
+    if (endBrace === -1) return { error: 'Missing "}"', pos: i };
+    const name = text.slice(i + 1, endBrace);
+    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+      return { error: `Invalid variable name "${name}"`, pos: i };
+    }
+    return { expr: { kind: 'ref', name }, end: endBrace + 1 };
+  }
+  if (/^[a-zA-Z_]/.test(text[i] ?? '')) {
+    const match = text.slice(i).match(/^[a-zA-Z_][a-zA-Z0-9_]*/);
+    if (match) {
+      return { expr: { kind: 'ref', name: match[0] }, end: i + match[0].length };
+    }
+  }
   if (isDigit(text[i] ?? '')) {
     return parseNumber(text, i);
   }
@@ -140,10 +142,10 @@ export function parseExpr(text: string): ExprParseResult {
   return result;
 }
 
-export function evalExpr(expr: Expr, vars: { x: number; y: number }): number {
+export function evalExpr(expr: Expr, vars: Record<string, number>): number {
   switch (expr.kind) {
     case 'literal': return expr.value;
-    case 'ref': return expr.name === 'X' ? vars.x : vars.y;
+    case 'ref': return vars[expr.name] ?? 0;
     case 'binop': {
       const l = evalExpr(expr.left, vars);
       const r = evalExpr(expr.right, vars);
@@ -159,7 +161,7 @@ export function evalExpr(expr: Expr, vars: { x: number; y: number }): number {
 
 export function exprToInteger(
   expr: Expr,
-  vars: { x: number; y: number },
+  vars: Record<string, number>,
   range: { min: number; max: number }
 ): number {
   const value = evalExpr(expr, vars);
@@ -172,16 +174,16 @@ function opPrecedence(op: ExprOp): number {
   return op === '+' || op === '-' ? 1 : 2;
 }
 
-function exprToStringInner(expr: Expr, parentPrec: number): string {
+function exprToStringInner(expr: Expr, parentPrec: number, format: 'display' | 'yaml'): string {
   if (expr.kind === 'literal') {
     return Number.isInteger(expr.value) ? String(expr.value) : String(expr.value);
   }
   if (expr.kind === 'ref') {
-    return expr.name;
+    return format === 'yaml' ? `{${expr.name}}` : expr.name;
   }
   const myPrec = opPrecedence(expr.op);
-  const leftStr = exprToStringInner(expr.left, myPrec);
-  const rightStr = exprToStringInner(expr.right, myPrec);
+  const leftStr = exprToStringInner(expr.left, myPrec, format);
+  const rightStr = exprToStringInner(expr.right, myPrec, format);
   let s = `${leftStr}${expr.op}${rightStr}`;
   if (myPrec < parentPrec) {
     s = `(${s})`;
@@ -189,8 +191,8 @@ function exprToStringInner(expr: Expr, parentPrec: number): string {
   return s;
 }
 
-export function exprToString(expr: Expr): string {
-  return exprToStringInner(expr, 0);
+export function exprToString(expr: Expr, format: 'display' | 'yaml' = 'display'): string {
+  return exprToStringInner(expr, 0, format);
 }
 
 export function parseValues(text: string): number[] {

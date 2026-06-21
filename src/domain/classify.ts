@@ -2,7 +2,7 @@ import type { Outcome, OutcomeCondition, TaggedDie, PipelineValue, DiceCondition
 import { compare, DICE_CONDITION_TYPES, NOT_MATCHED_LABEL } from '@/types';
 import { evalExpr } from '@/utils/expression';
 
-function evaluateCondition(cond: OutcomeCondition, env: Map<string, PipelineValue>, vars: { x: number; y: number }): boolean {
+function evaluateCondition(cond: OutcomeCondition, env: Map<string, PipelineValue>, vars: Record<string, number>): boolean {
   const sourceValue = env.get(cond.source);
   if (sourceValue === undefined) return false;
 
@@ -26,7 +26,7 @@ function evaluateCondition(cond: OutcomeCondition, env: Map<string, PipelineValu
 export function evaluateOutcome(
   outcome: Outcome,
   env: Map<string, PipelineValue>,
-  vars: { x: number; y: number } = { x: 0, y: 0 }
+  vars: Record<string, number> = {}
 ): boolean {
   if (outcome.conditions.length === 0) return false;
 
@@ -42,7 +42,7 @@ export function evaluateOutcome(
 export function evaluateOutcomes(
   outcomes: Outcome[],
   env: Map<string, PipelineValue>,
-  vars: { x: number; y: number } = { x: 0, y: 0 }
+  vars: Record<string, number> = {}
 ): string[] {
   const matched: string[] = [];
   for (const outcome of outcomes) {

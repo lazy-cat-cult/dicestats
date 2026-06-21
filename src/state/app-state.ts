@@ -12,7 +12,7 @@ function defaultPool(): DicePool {
 }
 
 function defaultSweep(): SweepParameters {
-  return { x: [], y: null };
+  return { x: [], y: null, xName: 'X', yName: 'Y' };
 }
 
 export const dicePool = signal<DicePool>(defaultPool());
@@ -121,6 +121,8 @@ export function applyPresetConfig(preset: PresetConfig) {
   sweep.value = {
     x: [...preset.sweep.x],
     y: preset.sweep.y ? [...preset.sweep.y] : null,
+    xName: preset.sweep.xName,
+    yName: preset.sweep.yName,
   };
   currentPresetName.value = preset.name;
   lastAppliedPresetId.value = preset.id;
@@ -208,18 +210,19 @@ effect(() => {
   lastConfigFingerprint = fp;
 });
 
-export const previewVars = computed<{ x?: number; y?: number }>(() => {
+export const previewVars = computed<Record<string, number>>(() => {
   const sw = sweep.value;
-  return {
-    x: sw.x[0],
-    y: sw.y ? sw.y[0] : undefined,
-  };
+  const vars: Record<string, number> = {};
+  if (sw.x.length > 0) vars[sw.xName] = sw.x[0]!;
+  if (sw.y && sw.y.length > 0) vars[sw.yName] = sw.y[0]!;
+  return vars;
 });
 
 function formatExprForNotation(expr: Expr, sw: SweepParameters): string {
   if (expr.kind === 'literal') return String(expr.value);
   if (expr.kind === 'ref') {
-    const values = expr.name === 'Y' && sw.y ? sw.y : sw.x;
+    const isY = expr.name === sw.yName && sw.y && sw.y.length > 0;
+    const values = isY ? sw.y! : sw.x;
     if (values.length === 0) return expr.name;
     if (values.length === 1) return String(values[0]!);
     const min = values[0]!;
@@ -233,7 +236,7 @@ function formatExprForNotation(expr: Expr, sw: SweepParameters): string {
 
 export function buildSavedConfig(): SavedConfig {
   return {
-    version: 9,
+    version: 10,
     pool: dicePool.value,
     rerollConditions: rerollConditions.value,
     pipeline: pipeline.value,
