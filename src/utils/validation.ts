@@ -41,17 +41,21 @@ export function asScalarLiteral(nv: NamedValue): ScalarBinaryTerm | null {
   return null;
 }
 
-function validateExprInContext(expr: Expr, prefix: string, errors: ValidationError[], nextId: () => string): void {
-  const testVars = { x: 1, y: 1 };
+function validateExprInContext(expr: Expr, prefix: string, errors: ValidationError[], nextId: () => string, sweep: SweepParameters): void {
+  const testVars: Record<string, number> = {};
+  testVars[sweep.xName] = 1;
+  if (sweep.y) testVars[sweep.yName] = 1;
   const value = evalExpr(expr, testVars);
   if (!Number.isFinite(value)) {
     errors.push({ id: nextId(), message: `${prefix}: expression evaluates to non-finite value`, blocking: true });
   }
 }
 
-function validateDiceTermExpr(expr: Expr, field: 'count' | 'sides', prefix: string, errors: ValidationError[], nextId: () => string): void {
-  validateExprInContext(expr, prefix, errors, nextId);
-  const testVars = { x: 1, y: 1 };
+function validateDiceTermExpr(expr: Expr, field: 'count' | 'sides', prefix: string, errors: ValidationError[], nextId: () => string, sweep: SweepParameters): void {
+  validateExprInContext(expr, prefix, errors, nextId, sweep);
+  const testVars: Record<string, number> = {};
+  testVars[sweep.xName] = 1;
+  if (sweep.y) testVars[sweep.yName] = 1;
   const value = evalExpr(expr, testVars);
   if (Number.isFinite(value)) {
     if (field === 'count' && (value < 1 || value > 99)) {
@@ -79,8 +83,8 @@ export function validateConfig(
   }
 
   for (const term of pool.terms) {
-    validateDiceTermExpr(term.count, 'count', `Term "${term.tag || 'unnamed'}" count`, errors, nextId);
-    validateDiceTermExpr(term.sides, 'sides', `Term "${term.tag || 'unnamed'}" sides`, errors, nextId);
+    validateDiceTermExpr(term.count, 'count', `Term "${term.tag || 'unnamed'}" count`, errors, nextId, sweep);
+    validateDiceTermExpr(term.sides, 'sides', `Term "${term.tag || 'unnamed'}" sides`, errors, nextId, sweep);
   }
 
   if (outcomes.length === 0) {
@@ -137,7 +141,9 @@ export function validateConfig(
                 }
               }
               if (term.operand === 'val') {
-                const testVars = { x: 1, y: 1 };
+                const testVars: Record<string, number> = {};
+                testVars[sweep.xName] = 1;
+                if (sweep.y) testVars[sweep.yName] = 1;
                 const v = evalExpr(term.value, testVars);
                 if (!Number.isFinite(v)) {
                   errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" literal evaluates to non-finite value`, blocking: true });
@@ -182,7 +188,9 @@ export function validateConfig(
                 errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: condition requires a value for "${cond.op}" operator`, blocking: true });
               }
               if (cond.value) {
-                const testVars = { x: 1, y: 1 };
+                const testVars: Record<string, number> = {};
+                testVars[sweep.xName] = 1;
+                if (sweep.y) testVars[sweep.yName] = 1;
                 const v = evalExpr(cond.value, testVars);
                 if (!Number.isFinite(v)) {
                   errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: condition value evaluates to non-finite value`, blocking: false });
@@ -201,7 +209,9 @@ export function validateConfig(
                 }
               }
               if (branch.value.operand === 'val') {
-                const testVars = { x: 1, y: 1 };
+                const testVars: Record<string, number> = {};
+                testVars[sweep.xName] = 1;
+                if (sweep.y) testVars[sweep.yName] = 1;
                 const v = evalExpr(branch.value.value, testVars);
                 if (!Number.isFinite(v)) {
                   errors.push({ id: nextId(), message: `Switch branch ${bi + 1}: branch value evaluates to non-finite value`, blocking: true });
@@ -287,7 +297,9 @@ export function validateConfig(
         errors.push({ id: nextId(), message: `Outcome "${outcome.name}" scalar comparison on vector source requires aggregation first`, blocking: true });
       }
       if ('value' in cond && cond.value) {
-        const testVars = { x: 1, y: 1 };
+        const testVars: Record<string, number> = {};
+        testVars[sweep.xName] = 1;
+        if (sweep.y) testVars[sweep.yName] = 1;
         const v = evalExpr(cond.value, testVars);
         if (!Number.isFinite(v)) {
           errors.push({ id: nextId(), message: `Outcome "${outcome.name}" condition value evaluates to non-finite value`, blocking: true });
@@ -296,25 +308,31 @@ export function validateConfig(
     }
   }
 
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(sweep.xName)) {
+    errors.push({ id: nextId(), message: `Sweep X name "${sweep.xName}" is not a valid identifier`, blocking: true });
+  }
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(sweep.yName)) {
+    errors.push({ id: nextId(), message: `Sweep Y name "${sweep.yName}" is not a valid identifier`, blocking: true });
+  }
   if (sweep.x.length > 10) {
-    errors.push({ id: nextId(), message: `Sweep X has ${sweep.x.length} values (max 10)`, blocking: true });
+    errors.push({ id: nextId(), message: `Sweep ${sweep.xName} has ${sweep.x.length} values (max 10)`, blocking: true });
   }
   if (sweep.y && sweep.y.length > 10) {
-    errors.push({ id: nextId(), message: `Sweep Y has ${sweep.y.length} values (max 10)`, blocking: true });
+    errors.push({ id: nextId(), message: `Sweep ${sweep.yName} has ${sweep.y.length} values (max 10)`, blocking: true });
   }
   if (sweep.y && sweep.y.length > 0 && sweep.x.length === 0) {
-    errors.push({ id: nextId(), message: 'Sweep Y is set but Sweep X is empty', blocking: true });
+    errors.push({ id: nextId(), message: `Sweep ${sweep.yName} is set but Sweep ${sweep.xName} is empty`, blocking: true });
   }
   for (const v of sweep.x) {
     if (!Number.isFinite(v)) {
-      errors.push({ id: nextId(), message: `Sweep X contains non-finite value`, blocking: true });
+      errors.push({ id: nextId(), message: `Sweep ${sweep.xName} contains non-finite value`, blocking: true });
       break;
     }
   }
   if (sweep.y) {
     for (const v of sweep.y) {
       if (!Number.isFinite(v)) {
-        errors.push({ id: nextId(), message: `Sweep Y contains non-finite value`, blocking: true });
+        errors.push({ id: nextId(), message: `Sweep ${sweep.yName} contains non-finite value`, blocking: true });
         break;
       }
     }

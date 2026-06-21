@@ -17,6 +17,7 @@ import { DICE_CONDITION_TYPES } from '@/types';
 import { literalExpr } from '@/utils/expression';
 import { inferType, inferTypeFromOp } from '@/utils/validation';
 import { ExprInput } from '@/components/ExprInput';
+import type { VarOption } from '@/components/ExprInput';
 import { Button, IconButton, Select, TextField } from '@/components/ui';
 
 const CONDITION_OPERATORS: ConditionOperator[] = ['>=', '>', '<=', '<', '=', '!='];
@@ -91,7 +92,10 @@ function convertCondition(cond: OutcomeCondition, newSource: string, newType: 'v
 export function OutcomeEditor() {
   const list = outcomes.value;
   const sw = sweep.value;
-  const availableVars = { x: sw.x.length > 0, y: sw.y !== null && sw.y.length > 0 };
+  const availableVars = [
+    { name: sw.xName, label: `${sw.xName}${sw.x.length > 0 ? '' : ' (not set)'}`, available: sw.x.length > 0 },
+    { name: sw.yName, label: `${sw.yName}${sw.y !== null && sw.y.length > 0 ? '' : ' (not set)'}`, available: sw.y !== null && sw.y.length > 0 },
+  ];
 
   function addOutcome() {
     if (list.length >= 10) return;
@@ -265,7 +269,7 @@ export function OutcomeEditor() {
   );
 }
 
-function OutcomeScalarCondition({ cond, onChange, availableVars }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void; availableVars: { x: boolean; y: boolean } }) {
+function OutcomeScalarCondition({ cond, onChange, availableVars }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void; availableVars: VarOption[] }) {
   const scalar = isScalarCondition(cond) ? cond : null;
   if (!scalar) {
     return (
@@ -294,7 +298,7 @@ function OutcomeScalarCondition({ cond, onChange, availableVars }: { cond: Outco
   );
 }
 
-function OutcomeVectorCondition({ cond, onChange, availableVars }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void; availableVars: { x: boolean; y: boolean } }) {
+function OutcomeVectorCondition({ cond, onChange, availableVars }: { cond: OutcomeCondition; onChange: (c: OutcomeCondition) => void; availableVars: VarOption[] }) {
   const dice = isDiceCondition(cond) ? cond : null;
   if (!dice) {
     return (
