@@ -268,25 +268,18 @@ export function App() {
   return (
     <div class="min-h-screen flex flex-col">
       <header class="bg-billiard text-paper">
-        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 py-2 flex items-center justify-between gap-4">
           <a href="#" class="flex items-center gap-3 group" aria-label="Dicestats home">
-            <span class="inline-flex items-center justify-center w-12 h-12 border-2 border-gold bg-billiard-deep shadow-[0_2px_0_0_var(--color-gold)]">
-              <svg viewBox="0 0 100 100" class="w-9 h-9" aria-hidden="true">
-                <path d="M50 22 L78 36 L68 70 L32 70 L22 36 Z"
-                      fill="none" stroke="#faf8f2" stroke-width="4" stroke-linejoin="round"/>
-                <circle cx="50" cy="36" r="4" fill="#faf8f2"/>
-                <circle cx="38" cy="50" r="4" fill="#faf8f2"/>
-                <circle cx="62" cy="50" r="4" fill="#faf8f2"/>
-                <circle cx="44" cy="62" r="4" fill="#faf8f2"/>
-                <circle cx="56" cy="62" r="4" fill="#c9a646"/>
-              </svg>
-            </span>
+            <img src="/dicestats/cat_paw_roll.png" alt="Dicestats" class="w-14 h-14 object-contain" />
             <span class="flex flex-col leading-none">
               <span class="font-display text-[30px] tracking-[0.06em] text-paper leading-none">DICESTATS</span>
               <span class="font-mono text-[9px] uppercase tracking-[0.28em] text-gold mt-1.5">
-                Dice Probability · v1
+                by Lazy Cat Cult
               </span>
             </span>
+          </a>
+          <a href="https://lazycatcult.com" target="_blank" rel="noopener noreferrer" aria-label="Lazy Cat Cult">
+            <img src="/dicestats/lcc_logo2.png" alt="Lazy Cat Cult" class="h-12 w-auto" />
           </a>
         </div>
       </header>
