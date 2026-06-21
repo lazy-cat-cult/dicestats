@@ -2,7 +2,7 @@ import type { TaggedDie, ConditionClause, ConditionChain } from '@/types';
 import { compare } from '@/types';
 import { evalExpr } from '@/utils/expression';
 
-export function matchClause(die: TaggedDie, clause: ConditionClause, termsSides: { sides: number; tag: string }[], vars: { x: number; y: number }): boolean {
+export function matchClause(die: TaggedDie, clause: ConditionClause, termsSides: { sides: number; tag: string }[],   vars: Record<string, number>): boolean {
   if (clause.field === 'face') {
     switch (clause.operator) {
       case 'is_min':
@@ -24,7 +24,7 @@ export function matchClause(die: TaggedDie, clause: ConditionClause, termsSides:
   return false;
 }
 
-export function matchConditions(die: TaggedDie, chain: ConditionChain, termsSides: { sides: number; tag: string }[], vars: { x: number; y: number }): boolean {
+export function matchConditions(die: TaggedDie, chain: ConditionChain, termsSides: { sides: number; tag: string }[],   vars: Record<string, number>): boolean {
   if (chain.clauses.length === 0) return false;
   let result = matchClause(die, chain.clauses[0]!, termsSides, vars);
   for (let i = 0; i < chain.connectors.length; i++) {

@@ -15,7 +15,7 @@ export function buildSampleTrace(
   pipeline: NamedValue[],
   outcomes: Outcome[],
   termsSides: { sides: number; tag: string }[],
-  vars: { x: number; y: number },
+  vars: Record<string, number>,
   overrides?: { termIndex: number; faces: number[] }[]
 ): SampleTrace {
   const details: SampleDieDetail[] = [];

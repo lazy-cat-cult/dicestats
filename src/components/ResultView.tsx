@@ -5,6 +5,8 @@ import { ParameterChart } from '@/components/DistributionChart';
 
 interface ResultViewProps {
   results: SimResult[];
+  xName?: string;
+  yName?: string;
 }
 
 function hasYSweep(results: SimResult[]): boolean {
@@ -27,7 +29,7 @@ function getYValues(results: SimResult[]): number[] {
   return Array.from(seen).sort((a, b) => a - b);
 }
 
-export function ResultView({ results }: ResultViewProps) {
+export function ResultView({ results, xName = 'X', yName = 'Y' }: ResultViewProps) {
   if (!results || results.length === 0) {
     return <div class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-mute py-3">No results.</div>;
   }
@@ -50,9 +52,9 @@ export function ResultView({ results }: ResultViewProps) {
             <div key={y}>
               <div class="border border-rule bg-paper-deep/20 p-3">
                 <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-gold-deep mb-2">
-                  Y = {y}
+                  {yName} = {y}
                 </p>
-                <YGroupTable groupResults={groupResults} />
+                <YGroupTable groupResults={groupResults} xName={xName} />
               </div>
               <div class="mt-3">
                 <ParameterChart results={groupResults} />
@@ -70,19 +72,19 @@ export function ResultView({ results }: ResultViewProps) {
         Simulation · {firstTotal.toLocaleString()} rolls
       </p>
 
-      {hasParams ? <ParamResults results={results} xValues={xValues} /> : <SingleResult result={results[0]} />}
+      {hasParams ? <ParamResults results={results} xValues={xValues} xName={xName} /> : <SingleResult result={results[0]} />}
     </div>
   );
 }
 
-function YGroupTable({ groupResults }: { groupResults: SimResult[] }) {
+function YGroupTable({ groupResults, xName }: { groupResults: SimResult[]; xName: string }) {
   const outcomeLabels = filterOutcomes(groupResults[0]?.outcomes ?? []).map((o) => o.label);
   return (
     <div class="overflow-x-auto">
       <table class="w-full border-collapse">
         <thead>
           <tr class="border-b border-rule">
-            <th class="text-left py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">X</th>
+            <th class="text-left py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">{xName}</th>
             {outcomeLabels.map((label) => (
               <th key={label} class="text-right py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">{label}</th>
             ))}
@@ -91,7 +93,7 @@ function YGroupTable({ groupResults }: { groupResults: SimResult[] }) {
         <tbody>
           {groupResults.map((r) => (
             <tr key={r.label} class="border-b border-rule/60">
-              <td class="py-2 font-mono tabular text-[12px] text-ink">{r.sweepX !== null && r.sweepX !== undefined ? `X = ${r.sweepX}` : r.label}</td>
+              <td class="py-2 font-mono tabular text-[12px] text-ink">{r.sweepX !== null && r.sweepX !== undefined ? `${xName} = ${r.sweepX}` : r.label}</td>
               {filterOutcomes(r.outcomes).map((o) => (
                 <td key={o.label} class="py-2 font-mono tabular text-[12px] text-ink text-right">{formatPercent(o.probability)}</td>
               ))}
@@ -136,7 +138,7 @@ function SingleResult({ result }: { result: SimResult }) {
   );
 }
 
-function ParamResults({ results, xValues }: { results: SimResult[]; xValues: number[] }) {
+function ParamResults({ results, xValues, xName }: { results: SimResult[]; xValues: number[]; xName: string }) {
   const outcomeLabels = filterOutcomes(results[0]?.outcomes ?? []).map((o) => o.label);
 
   const anyOverlaps = results.some((r) => r.overlaps.length > 0);
@@ -145,13 +147,13 @@ function ParamResults({ results, xValues }: { results: SimResult[]; xValues: num
   return (
     <div>
       <p class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute mb-2">
-        X ∈ {xValues.length > 0 ? `{${xValues.join(', ')}}` : '∅'}
+        {xName} ∈ {xValues.length > 0 ? `{${xValues.join(', ')}}` : '∅'}
       </p>
       <div class="overflow-x-auto">
         <table class="w-full border-collapse">
           <thead>
             <tr class="border-b border-rule">
-              <th class="text-left py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">X</th>
+              <th class="text-left py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">{xName}</th>
               {outcomeLabels.map((label) => (
                 <th key={label} class="text-right py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute font-normal">{label}</th>
               ))}
@@ -160,7 +162,7 @@ function ParamResults({ results, xValues }: { results: SimResult[]; xValues: num
           <tbody>
             {results.map((r) => (
               <tr key={r.label} class="border-b border-rule/60">
-                <td class="py-2 font-mono tabular text-[12px] text-ink">{r.sweepX !== null && r.sweepX !== undefined ? `X = ${r.sweepX}` : r.label}</td>
+                <td class="py-2 font-mono tabular text-[12px] text-ink">{r.sweepX !== null && r.sweepX !== undefined ? `${xName} = ${r.sweepX}` : r.label}</td>
                 {filterOutcomes(r.outcomes).map((o) => (
                   <td key={o.label} class="py-2 font-mono tabular text-[12px] text-ink text-right">{formatPercent(o.probability)}</td>
                 ))}

@@ -141,7 +141,7 @@ export function App() {
       rerollConditions: rerollConditions.value.map((r) => ({ ...r, conditions: { ...r.conditions, clauses: [...r.conditions.clauses] } })),
       pipeline: pipeline.value.map((p) => ({ ...p })),
       outcomes: outcomes.value.map((o) => ({ ...o, conditions: [...o.conditions] })),
-      sweep: { x: [...sweep.value.x], y: sweep.value.y ? [...sweep.value.y] : null },
+      sweep: { x: [...sweep.value.x], y: sweep.value.y ? [...sweep.value.y] : null, xName: sweep.value.xName, yName: sweep.value.yName },
       iterations: 1_000_000,
       taskName: currentPresetName.value ?? undefined,
     };
@@ -218,7 +218,7 @@ export function App() {
       rerollConditions: rerollConditions.value.map((r) => ({ ...r, conditions: { ...r.conditions, clauses: [...r.conditions.clauses] } })),
       pipeline: pipeline.value.map((p) => ({ ...p })),
       outcomes: outcomes.value.map((o) => ({ ...o, conditions: [...o.conditions] })),
-      sweep: { x: [...sw.x], y: sw.y ? [...sw.y] : null },
+      sweep: { x: [...sw.x], y: sw.y ? [...sw.y] : null, xName: sweep.value.xName, yName: sweep.value.yName },
       iterations: 1,
       taskName: currentPresetName.value ?? undefined,
     };
@@ -410,7 +410,7 @@ export function App() {
                 rerollConditions: rerollConditions.value.map((r) => ({ ...r, conditions: { ...r.conditions, clauses: [...r.conditions.clauses] } })),
                 pipeline: pipeline.value.map((p) => ({ ...p })),
                 outcomes: outcomes.value.map((o) => ({ ...o, conditions: [...o.conditions] })),
-                sweep: { x: [...sweep.value.x], y: sweep.value.y ? [...sweep.value.y] : null },
+                sweep: { x: [...sweep.value.x], y: sweep.value.y ? [...sweep.value.y] : null, xName: sweep.value.xName, yName: sweep.value.yName },
                 iterations: 1,
                 taskName: currentPresetName.value ?? undefined,
               };
@@ -479,7 +479,7 @@ export function App() {
                 </Button>
               }
             >
-              <ResultView results={simResults.value} />
+              <ResultView results={simResults.value} xName={sweep.value.xName} yName={sweep.value.yName} />
               {simResults.value.length === 1 && (
                 <div class="mt-5">
                   <p class="font-mono text-[10px] uppercase tracking-[0.22em] text-gold-deep mb-2">
