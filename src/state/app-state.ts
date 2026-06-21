@@ -41,12 +41,7 @@ export function resetToPreset(presetId: string) {
   applyPresetConfig(preset);
 }
 
-export function mergeOrStagePreset(config: PresetConfig): 'merged' | 'staged' {
-  const idx = PRESETS.findIndex((p) => p.name === config.name);
-  if (idx >= 0) {
-    PRESETS[idx] = { ...config, id: PRESETS[idx]!.id };
-    return 'merged';
-  }
+export function mergeOrStagePreset(config: PresetConfig): 'staged' {
   const myIdx = myPresets.value.findIndex((p) => p.name === config.name);
   if (myIdx >= 0) {
     const existing = myPresets.value[myIdx]!;

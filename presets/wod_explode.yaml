@@ -1,0 +1,11 @@
+id: wod-explode
+name: World of Darkness — Xd10 explode
+pool: Xd10
+reroll:
+  - explode when face is_max up to 3 times
+outcomes:
+  - Success when any rolled >= 8
+  - Failure when none rolled >= 8
+sweep:
+  x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  xName: dice

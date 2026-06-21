@@ -1,0 +1,33 @@
+
+name: Cyberpunk RED
+pool:
+  - 1d10<main>
+  - 1d10<crit>
+pipeline:
+  - main_dice = filter rolled where tag = main
+  - normal = max main_dice
+  - crit_bad = sub rolled
+  - crit_good = sum rolled
+  - total = switch normal -> crit_bad if normal = 1 | crit_good if normal = 10
+  - total_bonus = total + {Bonus}
+outcomes:
+  - Success when total_bonus > {DV}
+  - Failure when total_bonus <= {DV}
+sweep:
+  x:
+    - 4
+    - 6
+    - 8
+    - 10
+    - 12
+    - 14
+    - 16
+    - 18
+  xName: Bonus
+  yName: DV
+  y:
+    - 10
+    - 13
+    - 15
+    - 17
+    - 20

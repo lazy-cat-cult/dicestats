@@ -1,0 +1,37 @@
+
+name: Daggerheart
+pool:
+  - 1d12<hope>
+  - 1d12<fear>
+pipeline:
+  - hope_face = filter rolled where tag = hope
+  - fear_face = filter rolled where tag = fear
+  - hope_value = max hope_face
+  - fear_value = max fear_face
+  - delta = hope_value - fear_value
+  - total = sum rolled
+  - total_bonus = total + {Bonus}
+outcomes:
+  - Critical Success when delta = 0
+  - Success with Hope when delta > 0 and total_bonus >= {DC}
+  - Success with Fear when delta < 0 and total_bonus >= {DC}
+  - Failure with Hope when delta > 0 and total_bonus < {DC}
+  - Failure with Fear when delta < 0 and total_bonus < {DC}
+  - Overall Success when total_bonus >= {DC} or delta = 0
+  - Overall Failure when total_bonus < {DC} and delta != 0
+sweep:
+  x:
+    - -2
+    - -1
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+  xName: Bonus
+  yName: DC
+  y:
+    - 10
+    - 15
+    - 20

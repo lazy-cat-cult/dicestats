@@ -92,12 +92,12 @@ function tokenize(text: string): Token[] {
         effectiveRest = afterDash;
         const colonIdx = afterDash.indexOf(':');
         const eqIdx = afterDash.indexOf('=');
-        const delimIdx = colonIdx >= 0 && (eqIdx < 0 || colonIdx < eqIdx) ? colonIdx : eqIdx;
+        const delimIdx = colonIdx >= 0 ? colonIdx : eqIdx;
         const spaceIdx = afterDash.search(/\s/);
         if (delimIdx > 0 && (spaceIdx < 0 || delimIdx < spaceIdx)) {
           const delim = afterDash[delimIdx];
           const key = afterDash.slice(0, delimIdx).trim();
-          if (/^[A-Za-z_][A-Za-z0-9_.\- ]*$/.test(key) && delim === ':') {
+          if (/^[A-Za-z_][A-Za-z0-9_.\- =]*$/.test(key) && delim === ':') {
             tokens.push({ line: lineNo, col: indent + k + 1, kind: 'key', indent, text: key });
             k += delimIdx + 1;
             while (k < trimmedPrefix.length && trimmedPrefix[k] === ' ') k++;
@@ -110,7 +110,7 @@ function tokenize(text: string): Token[] {
           throw new YamlError(`Expected ':' in mapping line`, lineNo, indent + 1);
         }
         const key = trimmedPrefix.slice(0, colonIdx).trim();
-        if (!/^[A-Za-z_][A-Za-z0-9_.\- ]*$/.test(key)) {
+        if (!/^[A-Za-z_][A-Za-z0-9_.\- =]*$/.test(key)) {
           throw new YamlError(`Invalid key "${key}"`, lineNo, indent + 1);
         }
         tokens.push({ line: lineNo, col: indent + 1, kind: 'key', indent, text: key });
@@ -131,12 +131,12 @@ function tokenize(text: string): Token[] {
         const afterDash = rest.slice(j);
         const colonIdx = afterDash.indexOf(':');
         const eqIdx = afterDash.indexOf('=');
-        const delimIdx = colonIdx >= 0 && (eqIdx < 0 || colonIdx < eqIdx) ? colonIdx : eqIdx;
+        const delimIdx = colonIdx >= 0 ? colonIdx : eqIdx;
         const spaceIdx = afterDash.search(/\s/);
         if (delimIdx > 0 && (spaceIdx < 0 || delimIdx < spaceIdx)) {
           const delim = afterDash[delimIdx];
           const key = afterDash.slice(0, delimIdx).trim();
-          if (/^[A-Za-z_][A-Za-z0-9_.\- ]*$/.test(key) && delim === ':') {
+          if (/^[A-Za-z_][A-Za-z0-9_.\- =]*$/.test(key) && delim === ':') {
             tokens.push({ line: lineNo, col: indent + j + 1, kind: 'key', indent, text: key });
             j += delimIdx + 1;
             while (j < rest.length && rest[j] === ' ') j++;
@@ -152,7 +152,7 @@ function tokenize(text: string): Token[] {
           throw new YamlError(`Expected ':' in mapping line`, lineNo, indent + 1);
         }
         const key = rest.slice(0, colonIdx).trim();
-        if (!/^[A-Za-z_][A-Za-z0-9_.\- ]*$/.test(key)) {
+        if (!/^[A-Za-z_][A-Za-z0-9_.\- =]*$/.test(key)) {
           throw new YamlError(`Invalid key "${key}"`, lineNo, indent + 1);
         }
         tokens.push({ line: lineNo, col: indent + 1, kind: 'key', indent, text: key });
@@ -644,6 +644,17 @@ function parsePipelineEntry(text: string, comment: string, branches?: string[]):
     throw new PresetError(`Switch branches provided but expression is not switch: "${expr}"`);
   }
 
+  const inlineSwitchM = /^switch\s+([A-Za-z_][A-Za-z0-9_]*)\s*->\s*(.+)$/i.exec(expr);
+  if (inlineSwitchM) {
+    const source = inlineSwitchM[1]!;
+    const branchStrs = inlineSwitchM[2]!.split(/\s*\|\s*/).map((b) => b.trim()).filter(Boolean);
+    if (branchStrs.length === 0) {
+      throw new PresetError(`Switch requires at least one branch, got: "${expr}"`);
+    }
+    const parsedBranches = branchStrs.map(parseSwitchBranch);
+    return { name, source, op: { fn: 'switch', branches: parsedBranches }, comment };
+  }
+
   const filterM = /^(filter|remove)\s+([A-Za-z_][A-Za-z0-9_]*)\s+where\s+(.+)$/i.exec(expr);
   if (filterM) {
     const fn = filterM[1]!.toLowerCase() as 'filter' | 'remove';
@@ -705,7 +716,7 @@ function serializePipelineEntry(nv: NamedValue): YamlNode {
     v = `${nv.name} = ${op} ${nv.source}`;
   } else if (op.fn === 'switch') {
     const branchStrings = op.branches.map(serializeSwitchBranch);
-    return { [`${nv.name} = ${nv.source} switch`]: branchStrings };
+    return `${nv.name} = switch ${nv.source} -> ${branchStrings.join(' | ')}`;
   } else if (op.fn === 'filter' || op.fn === 'remove') {
     const clauses = op.conditions.clauses.map((c) => {
       const sv = serializeClauseValue(c);
@@ -905,6 +916,7 @@ function astToPreset(ast: YamlNode): PresetConfig {
   }
 
   const name = typeof ast['name'] === 'string' ? ast['name'] : 'Untitled';
+  const presetId = typeof ast['id'] === 'string' && ast['id'] !== '' ? String(ast['id']) : crypto.randomUUID();
   if (ast['pool'] === undefined) {
     throw new PresetError('"pool:" is required');
   }
@@ -998,7 +1010,7 @@ function astToPreset(ast: YamlNode): PresetConfig {
   const sweep = parseSweep(ast['sweep']);
 
   return {
-    id: crypto.randomUUID(),
+    id: presetId,
     name,
     pool,
     rerollConditions: reroll,

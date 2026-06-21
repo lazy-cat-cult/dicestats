@@ -1,12 +1,21 @@
+
 name: PbtA
 pool:
   - 2d6
 pipeline:
   - total = sum rolled
-  - total_mod = total + 0
+  - total_mod = total + {Bonus}
 outcomes:
   - Success when total_mod >= 10
   - Partial when total_mod >= 7 and total_mod <= 9
   - Failure when total_mod <= 6
-parameters:
-  - X = [-3, -2, -1, 0, 1, 2, 3, 4] over pipeline.literal
+sweep:
+  x:
+    - -2
+    - -1
+    - 0
+    - 1
+    - 2
+    - 3
+  xName: Bonus
+  yName: Y
