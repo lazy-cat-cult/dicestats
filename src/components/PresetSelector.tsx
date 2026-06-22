@@ -1,17 +1,18 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState, useMemo } from 'preact/hooks';
 import {
   allPresets,
   applyPresetConfig,
   currentPresetName,
   myPresets,
   favoriteIds,
+  recentPresetIds,
   setCurrentPresetName,
   lastAppliedPresetId,
   resetToDefaults,
   mergeOrStagePreset,
 } from '@/state/app-state';
 import { dicePool, rerollConditions, pipeline, outcomes, sweep } from '@/state/app-state';
-import { FEATURED_PRESET_IDS, PRESETS } from '@/domain/presets';
+import { PRESETS } from '@/domain/presets';
 import { resetUiForPresetApply, loadError } from '@/app';
 import { Pill, Button } from '@/components/ui';
 import { PresetLibraryModal } from '@/components/PresetLibraryModal';
@@ -65,6 +66,7 @@ export function PresetSelector() {
     if (!preset) return;
     resetUiForPresetApply();
     applyPresetConfig(preset);
+    recentPresetIds.value = [id, ...recentPresetIds.value.filter((rid) => rid !== id)].slice(0, 10);
   }
 
   function handleNew() {
@@ -197,18 +199,47 @@ export function PresetSelector() {
     setSaveConflict(null);
   }
 
-  const myPresetsList = [...myPresets.value]
-    .sort((a, b) => {
-      const aFav = favoriteIds.value.has(a.id);
-      const bFav = favoriteIds.value.has(b.id);
-      if (aFav !== bFav) return aFav ? -1 : 1;
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-    })
-    .slice(0, 4);
+  const railPresets = useMemo(() => {
+    const all = allPresets.value;
+    const myList = myPresets.value;
+    const favs = favoriteIds.value;
+    const recents = recentPresetIds.value;
 
-  const featured = FEATURED_PRESET_IDS
-    .map((id) => PRESETS.find((p) => p.id === id))
-    .filter((p): p is NonNullable<typeof p> => p !== undefined);
+    const result: PresetConfig[] = [];
+    const seen = new Set<string>();
+
+    for (const p of all) {
+      if (favs.has(p.id)) {
+        result.push(p);
+        seen.add(p.id);
+      }
+    }
+
+    for (const id of recents) {
+      if (seen.has(id)) continue;
+      const p = all.find((p) => p.id === id);
+      if (p) {
+        result.push(p);
+        seen.add(p.id);
+      }
+    }
+
+    const sortedMy = [...myList].sort((a, b) =>
+      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    );
+    for (const p of sortedMy) {
+      if (seen.has(p.id)) continue;
+      result.push(p);
+      seen.add(p.id);
+    }
+
+    if (result.length === 0) {
+      const shuffled = [...PRESETS].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 4);
+    }
+
+    return result.slice(0, 4);
+  }, [myPresets.value, recentPresetIds.value, favoriteIds.value]);
 
   const displayName = currentPresetName.value ?? '';
   const hasName = displayName.length > 0;
@@ -224,28 +255,20 @@ export function PresetSelector() {
           </span>
           <div class="flex-1 overflow-x-auto -mx-1 px-1">
             <div class="flex items-center gap-1.5 min-w-min">
-              {myPresetsList.length > 0 ? myPresetsList.map((preset) => (
-                <Pill
-                  key={preset.id}
-                  onClick={() => applyPreset(preset.id)}
-                  title={preset.name}
-                >
-                  {favoriteIds.value.has(preset.id) && <span aria-hidden="true">⭐</span>}
-                  {preset.name}
-                  <span aria-hidden="true" class="text-billiard">·</span>
-                </Pill>
-              )) : (
-                <span class="font-mono text-[12px] text-ink-mute italic px-1">No saved presets</span>
-              )}
-              {featured.map((preset) => (
-                <Pill
-                  key={preset.id}
-                  onClick={() => applyPreset(preset.id)}
-                  title={preset.name}
-                >
-                  {preset.name}
-                </Pill>
-              ))}
+              {railPresets.map((preset) => {
+                const isUser = !PRESETS.some((p) => p.id === preset.id);
+                return (
+                  <Pill
+                    key={preset.id}
+                    onClick={() => applyPreset(preset.id)}
+                    title={preset.name}
+                  >
+                    {favoriteIds.value.has(preset.id) && <span aria-hidden="true">⭐</span>}
+                    {preset.name}
+                    {isUser && <span aria-hidden="true" class="text-billiard">·</span>}
+                  </Pill>
+                );
+              })}
               <Pill
                 variant="accent"
                 onClick={() => setLibraryOpen(true)}

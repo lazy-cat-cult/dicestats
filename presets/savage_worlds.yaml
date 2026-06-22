@@ -1,4 +1,5 @@
 
+id: savage-worlds
 name: Savage Worlds
 pool:
   - 1d{Dice}<trait>

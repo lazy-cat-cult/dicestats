@@ -1,4 +1,5 @@
 
+id: dnd-5e-add
 name: Dice Roll
 pool:
   - 1d20<normal>

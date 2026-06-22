@@ -1,4 +1,5 @@
 
+id: dnd-d20
 name: D&D 5e
 pool:
   - 1d20
