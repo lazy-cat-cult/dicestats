@@ -102,6 +102,7 @@ export const myPresets = signal<MyPreset[]>(loadMyPresets());
 export const allPresets = computed<PresetConfig[]>(() => [...myPresets.value, ...PRESETS]);
 export const favoriteIds = signal<Set<string>>(loadFavorites());
 export const lastAppliedPresetId = signal<string | null>(null);
+export const recentPresetIds = signal<string[]>([]);
 export const currentPresetName = signal<string | null>(null);
 
 export function setCurrentPresetName(name: string | null): void {

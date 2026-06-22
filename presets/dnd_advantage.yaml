@@ -1,4 +1,5 @@
 
+id: dnd-advantage
 name: D&D 5e - Advantage
 pool:
   - 1d20

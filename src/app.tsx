@@ -24,6 +24,7 @@ import {
   resetSampleMode,
   applyPresetConfig,
   flushPendingPresetWrites,
+  resetToDefaults,
 } from '@/state/app-state';
 import { PresetSelector } from '@/components/PresetSelector';
 import { DicePoolEditor } from '@/components/DicePoolEditor';
@@ -36,7 +37,7 @@ import { ResultDetailsModal } from '@/components/ResultDetailsModal';
 import { OutcomeChart, ParameterChart } from '@/components/DistributionChart';
 import { OddsTape } from '@/components/OddsTape';
 import { SampleView } from '@/components/SampleView';
-import { saveConfig, loadConfig } from '@/state/persistence';
+import { saveConfig } from '@/state/persistence';
 import { validateConfig, canRunSimulation } from '@/utils/validation';
 import { decodeShareUrl } from '@/utils/share';
 import { computed } from '@preact/signals';
@@ -94,7 +95,7 @@ export function App() {
         return;
       }
     }
-    loadConfig();
+    resetToDefaults();
   }, []);
 
   useEffect(() => {

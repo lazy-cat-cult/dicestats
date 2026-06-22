@@ -1,4 +1,5 @@
 
+id: year-zero-push
 name: Year Zero - Push
 pool:
   - {Dice}d6

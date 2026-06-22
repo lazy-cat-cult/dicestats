@@ -32,7 +32,7 @@ describe('PRESETS', () => {
     expect(sr!.outcomes.length).toBeGreaterThanOrEqual(2);
     const hitOutcome = sr!.outcomes.find((o) => o.name === '1+ hits');
     expect(hitOutcome).toBeDefined();
-    expect(hitOutcome!.conditions[0]).toEqual({ source: 'rolled', op: 'any', subCondition: '>=', value: { kind: 'literal', value: 5 } });
+    expect(hitOutcome!.conditions[0]).toEqual({ source: 'success_count', op: '>=', value: { kind: 'ref', name: 'Difficulty' } });
   });
 
   it('has Vampire V5 preset', () => {

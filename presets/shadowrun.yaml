@@ -1,4 +1,5 @@
 
+id: shadowrun-xd6
 name: Shadowrun 6
 pool:
   - {Dice}d6

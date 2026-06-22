@@ -43,6 +43,7 @@ export function MyPresetsContextMenu({ open, onClose, onRename, onCopy, onDelete
       ref={menuRef}
       class="fixed z-50 bg-paper border border-rule shadow-[4px_4px_0_0_var(--color-gold)] min-w-[140px] py-1"
       style={style}
+      onClick={(e) => e.stopPropagation()}
     >
       <button
         type="button"

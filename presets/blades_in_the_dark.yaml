@@ -1,4 +1,5 @@
 
+id: blades-in-the-dark
 name: Blades in the Dark
 pool:
   - {Dice}d6
