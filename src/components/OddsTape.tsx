@@ -6,7 +6,7 @@ import { filterOutcomes } from '@/utils/outcomes';
 
 interface OddsTapeProps {
   result: SimResult;
-  progress?: { completed: number; total: number } | null;
+  progress?: { completed: number; total: number; overallCompleted: number; overallTotal: number } | null;
 }
 
 export function OddsTape({ result, progress }: OddsTapeProps) {
