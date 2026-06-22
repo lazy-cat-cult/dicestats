@@ -1,0 +1,28 @@
+
+name: Fate
+pool:
+  - 4d3  # 1 - minus, 2 - empty, 3 - plus
+pipeline:
+  - minuses = filter rolled where face = 1
+  - pluses = filter rolled where face = 3
+  - count_minus = count minuses
+  - count_plus = count pluses
+  - delta = count_plus - count_minus
+  - result = delta + {Bonus}
+outcomes:
+  - Success when result >= {Difficulty}
+  - Failure when result < {Difficulty}
+sweep:
+  x:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+  xName: Bonus
+  yName: Difficulty
+  y:
+    - 1
+    - 2
+    - 3
+    - 4

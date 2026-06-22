@@ -1,20 +1,27 @@
-id: savage-worlds
-name: Savage Worlds — Trait (d8) + Wild (d6)
+
+name: Savage Worlds
 pool:
-  - 1dX<trait>
+  - 1d{Dice}<trait>
   - 1d6<wild>
 reroll:
-  - explode when face is_max up to 5 times
+  - explode when face is_max up to 9 times
 pipeline:
   - trait_only = filter rolled where tag = trait
   - wild_only = filter rolled where tag = wild
-  - trait_best = max trait_only
-  - wild_best = max wild_only
-  - effective = max(trait_best, wild_best)
+  - trait_best = sum trait_only
+  - wild_best = sum wild_only
 outcomes:
-  - Raise when effective >= 8
-  - Success when effective >= 4 and effective <= 7
-  - Failure when effective < 4
+  - Raise when trait_best >= 8 or wild_best >= 8
+  - Success when trait_best >= 4 or wild_best >= 4
+  - Failure when trait_best < 4 and wild_best < 4
+  - Just Trait die Success when trait_best >= 4
+  - Critical Failure when trait_best = 1 and wild_best = 1
 sweep:
-  x: [4, 6, 8, 10, 12]
-  xName: sides
+  x:
+    - 4
+    - 6
+    - 8
+    - 10
+    - 12
+  xName: Dice
+  yName: Y

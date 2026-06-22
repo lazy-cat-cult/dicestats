@@ -1,9 +1,28 @@
-id: shadowrun-xd6
-name: Shadowrun — Xd6
-pool: Xd6
+
+name: Shadowrun 6
+pool:
+  - {Dice}d6
+pipeline:
+  - successes = filter rolled where face >= 5
+  - success_count = count successes
 outcomes:
-  - 1+ hits when any rolled >= 5
-  - No hits when none rolled >= 5
+  - 1+ hits when success_count >= {Difficulty}
+  - No hits when success_count < {Difficulty}
 sweep:
-  x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  xName: dice
+  x:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+  xName: Dice
+  yName: Difficulty
+  y:
+    - 2
+    - 3
+    - 4
+    - 5
