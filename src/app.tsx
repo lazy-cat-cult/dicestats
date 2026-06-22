@@ -151,7 +151,12 @@ export function App() {
     worker.onmessage = (e: MessageEvent) => {
       const msg = e.data;
       if (msg.type === 'progress') {
-        simProgress.value = { completed: msg.completed, total: msg.total };
+        simProgress.value = {
+          completed: msg.completed,
+          total: msg.total,
+          overallCompleted: msg.overallCompleted ?? 0,
+          overallTotal: msg.overallTotal ?? 0,
+        };
       }
       if (msg.type === 'result') {
         simResults.value = msg.results;
@@ -518,8 +523,9 @@ export function App() {
   );
 }
 
-function RunningPanel({ progress }: { progress: { completed: number; total: number } }) {
-  const pct = progress.total > 0 ? (progress.completed / progress.total) * 100 : 0;
+function RunningPanel({ progress }: { progress: { completed: number; total: number; overallCompleted: number; overallTotal: number } }) {
+  const pct = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
+  const overallPct = progress.overallTotal > 0 ? Math.round((progress.overallCompleted / progress.overallTotal) * 100) : 0;
   return (
     <div class="border-2 border-billiard bg-paper p-5 shadow-[0_3px_0_0_var(--color-billiard)]">
       <div class="flex items-center justify-between mb-3">
@@ -531,8 +537,20 @@ function RunningPanel({ progress }: { progress: { completed: number; total: numb
           {progress.completed.toLocaleString()} / {progress.total > 0 ? progress.total.toLocaleString() : '…'}
         </span>
       </div>
-      <div class="font-display text-[3.5rem] text-ink tabular leading-none mb-4">
-        {pct.toFixed(1)}<span class="text-ink-soft text-[1.25rem]">%</span>
+      <div class="flex items-end gap-4 mb-4">
+        <div class="flex flex-col items-center">
+          <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft mb-1">Step</span>
+          <span class="font-display text-[3rem] text-ink tabular-nums leading-none">
+            {String(pct).padStart(2, '0')}<span class="text-ink-soft text-[1.25rem]">%</span>
+          </span>
+        </div>
+        <span class="font-mono text-ink-mute text-[1.5rem] pb-2">/</span>
+        <div class="flex flex-col items-center">
+          <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft mb-1">Overall</span>
+          <span class="font-display text-[3rem] text-ink tabular-nums leading-none">
+            {String(overallPct).padStart(2, '0')}<span class="text-ink-soft text-[1.25rem]">%</span>
+          </span>
+        </div>
       </div>
       <div class="h-1.5 bg-paper-soft border border-rule">
         <div

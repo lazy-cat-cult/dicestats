@@ -21,7 +21,7 @@ export const pipeline = signal<NamedValue[]>([]);
 export const outcomes = signal<Outcome[]>([]);
 export const sweep = signal<SweepParameters>(defaultSweep());
 export const isSimulating = signal(false);
-export const simProgress = signal({ completed: 0, total: 0 });
+export const simProgress = signal({ completed: 0, total: 0, overallCompleted: 0, overallTotal: 0 });
 
 export const sampleMode = signal<'idle' | 'sampling' | 'result'>('idle');
 export const sampleTrace = signal<SampleTrace | null>(null);

@@ -118,8 +118,12 @@ function runSimulation(
   sweepX: number | null = null,
   sweepY: number | null = null,
   xName?: string,
-  yName?: string
+  yName?: string,
+  overallStepIndex: number = 0,
+  overallStepTotal: number = 1
 ): SimResult {
+  const stepOffset = overallStepIndex * iterations;
+  const grandTotal = overallStepTotal * iterations;
   const termsSides = pool.terms.map((t) => ({ sides: exprToInteger(t.sides, vars, { min: 1, max: 999 }), tag: t.tag }));
   const outcomeCounts = new Map<string, number>();
   for (const o of outcomes) {
@@ -133,7 +137,7 @@ function runSimulation(
   for (let i = 0; i < iterations; i++) {
     if (i % 10000 === 0) {
       if (typeof self !== 'undefined') {
-        self.postMessage({ type: 'progress', completed: i, total: iterations });
+        self.postMessage({ type: 'progress', completed: i, total: iterations, overallCompleted: stepOffset + i, overallTotal: grandTotal });
       }
     }
 
@@ -312,7 +316,7 @@ export type WorkerMessage =
   | { type: 'cancel' };
 
 export type WorkerResponse =
-  | { type: 'progress'; completed: number; total: number }
+  | { type: 'progress'; completed: number; total: number; overallCompleted: number; overallTotal: number }
   | { type: 'result'; results: SimResult[] }
   | { type: 'sampleResult'; trace: SampleTrace }
   | { type: 'sampleError'; message: string }
@@ -359,10 +363,14 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             yList === null ? xVal : xVal,
             yList === null ? null : yVal,
             xName,
-            yName
+            yName,
+            stepIndex - 1,
+            totalSteps
           );
           results.push(result);
-          self.postMessage({ type: 'progress', completed: stepIndex, total: totalSteps } as WorkerResponse);
+          const overallCompleted = stepIndex * iterations;
+          const overallTotal = totalSteps * iterations;
+          self.postMessage({ type: 'progress', completed: stepIndex, total: totalSteps, overallCompleted, overallTotal } as WorkerResponse);
         }
       }
 
