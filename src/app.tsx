@@ -299,14 +299,14 @@ export function App() {
           <Section
             eyebrow="Step 01"
             title="Sweep Parameters"
-            description="Two independent variables, X and Y. Type a number or expression containing X or Y in any value cell below. Y produces one result section per value; each section contains the full X sweep."
+            description="Run the simulation across multiple values at once. Use X and Y as variables in any numeric field — count, sides, thresholds, pipeline constants — to see how probabilities change."
           >
             <SweepEditor />
           </Section>
           <Section
             eyebrow="Step 02"
             title="Dice Pool"
-            description="Which dice are rolled and how many of each. Tag a die set to refer to it by name in later steps."
+            description="Choose which dice to roll and how many. Assign tags to group dice and reference them by name in later steps."
             actions={
               <Checkbox
                 label="Comments"
@@ -320,7 +320,7 @@ export function App() {
           <Section
             eyebrow="Step 03"
             title="Additional Dice Rolls"
-            description="Add extra dice to the pool based on conditions — roll additional D6s, bonus dice, or extra dice from tagged sets."
+            description="Modify individual die results after rolling. Reroll dice that meet a condition, or let them explode for cascading extra rolls."
             actions={
               <Checkbox
                 label="Comments"
@@ -334,7 +334,7 @@ export function App() {
           <Section
             eyebrow="Step 04"
             title="Resolution Pipeline"
-            description="Transform the rolled dice into named values: keep the best, count sixes, sum, filter by tag, or add a modifier. Reference X or Y in any value to make it a sweep variable."
+            description="Transform dice into numbers: sum them, count matches, find the best, filter by tag, apply math, or build conditional logic. Each step builds on the previous one. Reference X or Y to connect to the sweep."
             actions={
               <Checkbox
                 label="Comments"
@@ -348,7 +348,7 @@ export function App() {
           <Section
             eyebrow="Step 05"
             title="Outcomes"
-            description="The buckets the roll is sorted into. The probability of each one is what the simulation estimates. Use X or Y in any threshold to make it a sweep variable."
+            description="Name and define the outcome categories for each roll. Each outcome has conditions — when met, the roll counts toward that outcome's probability."
             actions={
               <Checkbox
                 label="Comments"
