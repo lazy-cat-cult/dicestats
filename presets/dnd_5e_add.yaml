@@ -1,6 +1,6 @@
 
 id: dnd-5e-add
-name: Dice Roll
+name: D&D 5e - Additional Die
 pool:
   - 1d20<normal>
   - 1d20<additional>
