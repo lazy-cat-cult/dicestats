@@ -286,17 +286,14 @@ export function PresetSelector() {
           )}
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-          <span class="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-mute shrink-0">
-            Name
-          </span>
           {isEditingName ? (
             <div class="flex items-stretch border border-rule bg-paper focus-within:border-billiard focus-within:shadow-[0_0_0_1px_var(--color-billiard)] transition-all min-w-0 flex-1 max-w-[240px]">
               <input
                 ref={editInputRef}
                 type="text"
                 value={nameDraft}
-                placeholder="Preset name"
-                aria-label="Preset name"
+                placeholder="ENTER NAME"
+                aria-label="ENTER NAME"
                 class="w-full bg-transparent px-2 py-1 text-[12px] font-mono tabular text-ink outline-none placeholder:text-ink-mute min-w-0"
                 onInput={(e) => setNameDraft((e.currentTarget as HTMLInputElement).value)}
                 onKeyDown={(e) => {
@@ -313,10 +310,10 @@ export function PresetSelector() {
               onClick={startEditingName}
               aria-label={hasName ? `Edit preset name: ${displayName}` : 'Set preset name'}
               title={hasName ? `Edit preset name (${displayName})` : 'Set preset name'}
-              class={`group inline-flex items-center gap-1.5 px-2 py-1 border border-transparent hover:border-rule transition-colors min-w-0 max-w-[200px] ${hasName ? 'text-ink' : 'text-ink-mute'}`}
+              class={`group inline-flex items-center gap-2 border border-transparent hover:border-rule transition-colors min-w-0 ${hasName ? 'text-ink' : 'text-ink-mute'}`}
             >
-              <span class="font-mono tabular text-[12px] truncate">{hasName ? displayName : 'Preset name'}</span>
-              <span aria-hidden="true" class="font-mono text-[12px] text-ink-mute group-hover:text-billiard shrink-0">✎</span>
+              <span class="font-display text-[28px] leading-none tracking-wider truncate">{hasName ? displayName : 'ENTER NAME'}</span>
+              <span aria-hidden="true" class="font-mono text-[13px] text-ink-mute group-hover:text-billiard shrink-0 self-center">✎</span>
             </button>
           )}
           <div class="flex items-center gap-1.5 shrink-0">

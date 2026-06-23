@@ -21,7 +21,7 @@ export function Section({ eyebrow, title, description, index, total, actions, ch
               {eyebrow}
             </p>
           )}
-          <h2 class="font-display text-[2rem] leading-none text-ink tracking-wider">
+          <h2 class="font-display text-[1.5rem] leading-none text-ink tracking-wider">
             {index !== undefined && total !== undefined && (
               <span class="text-billiard mr-2">{String(index).padStart(2, '0')}</span>
             )}
