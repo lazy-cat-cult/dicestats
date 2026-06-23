@@ -276,16 +276,16 @@ export function App() {
       <header class="bg-billiard text-paper">
         <div class="max-w-[1400px] mx-auto px-4 sm:px-6 py-2 flex items-center justify-between gap-4">
           <a href="#" class="flex items-center gap-3 group" aria-label="Dicestats home">
-            <img src="/dicestats/cat_paw_roll.png" alt="Dicestats" class="w-14 h-14 object-contain" />
+            <img src={`${import.meta.env.BASE_URL}cat_paw_roll.png`} alt="Dicestats" class="w-14 h-14 object-contain" />
             <span class="flex flex-col leading-none">
               <span class="font-display text-[30px] tracking-[0.06em] text-paper leading-none">DICESTATS</span>
               <span class="font-mono text-[9px] uppercase tracking-[0.28em] text-gold mt-1.5">
-                by Lazy Cat Cult
+                dice probability calculator
               </span>
             </span>
           </a>
           <a href="https://lazycatcult.com" target="_blank" rel="noopener noreferrer" aria-label="Lazy Cat Cult">
-            <img src="/dicestats/lcc_logo2.png" alt="Lazy Cat Cult" class="h-12 w-auto" />
+            <img src={`${import.meta.env.BASE_URL}lcc_logo2.png`} alt="Lazy Cat Cult" class="h-12 w-auto" />
           </a>
         </div>
       </header>
@@ -506,8 +506,12 @@ export function App() {
 
       <footer class="border-t border-rule mt-auto">
         <div class="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">
-          <span>Monte Carlo · 1,000,000 iterations per value</span>
-          <span>Web Worker · No analytics · No tracking</span>
+          <span>
+            Created by <a href="https://lazycatcult.com" target="_blank" rel="noopener noreferrer" class="underline hover:text-gold-deep transition-colors">Lazy Cat Cult</a> {new Date().getFullYear() === 2026 ? '2026' : `2026-${new Date().getFullYear()}`}
+          </span>
+          <span>
+            Help us make this site better: <a href="https://github.com/lazy-cat-cult/dicestats/issues" target="_blank" rel="noopener noreferrer" class="underline hover:text-gold-deep transition-colors">lazy-cat-cult.github.io/dicestats</a>
+          </span>
         </div>
       </footer>
 

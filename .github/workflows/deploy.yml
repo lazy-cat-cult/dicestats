@@ -38,7 +38,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - run: npx vite build --base /dicestats/
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
         with:

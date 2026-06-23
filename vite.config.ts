@@ -3,7 +3,7 @@ import preact from '@preact/preset-vite';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  base: '/dicestats/',
+  base: process.env.VITE_BASE_URL || '/',
   plugins: [preact(), tailwindcss()],
   resolve: {
     alias: {
