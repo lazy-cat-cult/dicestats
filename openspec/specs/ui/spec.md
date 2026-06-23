@@ -35,7 +35,7 @@ Chart.js datasets SHALL pick from the palette in this order: `billiard`, `gold`,
 ### Requirement: Typography
 The application SHALL use three font families:
 
-- Display: **Ubuntu Condensed** (humanist condensed) — applied via Tailwind class `font-display`, used for the page logo wordmark, step headings, the top-probability headline number, and modal/empty-state display text.
+- Display: **Ubuntu** (humanist sans-serif) — applied via Tailwind class `font-display`, used for the page logo wordmark, step headings, the top-probability headline number, and modal/empty-state display text.
 - Body: **Space Grotesk** — applied via Tailwind class `font-body`, used for prose, descriptions, and the empty-state panel.
 - Mono: **JetBrains Mono** — applied via Tailwind class `font-mono`, used for all numeric and code content (probabilities, counts, dice notation, source names, form labels, table headers, and all `<input>` / `<select>` values).
 

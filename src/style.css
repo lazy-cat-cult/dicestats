@@ -16,7 +16,7 @@
   --color-gold-deep: #9c7f30;
   --color-gold-soft: #e8d99a;
 
-  --font-display: "Ubuntu Condensed", "Oswald", "Arial Narrow", system-ui, sans-serif;
+  --font-display: "Ubuntu", "Oswald", "Arial Narrow", system-ui, sans-serif;
   --font-body: "Space Grotesk", "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
 }
