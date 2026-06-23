@@ -266,7 +266,9 @@ export function App() {
   const yCount = sw.y ? sw.y.length : 0;
   const yActive = yCount > 0;
   const subLabel = yActive
-    ? `1M × ${xCount} · ${yCount}`
+    ? xCount > 0
+      ? `1M × ${xCount} · ${yCount}`
+      : `1M × ${yCount}`
     : `1M × ${Math.max(1, sims)}`;
   const canSample = canRun.value && sampleMode.value !== 'sampling';
   const sampleActive = sampleMode.value === 'result' && sampleTrace.value !== null;
@@ -296,6 +298,13 @@ export function App() {
         <div class="space-y-0">
           <Section
             eyebrow="Step 01"
+            title="Sweep Parameters"
+            description="Two independent variables, X and Y. Type a number or expression containing X or Y in any value cell below. Y produces one result section per value; each section contains the full X sweep."
+          >
+            <SweepEditor />
+          </Section>
+          <Section
+            eyebrow="Step 02"
             title="Dice Pool"
             description="Which dice are rolled and how many of each. Tag a die set to refer to it by name in later steps."
             actions={
@@ -309,9 +318,9 @@ export function App() {
             <DicePoolEditor />
           </Section>
           <Section
-            eyebrow="Step 02"
-            title="Reroll Conditions"
-            description="Re-roll or explode any die whose face matches a value or whose tag matches a name. Optional — leave empty for a plain roll."
+            eyebrow="Step 03"
+            title="Additional Dice Rolls"
+            description="Add extra dice to the pool based on conditions — roll additional D6s, bonus dice, or extra dice from tagged sets."
             actions={
               <Checkbox
                 label="Comments"
@@ -323,7 +332,7 @@ export function App() {
             <RerollEditor />
           </Section>
           <Section
-            eyebrow="Step 03"
+            eyebrow="Step 04"
             title="Resolution Pipeline"
             description="Transform the rolled dice into named values: keep the best, count sixes, sum, filter by tag, or add a modifier. Reference X or Y in any value to make it a sweep variable."
             actions={
@@ -337,7 +346,7 @@ export function App() {
             <PipelineEditor />
           </Section>
           <Section
-            eyebrow="Step 04"
+            eyebrow="Step 05"
             title="Outcomes"
             description="The buckets the roll is sorted into. The probability of each one is what the simulation estimates. Use X or Y in any threshold to make it a sweep variable."
             actions={
@@ -349,13 +358,6 @@ export function App() {
             }
           >
             <OutcomeEditor />
-          </Section>
-          <Section
-            eyebrow="Step 05"
-            title="Sweep Parameters"
-            description="Two independent variables, X and Y. Type a number or expression containing X or Y in any value cell above. Y produces one result section per value; each section contains the full X sweep."
-          >
-            <SweepEditor />
           </Section>
 
           <div class="sticky bottom-0 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mt-2 bg-paper/95 backdrop-blur border-t-2 border-gold">
@@ -522,7 +524,7 @@ export function App() {
       </div>
 
       {detailsModalOpen.value && simResults.value.length > 0 && (
-        <ResultDetailsModal results={simResults.value} onClose={closeDetailsModal} />
+        <ResultDetailsModal results={simResults.value} xName={sweep.value.xName} yName={sweep.value.yName} onClose={closeDetailsModal} />
       )}
     </div>
   );

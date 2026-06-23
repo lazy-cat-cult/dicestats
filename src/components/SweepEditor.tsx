@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
-import { sweep, totalIterations, confirmedHighCost } from '@/state/app-state';
+import { sweep, totalIterations } from '@/state/app-state';
 import { normalizeSweepValues, parseValues } from '@/utils/expression';
-import { SweepCostChip } from '@/components/SweepCostChip';
 import { TextField } from '@/components/ui';
 
 function formatValuesForDisplay(values: number[]): string {
@@ -15,6 +14,8 @@ export function SweepEditor() {
   const displayY = sw.y ? formatValuesForDisplay(sw.y) : '';
   const total = totalIterations.value;
   const yOuter = sw.y && sw.y.length > 0;
+  const xCount = Math.max(1, sw.x.length);
+  const yCount = yOuter ? sw.y!.length : 1;
 
   const [xInput, setXInput] = useState(displayX);
   const [yInput, setYInput] = useState(displayY);
@@ -31,10 +32,18 @@ export function SweepEditor() {
     setYInput(sweep.value.y ? formatValuesForDisplay(sweep.value.y) : '');
   }, [sweep.value.y]);
 
+  useEffect(() => {
+    setXName(sweep.value.xName);
+  }, [sweep.value.xName]);
+
+  useEffect(() => {
+    setYName(sweep.value.yName);
+  }, [sweep.value.yName]);
+
   function commitX(raw: string) {
     const trimmed = raw.trim();
     if (trimmed === '') {
-      sweep.value = { x: [], y: null, xName: sweep.value.xName, yName: sweep.value.yName };
+      sweep.value = { x: [], y: sweep.value.y, xName: '', yName: sweep.value.yName };
       setXCapped(false);
       return;
     }
@@ -42,7 +51,7 @@ export function SweepEditor() {
     const { values, capped } = normalizeSweepValues(parsed);
     sweep.value = {
       x: values,
-      y: sweep.value.y && sweep.value.y.length > 0 ? sweep.value.y : null,
+      y: sweep.value.y,
       xName: sweep.value.xName,
       yName: sweep.value.yName,
     };
@@ -55,16 +64,12 @@ export function SweepEditor() {
   function commitY(raw: string) {
     const trimmed = raw.trim();
     if (trimmed === '') {
-      sweep.value = { x: sweep.value.x, y: null, xName: sweep.value.xName, yName: sweep.value.yName };
+      sweep.value = { x: sweep.value.x, y: null, xName: sweep.value.xName, yName: '' };
       setYCapped(false);
       return;
     }
     const parsed = parseValues(trimmed);
     const { values, capped } = normalizeSweepValues(parsed);
-    if (sweep.value.x.length === 0) {
-      sweep.value = { x: [], y: null, xName: sweep.value.xName, yName: sweep.value.yName };
-      return;
-    }
     sweep.value = { x: sweep.value.x, y: values.length > 0 ? values : null, xName: sweep.value.xName, yName: sweep.value.yName };
     setYCapped(capped);
     if (capped) {
@@ -74,14 +79,18 @@ export function SweepEditor() {
 
   function commitXName(raw: string) {
     const name = raw.trim();
-    if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+    if (name === '') {
+      sweep.value = { ...sweep.value, xName: '' };
+    } else if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
       sweep.value = { ...sweep.value, xName: name };
     }
   }
 
   function commitYName(raw: string) {
     const name = raw.trim();
-    if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+    if (name === '') {
+      sweep.value = { ...sweep.value, yName: '' };
+    } else if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
       sweep.value = { ...sweep.value, yName: name };
     }
   }
@@ -122,6 +131,20 @@ export function SweepEditor() {
     setYName(sweep.value.yName);
   }
 
+  function clearX() {
+    sweep.value = { ...sweep.value, x: [], xName: '' };
+    setXInput('');
+    setXName('');
+    setXCapped(false);
+  }
+
+  function clearY() {
+    sweep.value = { ...sweep.value, y: null, yName: '' };
+    setYInput('');
+    setYName('');
+    setYCapped(false);
+  }
+
   return (
     <div>
       <div class="space-y-3">
@@ -138,15 +161,24 @@ export function SweepEditor() {
           </div>
           <div class="flex-1">
             <TextField
-              label={`${sweep.value.xName} values`}
+              label={`${sweep.value.xName || 'X'} values`}
               value={xInput}
               onInput={handleXInput}
               onBlur={handleXBlur}
               placeholder="1, 2, 3, 4, 5 or 1..5"
-              ariaLabel={`${sweep.value.xName} values`}
+              ariaLabel={`${sweep.value.xName || 'X'} values`}
               error={xCapped ? 'Capped to 10 values' : undefined}
             />
           </div>
+          <button
+            type="button"
+            onClick={clearX}
+            title="Clear X"
+            aria-label="Clear X parameter"
+            class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute hover:text-billiard transition-colors mb-[3px] shrink-0"
+          >
+            Clear
+          </button>
         </div>
         <div class="flex gap-3 items-end">
           <div class="w-28 shrink-0">
@@ -161,24 +193,32 @@ export function SweepEditor() {
           </div>
           <div class="flex-1">
             <TextField
-              label={`${sweep.value.yName} values`}
+              label={`${sweep.value.yName || 'Y'} values`}
               value={yInput}
               onInput={handleYInput}
               onBlur={handleYBlur}
               placeholder="10, 15, 20 or 10..20"
-              ariaLabel={`${sweep.value.yName} values`}
+              ariaLabel={`${sweep.value.yName || 'Y'} values`}
               error={yCapped ? 'Capped to 10 values' : undefined}
             />
           </div>
+          <button
+            type="button"
+            onClick={clearY}
+            title="Clear Y"
+            aria-label="Clear Y parameter"
+            class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute hover:text-billiard transition-colors mb-[3px] shrink-0"
+          >
+            Clear
+          </button>
         </div>
-        <p class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute">
-          {yOuter
-            ? `${sw.y!.length} × ${sw.x.length} simulations · ${total.toLocaleString()} rolls`
-            : `${sw.x.length} simulation${sw.x.length === 1 ? '' : 's'} · ${total.toLocaleString()} rolls`}
-        </p>
-      </div>
-      <div class="mt-4">
-        <SweepCostChip onConfirmHighCost={() => { confirmedHighCost.value = true; }} />
+        {total > 1_000_000 && (
+          <p class="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-mute">
+            {yOuter
+              ? `${yCount} × ${xCount} simulations · ${total.toLocaleString()} rolls`
+              : `${xCount} simulation${xCount === 1 ? '' : 's'} · ${total.toLocaleString()} rolls`}
+          </p>
+        )}
       </div>
     </div>
   );

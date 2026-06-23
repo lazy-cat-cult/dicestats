@@ -12,7 +12,7 @@ function defaultPool(): DicePool {
 }
 
 function defaultSweep(): SweepParameters {
-  return { x: [], y: null, xName: 'X', yName: 'Y' };
+  return { x: [], y: null, xName: '', yName: '' };
 }
 
 export const dicePool = signal<DicePool>(defaultPool());
