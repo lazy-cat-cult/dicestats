@@ -5,6 +5,11 @@ declare module '*.css' {
   export default content;
 }
 
+declare module '*.md?raw' {
+  const content: string;
+  export default content;
+}
+
 interface WindowFileSystemFileHandle {
   createWritable(): Promise<FileSystemWritableFileStream>;
 }
