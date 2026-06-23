@@ -506,15 +506,17 @@ When the worker reports an error or throws, the result aside SHALL show an `Erro
 - AND the live region announces `Simulation error: <message>`
 
 ### Requirement: Footer
-The application SHALL render a full-width footer with `border-t border-rule mt-auto`. Inside the `max-w-[1400px]` container, a single row shows two `font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft` strings:
+The application SHALL render a full-width footer with `border-t border-rule mt-auto`. Inside the `max-w-[1400px]` container, a single row shows two strings in `font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft`:
 
-- Left: `Monte Carlo · 1,000,000 iterations per value`
-- Right: `Web Worker · No analytics · No tracking`
+- Left: `Created by <a href="https://lazycatcult.com">Lazy Cat Cult</a> 2026` (the year SHALL be `2026` alone when the current year is 2026, otherwise `2026-<currentYear>`).
+- Right: `Help us make this site better: <a href="https://github.com/lazy-cat-cult/dicestats/issues">lazy-cat-cult.github.io/dicestats</a>`
+
+Both links SHALL use `class="underline hover:text-gold-deep transition-colors"` and open in a new tab with `target="_blank" rel="noopener noreferrer".
 
 #### Scenario: Footer always visible
 - GIVEN any application state
 - WHEN the page renders
-- THEN the footer is present at the bottom of the document with the two strings described above
+- THEN the footer is present at the bottom of the document with the two link-containing strings described above
 
 ### Requirement: "Not matched" Outcome Display
 The implicit "Not matched" outcome SHALL NOT appear in the OutcomeEditor UI. It SHALL appear in the results table, OddsTape, and charts only when its probability is greater than zero. When its probability is zero, it SHALL be filtered out of all result displays.

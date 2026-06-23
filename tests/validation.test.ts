@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { validateConfig, canRunSimulation } from '@/utils/validation';
-import type { DicePool, RerollCondition, NamedValue, Outcome, SweepParameters } from '@/types';
+import type { DicePool, RerollCondition, NamedValue, Outcome, SweepParameters, SwitchCondition } from '@/types';
 import { literalExpr } from '@/utils/expression';
 
 function makePool(terms?: Partial<{ id: string; count: number; sides: number; tag: string; comment: string }>[]): DicePool {
@@ -444,7 +444,7 @@ describe('validateConfig', () => {
         {
           id: 'p2', name: 'result', source: 'val',
           op: { fn: 'switch', branches: [
-            { value: { operand: 'val', value: literalExpr(1) }, condition: { source: 'val', op: 'is_min' as any, value: literalExpr(10) } },
+            { value: { operand: 'val', value: literalExpr(1) }, condition: { source: 'val', op: 'is_min' as unknown as SwitchCondition['op'], value: literalExpr(10) } },
           ] },
           comment: '',
         },
