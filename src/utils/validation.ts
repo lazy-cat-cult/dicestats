@@ -308,20 +308,29 @@ export function validateConfig(
     }
   }
 
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(sweep.xName)) {
+  if (sweep.xName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(sweep.xName)) {
     errors.push({ id: nextId(), message: `Sweep X name "${sweep.xName}" is not a valid identifier`, blocking: true });
   }
-  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(sweep.yName)) {
+  if (sweep.yName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(sweep.yName)) {
     errors.push({ id: nextId(), message: `Sweep Y name "${sweep.yName}" is not a valid identifier`, blocking: true });
   }
+  if (sweep.xName && sweep.x.length === 0) {
+    errors.push({ id: nextId(), message: `Sweep "${sweep.xName}" has a name but no values`, blocking: true });
+  }
+  if (sweep.x.length > 0 && !sweep.xName) {
+    errors.push({ id: nextId(), message: `Sweep X has values but no name`, blocking: true });
+  }
+  if (sweep.yName && (!sweep.y || sweep.y.length === 0)) {
+    errors.push({ id: nextId(), message: `Sweep "${sweep.yName}" has a name but no values`, blocking: true });
+  }
+  if (sweep.y && sweep.y.length > 0 && !sweep.yName) {
+    errors.push({ id: nextId(), message: `Sweep Y has values but no name`, blocking: true });
+  }
   if (sweep.x.length > 10) {
-    errors.push({ id: nextId(), message: `Sweep ${sweep.xName} has ${sweep.x.length} values (max 10)`, blocking: true });
+    errors.push({ id: nextId(), message: `Sweep ${sweep.xName || 'X'} has ${sweep.x.length} values (max 10)`, blocking: true });
   }
   if (sweep.y && sweep.y.length > 10) {
-    errors.push({ id: nextId(), message: `Sweep ${sweep.yName} has ${sweep.y.length} values (max 10)`, blocking: true });
-  }
-  if (sweep.y && sweep.y.length > 0 && sweep.x.length === 0) {
-    errors.push({ id: nextId(), message: `Sweep ${sweep.yName} is set but Sweep ${sweep.xName} is empty`, blocking: true });
+    errors.push({ id: nextId(), message: `Sweep ${sweep.yName || 'Y'} has ${sweep.y.length} values (max 10)`, blocking: true });
   }
   for (const v of sweep.x) {
     if (!Number.isFinite(v)) {
@@ -335,6 +344,80 @@ export function validateConfig(
         errors.push({ id: nextId(), message: `Sweep ${sweep.yName} contains non-finite value`, blocking: true });
         break;
       }
+    }
+  }
+
+  const activeSweepNames = new Set<string>();
+  if (sweep.x.length > 0 && sweep.xName) activeSweepNames.add(sweep.xName);
+  if (sweep.y && sweep.y.length > 0 && sweep.yName) activeSweepNames.add(sweep.yName);
+  const knownNames = new Set([...pipelineNames, 'rolled', ...activeSweepNames]);
+
+  const allRefs: { ref: string; label: string }[] = [];
+  function collectRefs(expr: Expr, label: string): void {
+    if (expr.kind === 'ref') {
+      allRefs.push({ ref: expr.name, label });
+    } else if (expr.kind === 'binop') {
+      collectRefs(expr.left, label);
+      collectRefs(expr.right, label);
+    }
+  }
+
+  for (const term of pool.terms) {
+    collectRefs(term.count, `Term "${term.tag || 'unnamed'}" count`);
+    collectRefs(term.sides, `Term "${term.tag || 'unnamed'}" sides`);
+  }
+
+  for (const rc of rerollConditions) {
+    for (const clause of rc.conditions.clauses) {
+      if (clause.field === 'face' && clause.value) {
+        collectRefs(clause.value, `Reroll "${rc.action}" condition`);
+      }
+    }
+  }
+
+  for (const nv of pipeline) {
+    const op = nv.op;
+    if (typeof op === 'object' && op !== null) {
+      const obj = asScalarObjectOp(op);
+      if (obj) {
+        if (obj.fn === 'add' || obj.fn === 'subtract' || obj.fn === 'multiply' || obj.fn === 'divide') {
+          if (obj.terms) {
+            for (const term of obj.terms) {
+              if (term.operand === 'val') {
+                collectRefs(term.value, `Pipeline "${nv.name}"`);
+              }
+            }
+          }
+        }
+        if (obj.fn === 'switch') {
+          const branches = (op as { fn: 'switch'; branches: SwitchBranch[] }).branches;
+          if (branches) {
+            for (let bi = 0; bi < branches.length; bi++) {
+              const branch = branches[bi]!;
+              if (branch.condition.value) {
+                collectRefs(branch.condition.value, `Pipeline "${nv.name}" switch branch ${bi + 1} condition`);
+              }
+              if (branch.value.operand === 'val') {
+                collectRefs(branch.value.value, `Pipeline "${nv.name}" switch branch ${bi + 1} value`);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  for (const outcome of outcomes) {
+    for (const cond of outcome.conditions) {
+      if ('value' in cond && cond.value) {
+        collectRefs(cond.value, `Outcome "${outcome.name}"`);
+      }
+    }
+  }
+
+  for (const ref of allRefs) {
+    if (!knownNames.has(ref.ref)) {
+      errors.push({ id: nextId(), message: `"${ref.label}" references unknown "${ref.ref}"`, blocking: true });
     }
   }
 

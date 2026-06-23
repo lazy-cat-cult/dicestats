@@ -1,7 +1,7 @@
 import type { SimResult } from '@/types';
 import { formatPercent } from '@/utils/format';
 import { filterOutcomes } from '@/utils/outcomes';
-import { ParameterChart } from '@/components/DistributionChart';
+import { OutcomeChart, ParameterChart } from '@/components/DistributionChart';
 
 interface ResultViewProps {
   results: SimResult[];
@@ -57,7 +57,11 @@ export function ResultView({ results, xName = 'X', yName = 'Y' }: ResultViewProp
                 <YGroupTable groupResults={groupResults} xName={xName} />
               </div>
               <div class="mt-3">
-                <ParameterChart results={groupResults} />
+                {groupResults.length <= 1 ? (
+                  <OutcomeChart result={groupResults[0]!} />
+                ) : (
+                  <ParameterChart results={groupResults} />
+                )}
               </div>
             </div>
           );

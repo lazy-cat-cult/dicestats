@@ -16,6 +16,8 @@ import { OutcomeChart } from '@/components/DistributionChart';
 
 interface ResultDetailsModalProps {
   results: SimResult[];
+  xName?: string;
+  yName?: string;
   onClose: () => void;
 }
 
@@ -35,7 +37,7 @@ function getYValues(results: SimResult[]): number[] {
   return Array.from(seen).sort((a, b) => a - b);
 }
 
-export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps) {
+export function ResultDetailsModal({ results, xName = 'X', yName = 'Y', onClose }: ResultDetailsModalProps) {
   const [selectedY, setSelectedY] = useState(0);
   const [selectedX, setSelectedX] = useState(0);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -131,8 +133,8 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
             </h2>
             <p class="font-mono text-[12px] text-ink-soft mt-2">
               {focused.totalRolls.toLocaleString()} rolls · {visibleOutcomes.length} outcomes
-              {hasY ? ` · Y = ${focusedY}` : ''}
-              {xValues.length > 0 ? ` · X = ${focusedX}` : ''}
+               {hasY ? ` · ${yName} = ${focusedY}` : ''}
+              {xValues.length > 0 ? ` · ${xName} = ${focusedX}` : ''}
             </p>
           </div>
           <button
@@ -152,7 +154,7 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
           {hasY && (
             <section>
               <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-gold-deep mb-2">
-                Sweep Y
+                Sweep {yName}
               </p>
               <div class="flex flex-wrap gap-1.5">
                 {yValues.map((y, i) => (
@@ -167,7 +169,7 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
                         : 'border-rule text-ink hover:border-billiard hover:text-billiard'
                     }`}
                   >
-                    Y = {y}
+                    {yName} = {y}
                   </button>
                 ))}
               </div>
@@ -177,7 +179,7 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
           {xValues.length > 1 && (
             <section>
               <p class="font-mono text-[11px] uppercase tracking-[0.24em] text-gold-deep mb-2">
-                Sweep X
+                Sweep {xName}
               </p>
               <div class="flex flex-wrap gap-1.5">
                 {xValues.map((x, i) => (
@@ -192,7 +194,7 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
                         : 'border-rule text-ink hover:border-billiard hover:text-billiard'
                     }`}
                   >
-                    X = {x}
+                    {xName} = {x}
                   </button>
                 ))}
               </div>
@@ -389,8 +391,8 @@ export function ResultDetailsModal({ results, onClose }: ResultDetailsModalProps
 
         <footer class="px-7 py-4 border-t border-rule font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft">
           Monte Carlo · {focused.totalRolls.toLocaleString()} iterations · {visibleOutcomes.length} outcomes
-          {hasY ? ` · ${yValues.length} Y values` : ''}
-          {xValues.length > 1 ? ` · ${xValues.length} X values` : ''}
+          {hasY ? ` · ${yValues.length} ${yName} values` : ''}
+          {xValues.length > 1 ? ` · ${xValues.length} ${xName} values` : ''}
         </footer>
       </div>
     </div>

@@ -32,7 +32,7 @@ const validPipeline: NamedValue[] = [
   { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
 ];
 const validRerollConditions: RerollCondition[] = [];
-const validSweep: SweepParameters = { x: [], y: null, xName: 'X', yName: 'Y' };
+const validSweep: SweepParameters = { x: [], y: null, xName: '', yName: '' };
 
 describe('validateConfig', () => {
   describe('pool validation', () => {
@@ -226,15 +226,15 @@ describe('validateConfig', () => {
 
   describe('sweep and expression validation', () => {
     it('reports error for sweep X exceeding 10 values', () => {
-      const sweep: SweepParameters = { x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], y: null, xName: 'X', yName: 'Y' };
+      const sweep: SweepParameters = { x: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], y: null, xName: 'X', yName: '' };
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], sweep);
       expect(errors.some((e) => e.blocking && e.message.includes('max 10'))).toBe(true);
     });
 
-    it('reports blocking error for sweep Y without X', () => {
-      const sweep: SweepParameters = { x: [], y: [1, 2], xName: 'X', yName: 'Y' };
+    it('allows sweep Y without X when X is inactive', () => {
+      const sweep: SweepParameters = { x: [], y: [1, 2], xName: '', yName: 'Y' };
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], sweep);
-      expect(errors.some((e) => e.blocking && e.message.includes('Sweep Y') && e.message.includes('X is empty'))).toBe(true);
+      expect(errors.some((e) => e.blocking)).toBe(false);
     });
 
     it('reports error for sweep Y exceeding 10 values', () => {
@@ -244,20 +244,20 @@ describe('validateConfig', () => {
     });
 
     it('passes validation for valid sweep', () => {
-      const sweep: SweepParameters = { x: [1, 2, 3], y: null, xName: 'X', yName: 'Y' };
+      const sweep: SweepParameters = { x: [1, 2, 3], y: null, xName: 'X', yName: '' };
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], sweep);
       expect(errors.some((e) => e.blocking)).toBe(false);
     });
 
     it('reports warning for high total iterations', () => {
-      const sweep: SweepParameters = { x: Array.from({ length: 15 }, (_, i) => i + 1), y: null, xName: 'X', yName: 'Y' };
+      const sweep: SweepParameters = { x: Array.from({ length: 15 }, (_, i) => i + 1), y: null, xName: 'X', yName: '' };
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, [validOutcome], sweep);
       expect(errors.some((e) => !e.blocking && e.message.includes('high'))).toBe(true);
     });
 
     it('reports blocking error for outcome with empty conditions when sweep is active', () => {
       const outcome: Outcome = { ...validOutcome, id: 'o-empty', conditions: [] };
-      const sweep: SweepParameters = { x: [5, 10, 15], y: null, xName: 'X', yName: 'Y' };
+      const sweep: SweepParameters = { x: [5, 10, 15], y: null, xName: 'X', yName: '' };
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], sweep);
       expect(errors.some((e) => e.blocking && e.message.includes('no conditions'))).toBe(true);
     });
@@ -267,7 +267,7 @@ describe('validateConfig', () => {
         ...validOutcome,
         conditions: [{ source: 'rolled', op: 'any', subCondition: '>=', value: literalExpr(5) }],
       };
-      const sweep: SweepParameters = { x: [5, 10, 15], y: null, xName: 'X', yName: 'Y' };
+      const sweep: SweepParameters = { x: [5, 10, 15], y: null, xName: 'X', yName: '' };
       const errors = validateConfig(validPool, validRerollConditions, validPipeline, [outcome], sweep);
       expect(errors.some((e) => e.blocking && e.message.includes('vector condition'))).toBe(false);
       expect(errors.some((e) => e.blocking && e.message.includes('no conditions'))).toBe(false);
@@ -278,7 +278,7 @@ describe('validateConfig', () => {
         { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
         { id: 'p2', name: 'ceil_total', source: 'total', op: { fn: 'ceil' }, comment: '' },
       ];
-      const sweep: SweepParameters = { x: [1, 2], y: null, xName: 'X', yName: 'Y' };
+      const sweep: SweepParameters = { x: [1, 2], y: null, xName: 'X', yName: '' };
       const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], sweep);
       expect(errors.some((e) => e.blocking)).toBe(false);
     });
