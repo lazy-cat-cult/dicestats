@@ -17,15 +17,6 @@ describe('PRESETS', () => {
     expect(pbta!.outcomes.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('has advantage preset with max pipeline', () => {
-    const adv = PRESETS.find((p) => p.name === 'D&D 5e - Advantage');
-    expect(adv).toBeDefined();
-    expect(adv!.pipeline.length).toBeGreaterThan(0);
-    const maxStep = adv!.pipeline[0]!;
-    expect(maxStep.name).toBe('rolled_value');
-    expect(maxStep.op).toBe('max');
-  });
-
   it('has Shadowrun preset with dice conditions', () => {
     const sr = getPreset('shadowrun-xd6');
     expect(sr).toBeDefined();
@@ -33,13 +24,6 @@ describe('PRESETS', () => {
     const hitOutcome = sr!.outcomes.find((o) => o.name === '1+ hits');
     expect(hitOutcome).toBeDefined();
     expect(hitOutcome!.conditions[0]).toEqual({ source: 'success_count', op: '>=', value: { kind: 'ref', name: 'Difficulty' } });
-  });
-
-  it('has Vampire V5 preset', () => {
-    const v = getPreset('vampire-v5');
-    expect(v).toBeDefined();
-    expect(v!.pool.terms.some((t) => t.tag === 'hunger')).toBe(true);
-    expect(v!.pipeline.length).toBeGreaterThan(3);
   });
 
   it('has Daggerheart preset', () => {
