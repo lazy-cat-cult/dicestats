@@ -62,21 +62,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx vite build --base /
-      - name: Upload to staging
+      - name: Deploy via rsync
         uses: burnett01/rsync-deployments@v8
         with:
-          switches: -avz --delete
+          switches: -avz --delay-updates --delete-after
           path: dist/
-          remote_path: ${{ vars.DEPLOY_PATH }}.staging/
+          remote_path: ${{ vars.DEPLOY_PATH }}/
           remote_host: ${{ vars.DEPLOY_HOST }}
           remote_user: ${{ vars.DEPLOY_USER }}
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - name: Atomic swap
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ vars.DEPLOY_HOST }}
-          username: ${{ vars.DEPLOY_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-            mv -T ${{ vars.DEPLOY_PATH }}.staging ${{ vars.DEPLOY_PATH }}
