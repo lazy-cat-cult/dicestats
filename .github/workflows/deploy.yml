@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -45,3 +49,34 @@ jobs:
           path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  deploy-server:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx vite build --base /
+      - name: Upload to staging
+        uses: burnett01/rsync-deployments@v8
+        with:
+          switches: -avz --delete
+          path: dist/
+          remote_path: ${{ vars.DEPLOY_PATH }}.staging/
+          remote_host: ${{ vars.DEPLOY_HOST }}
+          remote_user: ${{ vars.DEPLOY_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Atomic swap
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ vars.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            mv -T ${{ vars.DEPLOY_PATH }}.staging ${{ vars.DEPLOY_PATH }}
