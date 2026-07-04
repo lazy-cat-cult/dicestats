@@ -96,7 +96,7 @@ describe('buildSampleTrace', () => {
         expect(trace.diceDetails[0].rerollEvents[0].newFace).toBeGreaterThanOrEqual(1);
         expect(trace.diceDetails[0].rerollEvents[0].newFace).toBeLessThanOrEqual(6);
         expect(trace.diceDetails[0].rerollEvents[0].conditionIndex).toBe(0);
-        expect(trace.diceDetails[0].originalFace).not.toBe(1);
+        expect(trace.diceDetails[0].originalFace).toEqual(trace.diceDetails[0].rerollEvents[0].newFace);
         break;
       }
     }
