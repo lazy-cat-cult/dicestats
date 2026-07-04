@@ -1,4 +1,4 @@
-import { rerollConditions, showRerollComments } from '@/state/app-state';
+import { rerollConditions, showRerollComments, sweep } from '@/state/app-state';
 import type { RerollCondition, ConditionChain } from '@/types';
 import { Button, IconButton, Select, TextField } from '@/components/ui';
 import { ConditionChainEditor } from '@/components/ConditionChainEditor';
@@ -21,6 +21,11 @@ function emptyRerollCondition(): RerollCondition {
 
 export function RerollEditor() {
   const conditions = rerollConditions.value;
+  const sw = sweep.value;
+  const availableVars = [
+    { name: sw.xName, label: `${sw.xName}${sw.x.length > 0 ? '' : ' (not set)'}`, available: sw.x.length > 0 },
+    { name: sw.yName, label: `${sw.yName}${sw.y !== null && sw.y.length > 0 ? '' : ' (not set)'}`, available: sw.y !== null && sw.y.length > 0 },
+  ];
 
   function addCondition() {
     if (conditions.length >= 10) return;
@@ -75,6 +80,7 @@ export function RerollEditor() {
                 chain={rc.conditions}
                 onChange={(chain) => updateCondition(i, { conditions: chain })}
                 variant="reroll"
+                availableVars={availableVars}
               />
             </div>
             <div class="mt-2 flex items-center gap-2 flex-wrap">
