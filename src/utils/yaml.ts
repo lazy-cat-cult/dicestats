@@ -849,7 +849,7 @@ function serializeOutcomeEntry(o: Outcome): YamlNode {
 
 function parseSweep(node: YamlNode | undefined): SweepParameters {
   if (node === undefined || node === null) {
-    return { x: [], y: null, xName: 'X', yName: 'Y' };
+    return { x: [], y: null, xName: '', yName: '' };
   }
   if (!isMapping(node)) {
     throw new PresetError('"sweep:" must be a mapping with optional x and y lists');
@@ -864,10 +864,10 @@ function parseSweep(node: YamlNode | undefined): SweepParameters {
   }
   const xName = typeof node['xName'] === 'string' && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(node['xName'])
     ? String(node['xName'])
-    : 'X';
+    : (x.length > 0 ? 'X' : '');
   const yName = typeof node['yName'] === 'string' && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(node['yName'])
     ? String(node['yName'])
-    : 'Y';
+    : (y && y.length > 0 ? 'Y' : '');
   return { x, y, xName, yName };
 }
 

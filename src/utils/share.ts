@@ -29,10 +29,10 @@ export function decodeShareUrl(hash: string): SavedConfig | null {
       config.pipeline = [];
     }
     if (!config.sweep || typeof config.sweep !== 'object') {
-      config.sweep = { x: [], y: null, xName: 'X', yName: 'Y' };
+      config.sweep = { x: [], y: null, xName: '', yName: '' };
     }
-    if (!config.sweep.xName) config.sweep.xName = 'X';
-    if (!config.sweep.yName) config.sweep.yName = 'Y';
+    if (config.sweep.xName == null) config.sweep.xName = '';
+    if (config.sweep.yName == null) config.sweep.yName = '';
     return config;
   } catch {
     return null;
