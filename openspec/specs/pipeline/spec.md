@@ -15,13 +15,15 @@ The pipeline SHALL consist of an ordered list of `NamedValue` entries. Each entr
 - `comment`: optional description, max 100 chars
 
 There are two categories:
-- **VectorFunction**: `filter` or `remove` — each with a `ConditionChain` and produces a vector
+- **VectorFunction**: `filter`, `remove`, `highest`, or `lowest` — each produces a vector
 - **ScalarFunction**: `count`, `sum`, `max`, `min`, `sub`, binary math (`add`/`subtract`/`multiply`/`divide` with terms array), `ceil`, `floor`, `switch` — produces a scalar
 
 ```typescript
 type VectorFunction =
   | { fn: 'filter'; conditions: ConditionChain }
-  | { fn: 'remove'; conditions: ConditionChain };
+  | { fn: 'remove'; conditions: ConditionChain }
+  | { fn: 'highest'; n: Expr }
+  | { fn: 'lowest'; n: Expr };
 
 type ScalarBinaryOp = 'add' | 'subtract' | 'multiply' | 'divide';
 
@@ -175,7 +177,7 @@ A pipeline row's `source` and `source2` (for named operand) SHALL reference `rol
 
 ### Requirement: Type Derivation
 The output type of each pipeline row SHALL be derived from the operation:
-- `filter`, `remove` → **vector**
+- `filter`, `remove`, `highest`, `lowest` → **vector**
 - `count`, `sum`, `max`, `min`, `sub`, binary math, `ceil`, `floor`, `switch` → **scalar**
 
 #### Scenario: Type mismatch — count on scalar
@@ -187,6 +189,14 @@ The output type of each pipeline row SHALL be derived from the operation:
 - GIVEN a pipeline row referencing a vector named value as source with a binary math operation
 - WHEN validation runs
 - THEN the row is highlighted as a type mismatch error
+
+#### Scenario: Highest produces vector type
+- GIVEN a pipeline row `best = highest rolled 3`
+- WHEN validation runs
+- THEN `best` is typed as vector, and scalar operations on `best` require explicit conversion
+
+### Requirement: Highest and Lowest Vector Functions
+The pipeline SHALL support `highest` and `lowest` vector functions as defined in the highest-lowest capability spec. Their execution SHALL follow the same evaluation path as `filter`/`remove` through `applyVectorOp()`.
 
 ### Requirement: divide-by-zero
 A `divide` operation where the divisor is zero SHALL produce 0 (not Infinity or NaN). If a literal divisor of 0 is detected at configuration time, a validation warning SHALL be shown.
