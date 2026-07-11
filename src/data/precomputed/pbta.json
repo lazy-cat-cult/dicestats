@@ -1,25 +1,25 @@
 {
-  "sourceHash": "bc8676650e2f459d",
-  "timestamp": "2026-07-11T14:10:03.096Z",
-  "configFingerprint": "{\"pool\":{\"terms\":[{\"count\":{\"kind\":\"literal\",\"value\":2},\"sides\":{\"kind\":\"literal\",\"value\":6},\"tag\":\"\",\"comment\":\"\"}]},\"reroll\":[],\"pipeline\":[{\"name\":\"total\",\"source\":\"rolled\",\"op\":\"sum\",\"comment\":\"\"},{\"name\":\"total_mod\",\"source\":\"total\",\"op\":{\"fn\":\"add\",\"terms\":[{\"operand\":\"val\",\"value\":{\"kind\":\"ref\",\"name\":\"Bonus\"}}]},\"comment\":\"\"}],\"outcomes\":[{\"name\":\"Success\",\"conditions\":[{\"source\":\"total_mod\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":10}}],\"connectors\":[],\"comment\":\"\"},{\"name\":\"Partial\",\"conditions\":[{\"source\":\"total_mod\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":7}},{\"source\":\"total_mod\",\"op\":\"<=\",\"value\":{\"kind\":\"literal\",\"value\":9}}],\"connectors\":[\"and\"],\"comment\":\"\"},{\"name\":\"Failure\",\"conditions\":[{\"source\":\"total_mod\",\"op\":\"<=\",\"value\":{\"kind\":\"literal\",\"value\":6}}],\"connectors\":[],\"comment\":\"\"}],\"sweep\":{\"x\":[-2,-1,0,1,2,3],\"y\":null,\"xName\":\"Bonus\",\"yName\":\"Y\"}}",
+  "sourceHash": "8147a050dfa0c80e",
+  "timestamp": "2026-07-11T16:39:13.966Z",
+  "configFingerprint": "{\"pool\":{\"terms\":[{\"count\":{\"kind\":\"literal\",\"value\":2},\"sides\":{\"kind\":\"literal\",\"value\":6},\"tag\":\"\",\"comment\":\"\"}]},\"reroll\":[],\"pipeline\":[{\"name\":\"total\",\"source\":\"rolled\",\"op\":\"sum\",\"comment\":\"\"},{\"name\":\"total_mod\",\"source\":\"total\",\"op\":{\"fn\":\"add\",\"terms\":[{\"operand\":\"val\",\"value\":{\"kind\":\"ref\",\"name\":\"Bonus\"}}]},\"comment\":\"\"}],\"outcomes\":[{\"name\":\"Success\",\"conditions\":[{\"source\":\"total_mod\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":10}}],\"connectors\":[],\"comment\":\"\"},{\"name\":\"Partial\",\"conditions\":[{\"source\":\"total_mod\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":7}},{\"source\":\"total_mod\",\"op\":\"<=\",\"value\":{\"kind\":\"literal\",\"value\":9}}],\"connectors\":[\"and\"],\"comment\":\"\"},{\"name\":\"Failure\",\"conditions\":[{\"source\":\"total_mod\",\"op\":\"<=\",\"value\":{\"kind\":\"literal\",\"value\":6}}],\"connectors\":[],\"comment\":\"\"}],\"sweep\":{\"x\":[-2,-1,0,1,2,3],\"y\":null,\"xName\":\"Bonus\",\"yName\":\"\"}}",
   "results": [
     {
       "label": "Bonus=-2",
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.028127,
-          "count": 28127
+          "probability": 0.027784,
+          "count": 27784
         },
         {
           "label": "Partial",
-          "probability": 0.249607,
-          "count": 249607
+          "probability": 0.24991,
+          "count": 249910
         },
         {
           "label": "Failure",
-          "probability": 0.722266,
-          "count": 722266
+          "probability": 0.722306,
+          "count": 722306
         },
         {
           "label": "Not matched",
@@ -33,37 +33,37 @@
           "outcomes": [
             "Failure"
           ],
-          "count": 722266,
-          "probability": 0.722266
+          "count": 722306,
+          "probability": 0.722306
         },
         {
           "outcomes": [
             "Partial"
           ],
-          "count": 249607,
-          "probability": 0.249607
+          "count": 249910,
+          "probability": 0.24991
         },
         {
           "outcomes": [
             "Success"
           ],
-          "count": 28127,
-          "probability": 0.028127
+          "count": 27784,
+          "probability": 0.027784
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "0": 27639,
-        "1": 55315,
-        "2": 83406,
-        "3": 111235,
-        "4": 138754,
-        "5": 167031,
-        "6": 138886,
-        "7": 110776,
-        "8": 83270,
-        "9": 55561,
-        "10": 28127
+        "0": 27660,
+        "1": 55414,
+        "2": 82925,
+        "3": 110978,
+        "4": 138976,
+        "5": 166770,
+        "6": 139583,
+        "7": 111343,
+        "8": 83128,
+        "9": 55439,
+        "10": 27784
       },
       "sweepX": -2,
       "sweepY": null
@@ -73,18 +73,18 @@
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.083732,
-          "count": 83732
+          "probability": 0.083047,
+          "count": 83047
         },
         {
           "label": "Partial",
-          "probability": 0.333748,
-          "count": 333748
+          "probability": 0.33351,
+          "count": 333510
         },
         {
           "label": "Failure",
-          "probability": 0.58252,
-          "count": 582520
+          "probability": 0.583443,
+          "count": 583443
         },
         {
           "label": "Not matched",
@@ -98,37 +98,37 @@
           "outcomes": [
             "Failure"
           ],
-          "count": 582520,
-          "probability": 0.58252
+          "count": 583443,
+          "probability": 0.583443
         },
         {
           "outcomes": [
             "Partial"
           ],
-          "count": 333748,
-          "probability": 0.333748
+          "count": 333510,
+          "probability": 0.33351
         },
         {
           "outcomes": [
             "Success"
           ],
-          "count": 83732,
-          "probability": 0.083732
+          "count": 83047,
+          "probability": 0.083047
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "1": 27732,
-        "2": 55403,
-        "3": 83424,
-        "4": 110813,
-        "5": 139166,
-        "6": 165982,
-        "7": 139091,
-        "8": 111057,
-        "9": 83600,
-        "10": 55872,
-        "11": 27860
+        "1": 27886,
+        "2": 55434,
+        "3": 83103,
+        "4": 110655,
+        "5": 139278,
+        "6": 167087,
+        "7": 138397,
+        "8": 111182,
+        "9": 83931,
+        "10": 55388,
+        "11": 27659
       },
       "sweepX": -1,
       "sweepY": null
@@ -138,18 +138,18 @@
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.166497,
-          "count": 166497
+          "probability": 0.166669,
+          "count": 166669
         },
         {
           "label": "Partial",
-          "probability": 0.415933,
-          "count": 415933
+          "probability": 0.416837,
+          "count": 416837
         },
         {
           "label": "Failure",
-          "probability": 0.41757,
-          "count": 417570
+          "probability": 0.416494,
+          "count": 416494
         },
         {
           "label": "Not matched",
@@ -161,39 +161,39 @@
       "matchSets": [
         {
           "outcomes": [
-            "Failure"
+            "Partial"
           ],
-          "count": 417570,
-          "probability": 0.41757
+          "count": 416837,
+          "probability": 0.416837
         },
         {
           "outcomes": [
-            "Partial"
+            "Failure"
           ],
-          "count": 415933,
-          "probability": 0.415933
+          "count": 416494,
+          "probability": 0.416494
         },
         {
           "outcomes": [
             "Success"
           ],
-          "count": 166497,
-          "probability": 0.166497
+          "count": 166669,
+          "probability": 0.166669
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "2": 28089,
-        "3": 55618,
-        "4": 83488,
-        "5": 111670,
-        "6": 138705,
-        "7": 165520,
-        "8": 139291,
-        "9": 111122,
-        "10": 83238,
-        "11": 55453,
-        "12": 27806
+        "2": 27699,
+        "3": 55532,
+        "4": 83385,
+        "5": 110967,
+        "6": 138911,
+        "7": 166645,
+        "8": 139509,
+        "9": 110683,
+        "10": 83546,
+        "11": 55581,
+        "12": 27542
       },
       "sweepX": 0,
       "sweepY": null
@@ -203,18 +203,18 @@
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.277465,
-          "count": 277465
+          "probability": 0.277894,
+          "count": 277894
         },
         {
           "label": "Partial",
-          "probability": 0.444163,
-          "count": 444163
+          "probability": 0.444055,
+          "count": 444055
         },
         {
           "label": "Failure",
-          "probability": 0.278372,
-          "count": 278372
+          "probability": 0.278051,
+          "count": 278051
         },
         {
           "label": "Not matched",
@@ -228,37 +228,37 @@
           "outcomes": [
             "Partial"
           ],
-          "count": 444163,
-          "probability": 0.444163
+          "count": 444055,
+          "probability": 0.444055
         },
         {
           "outcomes": [
             "Failure"
           ],
-          "count": 278372,
-          "probability": 0.278372
+          "count": 278051,
+          "probability": 0.278051
         },
         {
           "outcomes": [
             "Success"
           ],
-          "count": 277465,
-          "probability": 0.277465
+          "count": 277894,
+          "probability": 0.277894
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "3": 27660,
-        "4": 55420,
-        "5": 83579,
-        "6": 111713,
-        "7": 138208,
-        "8": 166958,
-        "9": 138997,
-        "10": 111139,
-        "11": 83220,
-        "12": 55661,
-        "13": 27445
+        "3": 27355,
+        "4": 55618,
+        "5": 83399,
+        "6": 111679,
+        "7": 138502,
+        "8": 166640,
+        "9": 138913,
+        "10": 111540,
+        "11": 83337,
+        "12": 55255,
+        "13": 27762
       },
       "sweepX": 1,
       "sweepY": null
@@ -268,18 +268,18 @@
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.41635,
-          "count": 416350
+          "probability": 0.416301,
+          "count": 416301
         },
         {
           "label": "Partial",
-          "probability": 0.41699,
-          "count": 416990
+          "probability": 0.416693,
+          "count": 416693
         },
         {
           "label": "Failure",
-          "probability": 0.16666,
-          "count": 166660
+          "probability": 0.167006,
+          "count": 167006
         },
         {
           "label": "Not matched",
@@ -293,37 +293,37 @@
           "outcomes": [
             "Partial"
           ],
-          "count": 416990,
-          "probability": 0.41699
+          "count": 416693,
+          "probability": 0.416693
         },
         {
           "outcomes": [
             "Success"
           ],
-          "count": 416350,
-          "probability": 0.41635
+          "count": 416301,
+          "probability": 0.416301
         },
         {
           "outcomes": [
             "Failure"
           ],
-          "count": 166660,
-          "probability": 0.16666
+          "count": 167006,
+          "probability": 0.167006
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "4": 27624,
-        "5": 55701,
-        "6": 83335,
-        "7": 111535,
-        "8": 138663,
-        "9": 166792,
-        "10": 138779,
-        "11": 110430,
-        "12": 83205,
-        "13": 56093,
-        "14": 27843
+        "4": 27889,
+        "5": 55703,
+        "6": 83414,
+        "7": 111275,
+        "8": 138724,
+        "9": 166694,
+        "10": 138671,
+        "11": 110843,
+        "12": 83252,
+        "13": 55516,
+        "14": 28019
       },
       "sweepX": 2,
       "sweepY": null
@@ -333,18 +333,18 @@
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.583499,
-          "count": 583499
+          "probability": 0.583103,
+          "count": 583103
         },
         {
           "label": "Partial",
-          "probability": 0.333391,
-          "count": 333391
+          "probability": 0.333471,
+          "count": 333471
         },
         {
           "label": "Failure",
-          "probability": 0.08311,
-          "count": 83110
+          "probability": 0.083426,
+          "count": 83426
         },
         {
           "label": "Not matched",
@@ -358,37 +358,37 @@
           "outcomes": [
             "Success"
           ],
-          "count": 583499,
-          "probability": 0.583499
+          "count": 583103,
+          "probability": 0.583103
         },
         {
           "outcomes": [
             "Partial"
           ],
-          "count": 333391,
-          "probability": 0.333391
+          "count": 333471,
+          "probability": 0.333471
         },
         {
           "outcomes": [
             "Failure"
           ],
-          "count": 83110,
-          "probability": 0.08311
+          "count": 83426,
+          "probability": 0.083426
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "5": 27864,
-        "6": 55246,
-        "7": 83800,
-        "8": 110980,
-        "9": 138611,
-        "10": 166759,
-        "11": 138619,
-        "12": 111209,
-        "13": 83481,
-        "14": 55520,
-        "15": 27911
+        "5": 27952,
+        "6": 55474,
+        "7": 83414,
+        "8": 111441,
+        "9": 138616,
+        "10": 165859,
+        "11": 139132,
+        "12": 111123,
+        "13": 83036,
+        "14": 55978,
+        "15": 27975
       },
       "sweepX": 3,
       "sweepY": null

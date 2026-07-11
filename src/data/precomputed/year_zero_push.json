@@ -1,25 +1,25 @@
 {
-  "sourceHash": "04554d67213b3ea6",
-  "timestamp": "2026-07-11T14:12:06.970Z",
-  "configFingerprint": "{\"pool\":{\"terms\":[{\"count\":{\"kind\":\"ref\",\"name\":\"Dice\"},\"sides\":{\"kind\":\"literal\",\"value\":6},\"tag\":\"\",\"comment\":\"\"}]},\"reroll\":[{\"action\":\"reroll\",\"conditions\":{\"clauses\":[{\"field\":\"face\",\"operator\":\">\",\"value\":{\"kind\":\"literal\",\"value\":1}},{\"field\":\"face\",\"operator\":\"<\",\"value\":{\"kind\":\"literal\",\"value\":6}}],\"connectors\":[\"and\"]},\"repeat\":1,\"comment\":\"\",\"tagAs\":\"push\"}],\"pipeline\":[{\"name\":\"sixes\",\"source\":\"rolled\",\"op\":{\"fn\":\"filter\",\"conditions\":{\"clauses\":[{\"field\":\"face\",\"operator\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":6}}],\"connectors\":[]}},\"comment\":\"\"},{\"name\":\"result\",\"source\":\"sixes\",\"op\":\"count\",\"comment\":\"\"},{\"name\":\"ones\",\"source\":\"rolled\",\"op\":{\"fn\":\"filter\",\"conditions\":{\"clauses\":[{\"field\":\"face\",\"operator\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":1}}],\"connectors\":[]}},\"comment\":\"\"},{\"name\":\"ones_count\",\"source\":\"ones\",\"op\":\"count\",\"comment\":\"\"}],\"outcomes\":[{\"name\":\"Success\",\"conditions\":[{\"source\":\"result\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":1}}],\"connectors\":[],\"comment\":\"\"},{\"name\":\"Failure\",\"conditions\":[{\"source\":\"result\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":0}}],\"connectors\":[],\"comment\":\"\"},{\"name\":\"Critical Failure\",\"conditions\":[{\"source\":\"result\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":0}},{\"source\":\"ones_count\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":0}}],\"connectors\":[\"and\"],\"comment\":\"\"},{\"name\":\"Critical Success\",\"conditions\":[{\"source\":\"result\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":3}}],\"connectors\":[],\"comment\":\"\"}],\"sweep\":{\"x\":[1,2,3,4,5,6,7,8],\"y\":null,\"xName\":\"Dice\",\"yName\":\"Y\"}}",
+  "sourceHash": "4f4bdf51c180a040",
+  "timestamp": "2026-07-11T16:40:21.434Z",
+  "configFingerprint": "{\"pool\":{\"terms\":[{\"count\":{\"kind\":\"ref\",\"name\":\"Dice\"},\"sides\":{\"kind\":\"literal\",\"value\":6},\"tag\":\"\",\"comment\":\"\"}]},\"reroll\":[{\"action\":\"reroll\",\"conditions\":{\"clauses\":[{\"field\":\"face\",\"operator\":\">\",\"value\":{\"kind\":\"literal\",\"value\":1}},{\"field\":\"face\",\"operator\":\"<\",\"value\":{\"kind\":\"literal\",\"value\":6}}],\"connectors\":[\"and\"]},\"repeat\":1,\"comment\":\"\",\"tagAs\":\"push\"}],\"pipeline\":[{\"name\":\"sixes\",\"source\":\"rolled\",\"op\":{\"fn\":\"filter\",\"conditions\":{\"clauses\":[{\"field\":\"face\",\"operator\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":6}}],\"connectors\":[]}},\"comment\":\"\"},{\"name\":\"result\",\"source\":\"sixes\",\"op\":\"count\",\"comment\":\"\"},{\"name\":\"ones\",\"source\":\"rolled\",\"op\":{\"fn\":\"filter\",\"conditions\":{\"clauses\":[{\"field\":\"face\",\"operator\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":1}}],\"connectors\":[]}},\"comment\":\"\"},{\"name\":\"ones_count\",\"source\":\"ones\",\"op\":\"count\",\"comment\":\"\"}],\"outcomes\":[{\"name\":\"Success\",\"conditions\":[{\"source\":\"result\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":1}}],\"connectors\":[],\"comment\":\"\"},{\"name\":\"Failure\",\"conditions\":[{\"source\":\"result\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":0}}],\"connectors\":[],\"comment\":\"\"},{\"name\":\"Critical Failure\",\"conditions\":[{\"source\":\"result\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":0}},{\"source\":\"ones_count\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":0}}],\"connectors\":[\"and\"],\"comment\":\"\"},{\"name\":\"Critical Success\",\"conditions\":[{\"source\":\"result\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":3}}],\"connectors\":[],\"comment\":\"\"}],\"sweep\":{\"x\":[1,2,3,4,5,6,7,8],\"y\":null,\"xName\":\"Dice\",\"yName\":\"\"}}",
   "results": [
     {
       "label": "Dice=1",
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.277485,
-          "count": 277485
+          "probability": 0.278613,
+          "count": 278613
         },
         {
           "label": "Failure",
-          "probability": 0.722515,
-          "count": 722515
+          "probability": 0.721387,
+          "count": 721387
         },
         {
           "label": "Critical Failure",
-          "probability": 0.722515,
-          "count": 722515
+          "probability": 0.721387,
+          "count": 721387
         },
         {
           "label": "Critical Success",
@@ -38,8 +38,8 @@
             "Critical Failure",
             "Failure"
           ],
-          "count": 722515,
-          "probability": 0.722515
+          "count": 721387,
+          "probability": 0.721387
         }
       ],
       "matchSets": [
@@ -48,21 +48,21 @@
             "Critical Failure",
             "Failure"
           ],
-          "count": 722515,
-          "probability": 0.722515
+          "count": 721387,
+          "probability": 0.721387
         },
         {
           "outcomes": [
             "Success"
           ],
-          "count": 277485,
-          "probability": 0.277485
+          "count": 278613,
+          "probability": 0.278613
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "0": 723034,
-        "1": 276966
+        "0": 722246,
+        "1": 277754
       },
       "sweepX": 1,
       "sweepY": null
@@ -72,18 +72,18 @@
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.478654,
-          "count": 478654
+          "probability": 0.478113,
+          "count": 478113
         },
         {
           "label": "Failure",
-          "probability": 0.521346,
-          "count": 521346
+          "probability": 0.521887,
+          "count": 521887
         },
         {
           "label": "Critical Failure",
-          "probability": 0.521346,
-          "count": 521346
+          "probability": 0.521887,
+          "count": 521887
         },
         {
           "label": "Critical Success",
@@ -102,8 +102,8 @@
             "Critical Failure",
             "Failure"
           ],
-          "count": 521346,
-          "probability": 0.521346
+          "count": 521887,
+          "probability": 0.521887
         }
       ],
       "matchSets": [
@@ -112,22 +112,22 @@
             "Critical Failure",
             "Failure"
           ],
-          "count": 521346,
-          "probability": 0.521346
+          "count": 521887,
+          "probability": 0.521887
         },
         {
           "outcomes": [
             "Success"
           ],
-          "count": 478654,
-          "probability": 0.478654
+          "count": 478113,
+          "probability": 0.478113
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "0": 521261,
-        "1": 400905,
-        "2": 77834
+        "0": 521746,
+        "1": 401011,
+        "2": 77243
       },
       "sweepX": 2,
       "sweepY": null
@@ -137,23 +137,23 @@
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.623822,
-          "count": 623822
+          "probability": 0.62295,
+          "count": 622950
         },
         {
           "label": "Failure",
-          "probability": 0.376178,
-          "count": 376178
+          "probability": 0.37705,
+          "count": 377050
         },
         {
           "label": "Critical Failure",
-          "probability": 0.376178,
-          "count": 376178
+          "probability": 0.37705,
+          "count": 377050
         },
         {
           "label": "Critical Success",
-          "probability": 0.021595,
-          "count": 21595
+          "probability": 0.02148,
+          "count": 21480
         },
         {
           "label": "Not matched",
@@ -167,16 +167,16 @@
             "Critical Failure",
             "Failure"
           ],
-          "count": 376178,
-          "probability": 0.376178
+          "count": 377050,
+          "probability": 0.37705
         },
         {
           "outcomes": [
             "Critical Success",
             "Success"
           ],
-          "count": 21595,
-          "probability": 0.021595
+          "count": 21480,
+          "probability": 0.02148
         }
       ],
       "matchSets": [
@@ -184,32 +184,32 @@
           "outcomes": [
             "Success"
           ],
-          "count": 602227,
-          "probability": 0.602227
+          "count": 601470,
+          "probability": 0.60147
         },
         {
           "outcomes": [
             "Critical Failure",
             "Failure"
           ],
-          "count": 376178,
-          "probability": 0.376178
+          "count": 377050,
+          "probability": 0.37705
         },
         {
           "outcomes": [
             "Critical Success",
             "Success"
           ],
-          "count": 21595,
-          "probability": 0.021595
+          "count": 21480,
+          "probability": 0.02148
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "0": 376871,
-        "1": 434579,
-        "2": 167308,
-        "3": 21242
+        "0": 377288,
+        "1": 434061,
+        "2": 167070,
+        "3": 21581
       },
       "sweepX": 3,
       "sweepY": null
@@ -219,23 +219,23 @@
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.727366,
-          "count": 727366
+          "probability": 0.727414,
+          "count": 727414
         },
         {
           "label": "Failure",
-          "probability": 0.272634,
-          "count": 272634
+          "probability": 0.272586,
+          "count": 272586
         },
         {
           "label": "Critical Failure",
-          "probability": 0.272634,
-          "count": 272634
+          "probability": 0.272586,
+          "count": 272586
         },
         {
           "label": "Critical Success",
-          "probability": 0.067763,
-          "count": 67763
+          "probability": 0.068145,
+          "count": 68145
         },
         {
           "label": "Not matched",
@@ -249,16 +249,16 @@
             "Critical Failure",
             "Failure"
           ],
-          "count": 272634,
-          "probability": 0.272634
+          "count": 272586,
+          "probability": 0.272586
         },
         {
           "outcomes": [
             "Critical Success",
             "Success"
           ],
-          "count": 67763,
-          "probability": 0.067763
+          "count": 68145,
+          "probability": 0.068145
         }
       ],
       "matchSets": [
@@ -266,33 +266,33 @@
           "outcomes": [
             "Success"
           ],
-          "count": 659603,
-          "probability": 0.659603
+          "count": 659269,
+          "probability": 0.659269
         },
         {
           "outcomes": [
             "Critical Failure",
             "Failure"
           ],
-          "count": 272634,
-          "probability": 0.272634
+          "count": 272586,
+          "probability": 0.272586
         },
         {
           "outcomes": [
             "Critical Success",
             "Success"
           ],
-          "count": 67763,
-          "probability": 0.067763
+          "count": 68145,
+          "probability": 0.068145
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "0": 272405,
-        "1": 418529,
-        "2": 241281,
-        "3": 61881,
-        "4": 5904
+        "0": 272248,
+        "1": 418359,
+        "2": 241903,
+        "3": 61465,
+        "4": 6025
       },
       "sweepX": 4,
       "sweepY": null
@@ -302,23 +302,23 @@
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.803203,
-          "count": 803203
+          "probability": 0.8035,
+          "count": 803500
         },
         {
           "label": "Failure",
-          "probability": 0.196797,
-          "count": 196797
+          "probability": 0.1965,
+          "count": 196500
         },
         {
           "label": "Critical Failure",
-          "probability": 0.196797,
-          "count": 196797
+          "probability": 0.1965,
+          "count": 196500
         },
         {
           "label": "Critical Success",
-          "probability": 0.135244,
-          "count": 135244
+          "probability": 0.135094,
+          "count": 135094
         },
         {
           "label": "Not matched",
@@ -332,16 +332,16 @@
             "Critical Failure",
             "Failure"
           ],
-          "count": 196797,
-          "probability": 0.196797
+          "count": 196500,
+          "probability": 0.1965
         },
         {
           "outcomes": [
             "Critical Success",
             "Success"
           ],
-          "count": 135244,
-          "probability": 0.135244
+          "count": 135094,
+          "probability": 0.135094
         }
       ],
       "matchSets": [
@@ -349,34 +349,34 @@
           "outcomes": [
             "Success"
           ],
-          "count": 667959,
-          "probability": 0.667959
+          "count": 668406,
+          "probability": 0.668406
         },
         {
           "outcomes": [
             "Critical Failure",
             "Failure"
           ],
-          "count": 196797,
-          "probability": 0.196797
+          "count": 196500,
+          "probability": 0.1965
         },
         {
           "outcomes": [
             "Critical Success",
             "Success"
           ],
-          "count": 135244,
-          "probability": 0.135244
+          "count": 135094,
+          "probability": 0.135094
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "0": 195879,
-        "1": 379142,
-        "2": 291095,
-        "3": 111065,
-        "4": 21180,
-        "5": 1639
+        "0": 196953,
+        "1": 378227,
+        "2": 290305,
+        "3": 111362,
+        "4": 21472,
+        "5": 1681
       },
       "sweepX": 5,
       "sweepY": null
@@ -386,23 +386,23 @@
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.857483,
-          "count": 857483
+          "probability": 0.857558,
+          "count": 857558
         },
         {
           "label": "Failure",
-          "probability": 0.142517,
-          "count": 142517
+          "probability": 0.142442,
+          "count": 142442
         },
         {
           "label": "Critical Failure",
-          "probability": 0.142517,
-          "count": 142517
+          "probability": 0.142442,
+          "count": 142442
         },
         {
           "label": "Critical Success",
-          "probability": 0.21518,
-          "count": 215180
+          "probability": 0.215409,
+          "count": 215409
         },
         {
           "label": "Not matched",
@@ -416,16 +416,16 @@
             "Critical Success",
             "Success"
           ],
-          "count": 215180,
-          "probability": 0.21518
+          "count": 215409,
+          "probability": 0.215409
         },
         {
           "outcomes": [
             "Critical Failure",
             "Failure"
           ],
-          "count": 142517,
-          "probability": 0.142517
+          "count": 142442,
+          "probability": 0.142442
         }
       ],
       "matchSets": [
@@ -433,35 +433,35 @@
           "outcomes": [
             "Success"
           ],
-          "count": 642303,
-          "probability": 0.642303
+          "count": 642149,
+          "probability": 0.642149
         },
         {
           "outcomes": [
             "Critical Success",
             "Success"
           ],
-          "count": 215180,
-          "probability": 0.21518
+          "count": 215409,
+          "probability": 0.215409
         },
         {
           "outcomes": [
             "Critical Failure",
             "Failure"
           ],
-          "count": 142517,
-          "probability": 0.142517
+          "count": 142442,
+          "probability": 0.142442
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "0": 142193,
-        "1": 327454,
-        "2": 314354,
-        "3": 161985,
-        "4": 46268,
-        "5": 7278,
-        "6": 468
+        "0": 141977,
+        "1": 327955,
+        "2": 314972,
+        "3": 160806,
+        "4": 46595,
+        "5": 7225,
+        "6": 470
       },
       "sweepX": 6,
       "sweepY": null
@@ -471,23 +471,23 @@
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.897399,
-          "count": 897399
+          "probability": 0.896937,
+          "count": 896937
         },
         {
           "label": "Failure",
-          "probability": 0.102601,
-          "count": 102601
+          "probability": 0.103063,
+          "count": 103063
         },
         {
           "label": "Critical Failure",
-          "probability": 0.102601,
-          "count": 102601
+          "probability": 0.103063,
+          "count": 103063
         },
         {
           "label": "Critical Success",
-          "probability": 0.304052,
-          "count": 304052
+          "probability": 0.302899,
+          "count": 302899
         },
         {
           "label": "Not matched",
@@ -501,16 +501,16 @@
             "Critical Success",
             "Success"
           ],
-          "count": 304052,
-          "probability": 0.304052
+          "count": 302899,
+          "probability": 0.302899
         },
         {
           "outcomes": [
             "Critical Failure",
             "Failure"
           ],
-          "count": 102601,
-          "probability": 0.102601
+          "count": 103063,
+          "probability": 0.103063
         }
       ],
       "matchSets": [
@@ -518,36 +518,36 @@
           "outcomes": [
             "Success"
           ],
-          "count": 593347,
-          "probability": 0.593347
+          "count": 594038,
+          "probability": 0.594038
         },
         {
           "outcomes": [
             "Critical Success",
             "Success"
           ],
-          "count": 304052,
-          "probability": 0.304052
+          "count": 302899,
+          "probability": 0.302899
         },
         {
           "outcomes": [
             "Critical Failure",
             "Failure"
           ],
-          "count": 102601,
-          "probability": 0.102601
+          "count": 103063,
+          "probability": 0.103063
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "0": 102325,
-        "1": 276105,
-        "2": 318429,
-        "3": 204227,
-        "4": 78502,
-        "5": 17984,
-        "6": 2291,
-        "7": 137
+        "0": 102400,
+        "1": 276046,
+        "2": 318625,
+        "3": 203979,
+        "4": 78493,
+        "5": 18064,
+        "6": 2262,
+        "7": 131
       },
       "sweepX": 7,
       "sweepY": null
@@ -557,23 +557,23 @@
       "outcomes": [
         {
           "label": "Success",
-          "probability": 0.92608,
-          "count": 926080
+          "probability": 0.926769,
+          "count": 926769
         },
         {
           "label": "Failure",
-          "probability": 0.07392,
-          "count": 73920
+          "probability": 0.073231,
+          "count": 73231
         },
         {
           "label": "Critical Failure",
-          "probability": 0.07392,
-          "count": 73920
+          "probability": 0.073231,
+          "count": 73231
         },
         {
           "label": "Critical Success",
-          "probability": 0.392181,
-          "count": 392181
+          "probability": 0.392369,
+          "count": 392369
         },
         {
           "label": "Not matched",
@@ -587,16 +587,16 @@
             "Critical Success",
             "Success"
           ],
-          "count": 392181,
-          "probability": 0.392181
+          "count": 392369,
+          "probability": 0.392369
         },
         {
           "outcomes": [
             "Critical Failure",
             "Failure"
           ],
-          "count": 73920,
-          "probability": 0.07392
+          "count": 73231,
+          "probability": 0.073231
         }
       ],
       "matchSets": [
@@ -604,37 +604,37 @@
           "outcomes": [
             "Success"
           ],
-          "count": 533899,
-          "probability": 0.533899
+          "count": 534400,
+          "probability": 0.5344
         },
         {
           "outcomes": [
             "Critical Success",
             "Success"
           ],
-          "count": 392181,
-          "probability": 0.392181
+          "count": 392369,
+          "probability": 0.392369
         },
         {
           "outcomes": [
             "Critical Failure",
             "Failure"
           ],
-          "count": 73920,
-          "probability": 0.07392
+          "count": 73231,
+          "probability": 0.073231
         }
       ],
       "totalRolls": 1000000,
       "distribution": {
-        "0": 73183,
-        "1": 227871,
-        "2": 307147,
-        "3": 236263,
-        "4": 113297,
-        "5": 34785,
-        "6": 6678,
-        "7": 734,
-        "8": 42
+        "0": 74193,
+        "1": 228060,
+        "2": 306729,
+        "3": 235775,
+        "4": 113035,
+        "5": 34834,
+        "6": 6635,
+        "7": 708,
+        "8": 31
       },
       "sweepX": 8,
       "sweepY": null
