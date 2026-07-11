@@ -1,0 +1,1123 @@
+{
+  "sourceHash": "da6a56197c1e2999",
+  "timestamp": "2026-07-11T14:07:12.746Z",
+  "configFingerprint": "{\"pool\":{\"terms\":[{\"count\":{\"kind\":\"literal\",\"value\":1},\"sides\":{\"kind\":\"literal\",\"value\":20},\"tag\":\"\",\"comment\":\"\"}]},\"reroll\":[],\"pipeline\":[{\"name\":\"rolled_value\",\"source\":\"rolled\",\"op\":\"sum\",\"comment\":\"\"},{\"name\":\"total_bonus\",\"source\":\"rolled_value\",\"op\":{\"fn\":\"add\",\"terms\":[{\"operand\":\"val\",\"value\":{\"kind\":\"ref\",\"name\":\"Bonus\"}}]},\"comment\":\"\"}],\"outcomes\":[{\"name\":\"Hit\",\"conditions\":[{\"source\":\"total_bonus\",\"op\":\">=\",\"value\":{\"kind\":\"ref\",\"name\":\"DC\"}},{\"source\":\"rolled_value\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":20}},{\"source\":\"rolled_value\",\"op\":\"!=\",\"value\":{\"kind\":\"literal\",\"value\":1}}],\"connectors\":[\"or\",\"and\"],\"comment\":\"\"},{\"name\":\"Miss\",\"conditions\":[{\"source\":\"total_bonus\",\"op\":\"<\",\"value\":{\"kind\":\"ref\",\"name\":\"DC\"}},{\"source\":\"rolled_value\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":1}},{\"source\":\"rolled_value\",\"op\":\"!=\",\"value\":{\"kind\":\"literal\",\"value\":20}}],\"connectors\":[\"or\",\"and\"],\"comment\":\"\"}],\"sweep\":{\"x\":[2,5,7,10,12,15],\"y\":[10,15,20],\"xName\":\"Bonus\",\"yName\":\"DC\"}}",
+  "results": [
+    {
+      "label": "DC=10 · Bonus=2",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.650128,
+          "count": 650128
+        },
+        {
+          "label": "Miss",
+          "probability": 0.349872,
+          "count": 349872
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 650128,
+          "probability": 0.650128
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 349872,
+          "probability": 0.349872
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "3": 49973,
+        "4": 49985,
+        "5": 49946,
+        "6": 49785,
+        "7": 50209,
+        "8": 50030,
+        "9": 49944,
+        "10": 49696,
+        "11": 50049,
+        "12": 50236,
+        "13": 50271,
+        "14": 49949,
+        "15": 50046,
+        "16": 49984,
+        "17": 49991,
+        "18": 50029,
+        "19": 49903,
+        "20": 50041,
+        "21": 50042,
+        "22": 49891
+      },
+      "sweepX": 2,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=5",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.79994,
+          "count": 799940
+        },
+        {
+          "label": "Miss",
+          "probability": 0.20006,
+          "count": 200060
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 799940,
+          "probability": 0.79994
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 200060,
+          "probability": 0.20006
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "6": 50012,
+        "7": 49864,
+        "8": 50153,
+        "9": 50031,
+        "10": 49987,
+        "11": 50143,
+        "12": 49904,
+        "13": 50131,
+        "14": 50095,
+        "15": 50047,
+        "16": 49702,
+        "17": 49777,
+        "18": 49767,
+        "19": 49769,
+        "20": 49842,
+        "21": 50086,
+        "22": 50052,
+        "23": 50376,
+        "24": 50452,
+        "25": 49810
+      },
+      "sweepX": 5,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=7",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.900647,
+          "count": 900647
+        },
+        {
+          "label": "Miss",
+          "probability": 0.099353,
+          "count": 99353
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 900647,
+          "probability": 0.900647
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 99353,
+          "probability": 0.099353
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "8": 49596,
+        "9": 49757,
+        "10": 50056,
+        "11": 49741,
+        "12": 49592,
+        "13": 50366,
+        "14": 50229,
+        "15": 50074,
+        "16": 50103,
+        "17": 50211,
+        "18": 49895,
+        "19": 50351,
+        "20": 49824,
+        "21": 50099,
+        "22": 49997,
+        "23": 49963,
+        "24": 50136,
+        "25": 49815,
+        "26": 50045,
+        "27": 50150
+      },
+      "sweepX": 7,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=10",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.94975,
+          "count": 949750
+        },
+        {
+          "label": "Miss",
+          "probability": 0.05025,
+          "count": 50250
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 949750,
+          "probability": 0.94975
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 50250,
+          "probability": 0.05025
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "11": 50250,
+        "12": 50041,
+        "13": 49797,
+        "14": 49755,
+        "15": 49658,
+        "16": 49585,
+        "17": 50119,
+        "18": 50141,
+        "19": 50760,
+        "20": 49983,
+        "21": 50368,
+        "22": 49788,
+        "23": 49875,
+        "24": 50073,
+        "25": 49930,
+        "26": 49826,
+        "27": 49989,
+        "28": 50020,
+        "29": 49908,
+        "30": 50134
+      },
+      "sweepX": 10,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=12",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.9498,
+          "count": 949800
+        },
+        {
+          "label": "Miss",
+          "probability": 0.0502,
+          "count": 50200
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 949800,
+          "probability": 0.9498
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 50200,
+          "probability": 0.0502
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "13": 50200,
+        "14": 49782,
+        "15": 50117,
+        "16": 49766,
+        "17": 49965,
+        "18": 49989,
+        "19": 50077,
+        "20": 50242,
+        "21": 50281,
+        "22": 50031,
+        "23": 49862,
+        "24": 49807,
+        "25": 50224,
+        "26": 49849,
+        "27": 49859,
+        "28": 49821,
+        "29": 50015,
+        "30": 49890,
+        "31": 50438,
+        "32": 49785
+      },
+      "sweepX": 12,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=15",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.949963,
+          "count": 949963
+        },
+        {
+          "label": "Miss",
+          "probability": 0.050037,
+          "count": 50037
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 949963,
+          "probability": 0.949963
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 50037,
+          "probability": 0.050037
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "16": 50037,
+        "17": 50213,
+        "18": 50090,
+        "19": 49712,
+        "20": 49484,
+        "21": 50100,
+        "22": 50097,
+        "23": 49787,
+        "24": 50296,
+        "25": 49848,
+        "26": 49864,
+        "27": 50226,
+        "28": 50263,
+        "29": 49607,
+        "30": 49711,
+        "31": 49981,
+        "32": 49958,
+        "33": 50240,
+        "34": 50225,
+        "35": 50261
+      },
+      "sweepX": 15,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=15 · Bonus=2",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.399862,
+          "count": 399862
+        },
+        {
+          "label": "Miss",
+          "probability": 0.600138,
+          "count": 600138
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 600138,
+          "probability": 0.600138
+        },
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 399862,
+          "probability": 0.399862
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "3": 49962,
+        "4": 50554,
+        "5": 49738,
+        "6": 50293,
+        "7": 50417,
+        "8": 49821,
+        "9": 49904,
+        "10": 50120,
+        "11": 49942,
+        "12": 49731,
+        "13": 49861,
+        "14": 49795,
+        "15": 49784,
+        "16": 49667,
+        "17": 50388,
+        "18": 50142,
+        "19": 49647,
+        "20": 50040,
+        "21": 50346,
+        "22": 49848
+      },
+      "sweepX": 2,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=5",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.549904,
+          "count": 549904
+        },
+        {
+          "label": "Miss",
+          "probability": 0.450096,
+          "count": 450096
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 549904,
+          "probability": 0.549904
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 450096,
+          "probability": 0.450096
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "6": 50305,
+        "7": 49897,
+        "8": 50150,
+        "9": 50053,
+        "10": 49930,
+        "11": 50208,
+        "12": 50225,
+        "13": 49621,
+        "14": 49707,
+        "15": 49788,
+        "16": 49938,
+        "17": 50168,
+        "18": 49752,
+        "19": 50199,
+        "20": 49991,
+        "21": 49945,
+        "22": 49893,
+        "23": 50339,
+        "24": 49834,
+        "25": 50057
+      },
+      "sweepX": 5,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=7",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.650405,
+          "count": 650405
+        },
+        {
+          "label": "Miss",
+          "probability": 0.349595,
+          "count": 349595
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 650405,
+          "probability": 0.650405
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 349595,
+          "probability": 0.349595
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "8": 49957,
+        "9": 49688,
+        "10": 50290,
+        "11": 49963,
+        "12": 49695,
+        "13": 49852,
+        "14": 50150,
+        "15": 49960,
+        "16": 49675,
+        "17": 49979,
+        "18": 50221,
+        "19": 49794,
+        "20": 49953,
+        "21": 50102,
+        "22": 50350,
+        "23": 50045,
+        "24": 49955,
+        "25": 49864,
+        "26": 50299,
+        "27": 50208
+      },
+      "sweepX": 7,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=10",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.799935,
+          "count": 799935
+        },
+        {
+          "label": "Miss",
+          "probability": 0.200065,
+          "count": 200065
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 799935,
+          "probability": 0.799935
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 200065,
+          "probability": 0.200065
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "11": 49805,
+        "12": 49808,
+        "13": 50329,
+        "14": 50123,
+        "15": 50026,
+        "16": 50070,
+        "17": 50438,
+        "18": 50191,
+        "19": 49556,
+        "20": 49392,
+        "21": 50056,
+        "22": 50154,
+        "23": 49866,
+        "24": 49814,
+        "25": 50103,
+        "26": 50176,
+        "27": 50216,
+        "28": 50368,
+        "29": 49744,
+        "30": 49765
+      },
+      "sweepX": 10,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=12",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.900196,
+          "count": 900196
+        },
+        {
+          "label": "Miss",
+          "probability": 0.099804,
+          "count": 99804
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 900196,
+          "probability": 0.900196
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 99804,
+          "probability": 0.099804
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "13": 49911,
+        "14": 49893,
+        "15": 50103,
+        "16": 50134,
+        "17": 50043,
+        "18": 49823,
+        "19": 50201,
+        "20": 49996,
+        "21": 50478,
+        "22": 50037,
+        "23": 49617,
+        "24": 50106,
+        "25": 49940,
+        "26": 50070,
+        "27": 50052,
+        "28": 49782,
+        "29": 50191,
+        "30": 49602,
+        "31": 49841,
+        "32": 50180
+      },
+      "sweepX": 12,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=15",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.949686,
+          "count": 949686
+        },
+        {
+          "label": "Miss",
+          "probability": 0.050314,
+          "count": 50314
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 949686,
+          "probability": 0.949686
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 50314,
+          "probability": 0.050314
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "16": 50314,
+        "17": 49831,
+        "18": 49586,
+        "19": 50316,
+        "20": 49865,
+        "21": 49953,
+        "22": 49834,
+        "23": 50258,
+        "24": 49848,
+        "25": 50089,
+        "26": 49950,
+        "27": 50258,
+        "28": 50010,
+        "29": 50199,
+        "30": 49722,
+        "31": 49997,
+        "32": 49689,
+        "33": 50051,
+        "34": 50284,
+        "35": 49946
+      },
+      "sweepX": 15,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=20 · Bonus=2",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.150108,
+          "count": 150108
+        },
+        {
+          "label": "Miss",
+          "probability": 0.849892,
+          "count": 849892
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 849892,
+          "probability": 0.849892
+        },
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 150108,
+          "probability": 0.150108
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "3": 49880,
+        "4": 49998,
+        "5": 49702,
+        "6": 50208,
+        "7": 49771,
+        "8": 49890,
+        "9": 50350,
+        "10": 50039,
+        "11": 49815,
+        "12": 49735,
+        "13": 50361,
+        "14": 50134,
+        "15": 49867,
+        "16": 50142,
+        "17": 49977,
+        "18": 49789,
+        "19": 50234,
+        "20": 49982,
+        "21": 50168,
+        "22": 49958
+      },
+      "sweepX": 2,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=5",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.299873,
+          "count": 299873
+        },
+        {
+          "label": "Miss",
+          "probability": 0.700127,
+          "count": 700127
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 700127,
+          "probability": 0.700127
+        },
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 299873,
+          "probability": 0.299873
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "6": 50221,
+        "7": 49843,
+        "8": 49956,
+        "9": 50323,
+        "10": 50045,
+        "11": 50461,
+        "12": 49912,
+        "13": 49916,
+        "14": 50260,
+        "15": 49848,
+        "16": 49452,
+        "17": 50099,
+        "18": 49823,
+        "19": 49968,
+        "20": 49990,
+        "21": 50053,
+        "22": 50035,
+        "23": 50060,
+        "24": 49528,
+        "25": 50207
+      },
+      "sweepX": 5,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=7",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.39966,
+          "count": 399660
+        },
+        {
+          "label": "Miss",
+          "probability": 0.60034,
+          "count": 600340
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 600340,
+          "probability": 0.60034
+        },
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 399660,
+          "probability": 0.39966
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "8": 50047,
+        "9": 50161,
+        "10": 50533,
+        "11": 50077,
+        "12": 49685,
+        "13": 49647,
+        "14": 49934,
+        "15": 49904,
+        "16": 49996,
+        "17": 50166,
+        "18": 50265,
+        "19": 49925,
+        "20": 49967,
+        "21": 50332,
+        "22": 49849,
+        "23": 49829,
+        "24": 49982,
+        "25": 49985,
+        "26": 49953,
+        "27": 49763
+      },
+      "sweepX": 7,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=10",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.550586,
+          "count": 550586
+        },
+        {
+          "label": "Miss",
+          "probability": 0.449414,
+          "count": 449414
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 550586,
+          "probability": 0.550586
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 449414,
+          "probability": 0.449414
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "11": 50104,
+        "12": 50120,
+        "13": 49647,
+        "14": 49790,
+        "15": 50296,
+        "16": 49719,
+        "17": 49873,
+        "18": 49879,
+        "19": 49986,
+        "20": 50253,
+        "21": 49747,
+        "22": 50355,
+        "23": 49784,
+        "24": 49964,
+        "25": 50079,
+        "26": 49977,
+        "27": 49661,
+        "28": 50086,
+        "29": 50159,
+        "30": 50521
+      },
+      "sweepX": 10,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=12",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.649326,
+          "count": 649326
+        },
+        {
+          "label": "Miss",
+          "probability": 0.350674,
+          "count": 350674
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 649326,
+          "probability": 0.649326
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 350674,
+          "probability": 0.350674
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "13": 50014,
+        "14": 49876,
+        "15": 50157,
+        "16": 50252,
+        "17": 49955,
+        "18": 50352,
+        "19": 50068,
+        "20": 49950,
+        "21": 49920,
+        "22": 49971,
+        "23": 49820,
+        "24": 50018,
+        "25": 50056,
+        "26": 49866,
+        "27": 49958,
+        "28": 50012,
+        "29": 49545,
+        "30": 50066,
+        "31": 50109,
+        "32": 50035
+      },
+      "sweepX": 12,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=15",
+      "outcomes": [
+        {
+          "label": "Hit",
+          "probability": 0.798769,
+          "count": 798769
+        },
+        {
+          "label": "Miss",
+          "probability": 0.201231,
+          "count": 201231
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit"
+          ],
+          "count": 798769,
+          "probability": 0.798769
+        },
+        {
+          "outcomes": [
+            "Miss"
+          ],
+          "count": 201231,
+          "probability": 0.201231
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "16": 50099,
+        "17": 50319,
+        "18": 50314,
+        "19": 50499,
+        "20": 49749,
+        "21": 49894,
+        "22": 50166,
+        "23": 49998,
+        "24": 49908,
+        "25": 49709,
+        "26": 49213,
+        "27": 50381,
+        "28": 49807,
+        "29": 50031,
+        "30": 49909,
+        "31": 50102,
+        "32": 49561,
+        "33": 50442,
+        "34": 49872,
+        "35": 50027
+      },
+      "sweepX": 15,
+      "sweepY": 20
+    }
+  ]
+}

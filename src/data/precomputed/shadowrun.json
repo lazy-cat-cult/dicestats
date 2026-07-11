@@ -1,0 +1,1729 @@
+{
+  "sourceHash": "b8308710a86c998e",
+  "timestamp": "2026-07-11T14:11:28.549Z",
+  "configFingerprint": "{\"pool\":{\"terms\":[{\"count\":{\"kind\":\"ref\",\"name\":\"Dice\"},\"sides\":{\"kind\":\"literal\",\"value\":6},\"tag\":\"\",\"comment\":\"\"}]},\"reroll\":[],\"pipeline\":[{\"name\":\"successes\",\"source\":\"rolled\",\"op\":{\"fn\":\"filter\",\"conditions\":{\"clauses\":[{\"field\":\"face\",\"operator\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":5}}],\"connectors\":[]}},\"comment\":\"\"},{\"name\":\"success_count\",\"source\":\"successes\",\"op\":\"count\",\"comment\":\"\"}],\"outcomes\":[{\"name\":\"1+ hits\",\"conditions\":[{\"source\":\"success_count\",\"op\":\">=\",\"value\":{\"kind\":\"ref\",\"name\":\"Difficulty\"}}],\"connectors\":[],\"comment\":\"\"},{\"name\":\"No hits\",\"conditions\":[{\"source\":\"success_count\",\"op\":\"<\",\"value\":{\"kind\":\"ref\",\"name\":\"Difficulty\"}}],\"connectors\":[],\"comment\":\"\"}],\"sweep\":{\"x\":[2,3,4,5,6,7,8,9,10],\"y\":[2,3,4,5],\"xName\":\"Dice\",\"yName\":\"Difficulty\"}}",
+  "results": [
+    {
+      "label": "Difficulty=2 · Dice=2",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.110939,
+          "count": 110939
+        },
+        {
+          "label": "No hits",
+          "probability": 0.889061,
+          "count": 889061
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 889061,
+          "probability": 0.889061
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 110939,
+          "probability": 0.110939
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 445549,
+        "1": 443512,
+        "2": 110939
+      },
+      "sweepX": 2,
+      "sweepY": 2
+    },
+    {
+      "label": "Difficulty=2 · Dice=3",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.259642,
+          "count": 259642
+        },
+        {
+          "label": "No hits",
+          "probability": 0.740358,
+          "count": 740358
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 740358,
+          "probability": 0.740358
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 259642,
+          "probability": 0.259642
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 296880,
+        "1": 443478,
+        "2": 222676,
+        "3": 36966
+      },
+      "sweepX": 3,
+      "sweepY": 2
+    },
+    {
+      "label": "Difficulty=2 · Dice=4",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.406341,
+          "count": 406341
+        },
+        {
+          "label": "No hits",
+          "probability": 0.593659,
+          "count": 593659
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 593659,
+          "probability": 0.593659
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 406341,
+          "probability": 0.406341
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 198078,
+        "1": 395581,
+        "2": 295639,
+        "3": 98283,
+        "4": 12419
+      },
+      "sweepX": 4,
+      "sweepY": 2
+    },
+    {
+      "label": "Difficulty=2 · Dice=5",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.540164,
+          "count": 540164
+        },
+        {
+          "label": "No hits",
+          "probability": 0.459836,
+          "count": 459836
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 540164,
+          "probability": 0.540164
+        },
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 459836,
+          "probability": 0.459836
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 130836,
+        "1": 329000,
+        "2": 329694,
+        "3": 164937,
+        "4": 41475,
+        "5": 4058
+      },
+      "sweepX": 5,
+      "sweepY": 2
+    },
+    {
+      "label": "Difficulty=2 · Dice=6",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.648564,
+          "count": 648564
+        },
+        {
+          "label": "No hits",
+          "probability": 0.351436,
+          "count": 351436
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 648564,
+          "probability": 0.648564
+        },
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 351436,
+          "probability": 0.351436
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 87853,
+        "1": 263583,
+        "2": 329275,
+        "3": 218956,
+        "4": 82608,
+        "5": 16389,
+        "6": 1336
+      },
+      "sweepX": 6,
+      "sweepY": 2
+    },
+    {
+      "label": "Difficulty=2 · Dice=7",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.736752,
+          "count": 736752
+        },
+        {
+          "label": "No hits",
+          "probability": 0.263248,
+          "count": 263248
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 736752,
+          "probability": 0.736752
+        },
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 263248,
+          "probability": 0.263248
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 58559,
+        "1": 204689,
+        "2": 306814,
+        "3": 256977,
+        "4": 127593,
+        "5": 38605,
+        "6": 6320,
+        "7": 443
+      },
+      "sweepX": 7,
+      "sweepY": 2
+    },
+    {
+      "label": "Difficulty=2 · Dice=8",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.804878,
+          "count": 804878
+        },
+        {
+          "label": "No hits",
+          "probability": 0.195122,
+          "count": 195122
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 804878,
+          "probability": 0.804878
+        },
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 195122,
+          "probability": 0.195122
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 39160,
+        "1": 155962,
+        "2": 273031,
+        "3": 272790,
+        "4": 170736,
+        "5": 68469,
+        "6": 17233,
+        "7": 2462,
+        "8": 157
+      },
+      "sweepX": 8,
+      "sweepY": 2
+    },
+    {
+      "label": "Difficulty=2 · Dice=9",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.856364,
+          "count": 856364
+        },
+        {
+          "label": "No hits",
+          "probability": 0.143636,
+          "count": 143636
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 856364,
+          "probability": 0.856364
+        },
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 143636,
+          "probability": 0.143636
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 26140,
+        "1": 117496,
+        "2": 233603,
+        "3": 273148,
+        "4": 205276,
+        "5": 102169,
+        "6": 33936,
+        "7": 7297,
+        "8": 886,
+        "9": 49
+      },
+      "sweepX": 9,
+      "sweepY": 2
+    },
+    {
+      "label": "Difficulty=2 · Dice=10",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.89485,
+          "count": 894850
+        },
+        {
+          "label": "No hits",
+          "probability": 0.10515,
+          "count": 105150
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 894850,
+          "probability": 0.89485
+        },
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 105150,
+          "probability": 0.10515
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 17809,
+        "1": 87341,
+        "2": 195123,
+        "3": 259914,
+        "4": 227109,
+        "5": 136269,
+        "6": 56734,
+        "7": 16263,
+        "8": 3055,
+        "9": 361,
+        "10": 22
+      },
+      "sweepX": 10,
+      "sweepY": 2
+    },
+    {
+      "label": "Difficulty=3 · Dice=2",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0,
+          "count": 0
+        },
+        {
+          "label": "No hits",
+          "probability": 1,
+          "count": 1000000
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 1000000,
+          "probability": 1
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 443846,
+        "1": 444949,
+        "2": 111205
+      },
+      "sweepX": 2,
+      "sweepY": 3
+    },
+    {
+      "label": "Difficulty=3 · Dice=3",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.036862,
+          "count": 36862
+        },
+        {
+          "label": "No hits",
+          "probability": 0.963138,
+          "count": 963138
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 963138,
+          "probability": 0.963138
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 36862,
+          "probability": 0.036862
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 297256,
+        "1": 443876,
+        "2": 222006,
+        "3": 36862
+      },
+      "sweepX": 3,
+      "sweepY": 3
+    },
+    {
+      "label": "Difficulty=3 · Dice=4",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.111093,
+          "count": 111093
+        },
+        {
+          "label": "No hits",
+          "probability": 0.888907,
+          "count": 888907
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 888907,
+          "probability": 0.888907
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 111093,
+          "probability": 0.111093
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 197328,
+        "1": 394221,
+        "2": 297358,
+        "3": 98608,
+        "4": 12485
+      },
+      "sweepX": 4,
+      "sweepY": 3
+    },
+    {
+      "label": "Difficulty=3 · Dice=5",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.210149,
+          "count": 210149
+        },
+        {
+          "label": "No hits",
+          "probability": 0.789851,
+          "count": 789851
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 789851,
+          "probability": 0.789851
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 210149,
+          "probability": 0.210149
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 131737,
+        "1": 328184,
+        "2": 329930,
+        "3": 164550,
+        "4": 41381,
+        "5": 4218
+      },
+      "sweepX": 5,
+      "sweepY": 3
+    },
+    {
+      "label": "Difficulty=3 · Dice=6",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.31993,
+          "count": 319930
+        },
+        {
+          "label": "No hits",
+          "probability": 0.68007,
+          "count": 680070
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 680070,
+          "probability": 0.68007
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 319930,
+          "probability": 0.31993
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 88100,
+        "1": 263403,
+        "2": 328567,
+        "3": 219774,
+        "4": 82295,
+        "5": 16456,
+        "6": 1405
+      },
+      "sweepX": 6,
+      "sweepY": 3
+    },
+    {
+      "label": "Difficulty=3 · Dice=7",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.428925,
+          "count": 428925
+        },
+        {
+          "label": "No hits",
+          "probability": 0.571075,
+          "count": 571075
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 571075,
+          "probability": 0.571075
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 428925,
+          "probability": 0.428925
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 59082,
+        "1": 205157,
+        "2": 306836,
+        "3": 255618,
+        "4": 128135,
+        "5": 38294,
+        "6": 6410,
+        "7": 468
+      },
+      "sweepX": 7,
+      "sweepY": 3
+    },
+    {
+      "label": "Difficulty=3 · Dice=8",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.531409,
+          "count": 531409
+        },
+        {
+          "label": "No hits",
+          "probability": 0.468591,
+          "count": 468591
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 531409,
+          "probability": 0.531409
+        },
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 468591,
+          "probability": 0.468591
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 38973,
+        "1": 156208,
+        "2": 273410,
+        "3": 272885,
+        "4": 170536,
+        "5": 68469,
+        "6": 16920,
+        "7": 2452,
+        "8": 147
+      },
+      "sweepX": 8,
+      "sweepY": 3
+    },
+    {
+      "label": "Difficulty=3 · Dice=9",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.623045,
+          "count": 623045
+        },
+        {
+          "label": "No hits",
+          "probability": 0.376955,
+          "count": 376955
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 623045,
+          "probability": 0.623045
+        },
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 376955,
+          "probability": 0.376955
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 25990,
+        "1": 116728,
+        "2": 234237,
+        "3": 273151,
+        "4": 204902,
+        "5": 102387,
+        "6": 34213,
+        "7": 7419,
+        "8": 922,
+        "9": 51
+      },
+      "sweepX": 9,
+      "sweepY": 3
+    },
+    {
+      "label": "Difficulty=3 · Dice=10",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.700432,
+          "count": 700432
+        },
+        {
+          "label": "No hits",
+          "probability": 0.299568,
+          "count": 299568
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 700432,
+          "probability": 0.700432
+        },
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 299568,
+          "probability": 0.299568
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 17368,
+        "1": 87290,
+        "2": 194910,
+        "3": 260058,
+        "4": 227236,
+        "5": 135981,
+        "6": 57196,
+        "7": 16556,
+        "8": 2997,
+        "9": 385,
+        "10": 23
+      },
+      "sweepX": 10,
+      "sweepY": 3
+    },
+    {
+      "label": "Difficulty=4 · Dice=2",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0,
+          "count": 0
+        },
+        {
+          "label": "No hits",
+          "probability": 1,
+          "count": 1000000
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 1000000,
+          "probability": 1
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 444152,
+        "1": 444838,
+        "2": 111010
+      },
+      "sweepX": 2,
+      "sweepY": 4
+    },
+    {
+      "label": "Difficulty=4 · Dice=3",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0,
+          "count": 0
+        },
+        {
+          "label": "No hits",
+          "probability": 1,
+          "count": 1000000
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 1000000,
+          "probability": 1
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 296489,
+        "1": 443987,
+        "2": 222130,
+        "3": 37394
+      },
+      "sweepX": 3,
+      "sweepY": 4
+    },
+    {
+      "label": "Difficulty=4 · Dice=4",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.012153,
+          "count": 12153
+        },
+        {
+          "label": "No hits",
+          "probability": 0.987847,
+          "count": 987847
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 987847,
+          "probability": 0.987847
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 12153,
+          "probability": 0.012153
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 197985,
+        "1": 394661,
+        "2": 296265,
+        "3": 98936,
+        "4": 12153
+      },
+      "sweepX": 4,
+      "sweepY": 4
+    },
+    {
+      "label": "Difficulty=4 · Dice=5",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.045357,
+          "count": 45357
+        },
+        {
+          "label": "No hits",
+          "probability": 0.954643,
+          "count": 954643
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 954643,
+          "probability": 0.954643
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 45357,
+          "probability": 0.045357
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 131579,
+        "1": 328973,
+        "2": 329852,
+        "3": 164239,
+        "4": 41267,
+        "5": 4090
+      },
+      "sweepX": 5,
+      "sweepY": 4
+    },
+    {
+      "label": "Difficulty=4 · Dice=6",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.100315,
+          "count": 100315
+        },
+        {
+          "label": "No hits",
+          "probability": 0.899685,
+          "count": 899685
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 899685,
+          "probability": 0.899685
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 100315,
+          "probability": 0.100315
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 87798,
+        "1": 263604,
+        "2": 329310,
+        "3": 218973,
+        "4": 82360,
+        "5": 16539,
+        "6": 1416
+      },
+      "sweepX": 6,
+      "sweepY": 4
+    },
+    {
+      "label": "Difficulty=4 · Dice=7",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.172797,
+          "count": 172797
+        },
+        {
+          "label": "No hits",
+          "probability": 0.827203,
+          "count": 827203
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 827203,
+          "probability": 0.827203
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 172797,
+          "probability": 0.172797
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 58751,
+        "1": 204413,
+        "2": 307722,
+        "3": 256317,
+        "4": 127528,
+        "5": 38526,
+        "6": 6257,
+        "7": 486
+      },
+      "sweepX": 7,
+      "sweepY": 4
+    },
+    {
+      "label": "Difficulty=4 · Dice=8",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.258866,
+          "count": 258866
+        },
+        {
+          "label": "No hits",
+          "probability": 0.741134,
+          "count": 741134
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 741134,
+          "probability": 0.741134
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 258866,
+          "probability": 0.258866
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 39107,
+        "1": 155884,
+        "2": 273530,
+        "3": 272613,
+        "4": 171085,
+        "5": 68159,
+        "6": 17045,
+        "7": 2447,
+        "8": 130
+      },
+      "sweepX": 8,
+      "sweepY": 4
+    },
+    {
+      "label": "Difficulty=4 · Dice=9",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.349399,
+          "count": 349399
+        },
+        {
+          "label": "No hits",
+          "probability": 0.650601,
+          "count": 650601
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 650601,
+          "probability": 0.650601
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 349399,
+          "probability": 0.349399
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 25902,
+        "1": 116994,
+        "2": 234868,
+        "3": 272837,
+        "4": 204406,
+        "5": 102581,
+        "6": 34220,
+        "7": 7234,
+        "8": 901,
+        "9": 57
+      },
+      "sweepX": 9,
+      "sweepY": 4
+    },
+    {
+      "label": "Difficulty=4 · Dice=10",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.440698,
+          "count": 440698
+        },
+        {
+          "label": "No hits",
+          "probability": 0.559302,
+          "count": 559302
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 559302,
+          "probability": 0.559302
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 440698,
+          "probability": 0.440698
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 17414,
+        "1": 86544,
+        "2": 194574,
+        "3": 260770,
+        "4": 227780,
+        "5": 136536,
+        "6": 56896,
+        "7": 16072,
+        "8": 3063,
+        "9": 333,
+        "10": 18
+      },
+      "sweepX": 10,
+      "sweepY": 4
+    },
+    {
+      "label": "Difficulty=5 · Dice=2",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0,
+          "count": 0
+        },
+        {
+          "label": "No hits",
+          "probability": 1,
+          "count": 1000000
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 1000000,
+          "probability": 1
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 444667,
+        "1": 444669,
+        "2": 110664
+      },
+      "sweepX": 2,
+      "sweepY": 5
+    },
+    {
+      "label": "Difficulty=5 · Dice=3",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0,
+          "count": 0
+        },
+        {
+          "label": "No hits",
+          "probability": 1,
+          "count": 1000000
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 1000000,
+          "probability": 1
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 295198,
+        "1": 444768,
+        "2": 222773,
+        "3": 37261
+      },
+      "sweepX": 3,
+      "sweepY": 5
+    },
+    {
+      "label": "Difficulty=5 · Dice=4",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0,
+          "count": 0
+        },
+        {
+          "label": "No hits",
+          "probability": 1,
+          "count": 1000000
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 1000000,
+          "probability": 1
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 197284,
+        "1": 395207,
+        "2": 296607,
+        "3": 98692,
+        "4": 12210
+      },
+      "sweepX": 4,
+      "sweepY": 5
+    },
+    {
+      "label": "Difficulty=5 · Dice=5",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.003991,
+          "count": 3991
+        },
+        {
+          "label": "No hits",
+          "probability": 0.996009,
+          "count": 996009
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 996009,
+          "probability": 0.996009
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 3991,
+          "probability": 0.003991
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 131588,
+        "1": 329274,
+        "2": 329061,
+        "3": 164884,
+        "4": 41202,
+        "5": 3991
+      },
+      "sweepX": 5,
+      "sweepY": 5
+    },
+    {
+      "label": "Difficulty=5 · Dice=6",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.017964,
+          "count": 17964
+        },
+        {
+          "label": "No hits",
+          "probability": 0.982036,
+          "count": 982036
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 982036,
+          "probability": 0.982036
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 17964,
+          "probability": 0.017964
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 88029,
+        "1": 263078,
+        "2": 328853,
+        "3": 219543,
+        "4": 82533,
+        "5": 16629,
+        "6": 1335
+      },
+      "sweepX": 6,
+      "sweepY": 5
+    },
+    {
+      "label": "Difficulty=5 · Dice=7",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.045272,
+          "count": 45272
+        },
+        {
+          "label": "No hits",
+          "probability": 0.954728,
+          "count": 954728
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 954728,
+          "probability": 0.954728
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 45272,
+          "probability": 0.045272
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 58317,
+        "1": 204705,
+        "2": 307962,
+        "3": 255931,
+        "4": 127813,
+        "5": 38444,
+        "6": 6367,
+        "7": 461
+      },
+      "sweepX": 7,
+      "sweepY": 5
+    },
+    {
+      "label": "Difficulty=5 · Dice=8",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.087952,
+          "count": 87952
+        },
+        {
+          "label": "No hits",
+          "probability": 0.912048,
+          "count": 912048
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 912048,
+          "probability": 0.912048
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 87952,
+          "probability": 0.087952
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 39082,
+        "1": 156152,
+        "2": 272940,
+        "3": 272527,
+        "4": 171347,
+        "5": 68269,
+        "6": 17162,
+        "7": 2367,
+        "8": 154
+      },
+      "sweepX": 8,
+      "sweepY": 5
+    },
+    {
+      "label": "Difficulty=5 · Dice=9",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.144701,
+          "count": 144701
+        },
+        {
+          "label": "No hits",
+          "probability": 0.855299,
+          "count": 855299
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 855299,
+          "probability": 0.855299
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 144701,
+          "probability": 0.144701
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 26077,
+        "1": 116861,
+        "2": 233711,
+        "3": 272968,
+        "4": 205682,
+        "5": 102341,
+        "6": 34021,
+        "7": 7367,
+        "8": 917,
+        "9": 55
+      },
+      "sweepX": 9,
+      "sweepY": 5
+    },
+    {
+      "label": "Difficulty=5 · Dice=10",
+      "outcomes": [
+        {
+          "label": "1+ hits",
+          "probability": 0.212999,
+          "count": 212999
+        },
+        {
+          "label": "No hits",
+          "probability": 0.787001,
+          "count": 787001
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "No hits"
+          ],
+          "count": 787001,
+          "probability": 0.787001
+        },
+        {
+          "outcomes": [
+            "1+ hits"
+          ],
+          "count": 212999,
+          "probability": 0.212999
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 17446,
+        "1": 86565,
+        "2": 194900,
+        "3": 260507,
+        "4": 227583,
+        "5": 136415,
+        "6": 56972,
+        "7": 16314,
+        "8": 2947,
+        "9": 339,
+        "10": 12
+      },
+      "sweepX": 10,
+      "sweepY": 5
+    }
+  ]
+}

@@ -1,0 +1,809 @@
+{
+  "sourceHash": "4adf893d4160980c",
+  "timestamp": "2026-07-11T14:10:26.990Z",
+  "configFingerprint": "{\"pool\":{\"terms\":[{\"count\":{\"kind\":\"literal\",\"value\":1},\"sides\":{\"kind\":\"ref\",\"name\":\"Dice\"},\"tag\":\"trait\",\"comment\":\"\"},{\"count\":{\"kind\":\"literal\",\"value\":1},\"sides\":{\"kind\":\"literal\",\"value\":6},\"tag\":\"wild\",\"comment\":\"\"}]},\"reroll\":[{\"action\":\"explode\",\"conditions\":{\"clauses\":[{\"field\":\"face\",\"operator\":\"is_max\"}],\"connectors\":[]},\"repeat\":9,\"comment\":\"\",\"tagAs\":\"\"}],\"pipeline\":[{\"name\":\"trait_only\",\"source\":\"rolled\",\"op\":{\"fn\":\"filter\",\"conditions\":{\"clauses\":[{\"field\":\"tag\",\"operator\":\"=\",\"value\":\"trait\"}],\"connectors\":[]}},\"comment\":\"\"},{\"name\":\"wild_only\",\"source\":\"rolled\",\"op\":{\"fn\":\"filter\",\"conditions\":{\"clauses\":[{\"field\":\"tag\",\"operator\":\"=\",\"value\":\"wild\"}],\"connectors\":[]}},\"comment\":\"\"},{\"name\":\"trait_best\",\"source\":\"trait_only\",\"op\":\"sum\",\"comment\":\"\"},{\"name\":\"wild_best\",\"source\":\"wild_only\",\"op\":\"sum\",\"comment\":\"\"}],\"outcomes\":[{\"name\":\"Raise\",\"conditions\":[{\"source\":\"trait_best\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":8}},{\"source\":\"wild_best\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":8}}],\"connectors\":[\"or\"],\"comment\":\"\"},{\"name\":\"Success\",\"conditions\":[{\"source\":\"trait_best\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":4}},{\"source\":\"wild_best\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":4}}],\"connectors\":[\"or\"],\"comment\":\"\"},{\"name\":\"Failure\",\"conditions\":[{\"source\":\"trait_best\",\"op\":\"<\",\"value\":{\"kind\":\"literal\",\"value\":4}},{\"source\":\"wild_best\",\"op\":\"<\",\"value\":{\"kind\":\"literal\",\"value\":4}}],\"connectors\":[\"and\"],\"comment\":\"\"},{\"name\":\"Just Trait die Success\",\"conditions\":[{\"source\":\"trait_best\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":4}}],\"connectors\":[],\"comment\":\"\"},{\"name\":\"Critical Failure\",\"conditions\":[{\"source\":\"trait_best\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":1}},{\"source\":\"wild_best\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":1}}],\"connectors\":[\"and\"],\"comment\":\"\"}],\"sweep\":{\"x\":[4,6,8,10,12],\"y\":null,\"xName\":\"Dice\",\"yName\":\"Y\"}}",
+  "results": [
+    {
+      "label": "Dice=4",
+      "outcomes": [
+        {
+          "label": "Raise",
+          "probability": 0.193384,
+          "count": 193384
+        },
+        {
+          "label": "Success",
+          "probability": 0.62585,
+          "count": 625850
+        },
+        {
+          "label": "Failure",
+          "probability": 0.37415,
+          "count": 374150
+        },
+        {
+          "label": "Just Trait die Success",
+          "probability": 0.25118,
+          "count": 251180
+        },
+        {
+          "label": "Critical Failure",
+          "probability": 0.041676,
+          "count": 41676
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Success"
+          ],
+          "count": 251180,
+          "probability": 0.25118
+        },
+        {
+          "outcomes": [
+            "Raise",
+            "Success"
+          ],
+          "count": 193384,
+          "probability": 0.193384
+        },
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Raise"
+          ],
+          "count": 89174,
+          "probability": 0.089174
+        },
+        {
+          "outcomes": [
+            "Critical Failure",
+            "Failure"
+          ],
+          "count": 41676,
+          "probability": 0.041676
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 332474,
+          "probability": 0.332474
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 270460,
+          "probability": 0.27046
+        },
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Success"
+          ],
+          "count": 162006,
+          "probability": 0.162006
+        },
+        {
+          "outcomes": [
+            "Raise",
+            "Success"
+          ],
+          "count": 104210,
+          "probability": 0.10421
+        },
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Raise",
+            "Success"
+          ],
+          "count": 89174,
+          "probability": 0.089174
+        },
+        {
+          "outcomes": [
+            "Critical Failure",
+            "Failure"
+          ],
+          "count": 41676,
+          "probability": 0.041676
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "1": 166267,
+        "2": 166827,
+        "3": 166565,
+        "4": 166768,
+        "5": 166460,
+        "7": 27930,
+        "8": 27627,
+        "9": 27939,
+        "10": 27834,
+        "11": 27908,
+        "13": 4655,
+        "14": 4591,
+        "15": 4653,
+        "16": 4699,
+        "17": 4545,
+        "19": 764,
+        "20": 832,
+        "21": 784,
+        "22": 790,
+        "23": 796,
+        "25": 142,
+        "26": 105,
+        "27": 120,
+        "28": 133,
+        "29": 138,
+        "31": 24,
+        "32": 15,
+        "33": 21,
+        "34": 20,
+        "35": 26,
+        "37": 6,
+        "38": 3,
+        "39": 4,
+        "40": 3,
+        "41": 4,
+        "45": 1,
+        "47": 1
+      },
+      "sweepX": 4,
+      "sweepY": null
+    },
+    {
+      "label": "Dice=6",
+      "outcomes": [
+        {
+          "label": "Raise",
+          "probability": 0.257734,
+          "count": 257734
+        },
+        {
+          "label": "Success",
+          "probability": 0.749836,
+          "count": 749836
+        },
+        {
+          "label": "Failure",
+          "probability": 0.250164,
+          "count": 250164
+        },
+        {
+          "label": "Just Trait die Success",
+          "probability": 0.500452,
+          "count": 500452
+        },
+        {
+          "label": "Critical Failure",
+          "probability": 0.027575,
+          "count": 27575
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Success"
+          ],
+          "count": 500452,
+          "probability": 0.500452
+        },
+        {
+          "outcomes": [
+            "Raise",
+            "Success"
+          ],
+          "count": 257734,
+          "probability": 0.257734
+        },
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Raise"
+          ],
+          "count": 188868,
+          "probability": 0.188868
+        },
+        {
+          "outcomes": [
+            "Critical Failure",
+            "Failure"
+          ],
+          "count": 27575,
+          "probability": 0.027575
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Success"
+          ],
+          "count": 311584,
+          "probability": 0.311584
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 222589,
+          "probability": 0.222589
+        },
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Raise",
+            "Success"
+          ],
+          "count": 188868,
+          "probability": 0.188868
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 180518,
+          "probability": 0.180518
+        },
+        {
+          "outcomes": [
+            "Raise",
+            "Success"
+          ],
+          "count": 68866,
+          "probability": 0.068866
+        },
+        {
+          "outcomes": [
+            "Critical Failure",
+            "Failure"
+          ],
+          "count": 27575,
+          "probability": 0.027575
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "1": 166775,
+        "2": 167158,
+        "3": 166814,
+        "4": 166623,
+        "5": 166747,
+        "7": 27717,
+        "8": 27767,
+        "9": 27523,
+        "10": 27702,
+        "11": 27343,
+        "13": 4719,
+        "14": 4686,
+        "15": 4710,
+        "16": 4562,
+        "17": 4539,
+        "19": 748,
+        "20": 783,
+        "21": 703,
+        "22": 811,
+        "23": 758,
+        "25": 116,
+        "26": 130,
+        "27": 137,
+        "28": 143,
+        "29": 137,
+        "31": 25,
+        "32": 22,
+        "33": 28,
+        "34": 23,
+        "35": 20,
+        "37": 5,
+        "38": 7,
+        "39": 5,
+        "40": 5,
+        "41": 4,
+        "43": 1,
+        "47": 2,
+        "50": 1,
+        "53": 1
+      },
+      "sweepX": 6,
+      "sweepY": null
+    },
+    {
+      "label": "Dice=8",
+      "outcomes": [
+        {
+          "label": "Raise",
+          "probability": 0.247308,
+          "count": 247308
+        },
+        {
+          "label": "Success",
+          "probability": 0.812157,
+          "count": 812157
+        },
+        {
+          "label": "Failure",
+          "probability": 0.187843,
+          "count": 187843
+        },
+        {
+          "label": "Just Trait die Success",
+          "probability": 0.624216,
+          "count": 624216
+        },
+        {
+          "label": "Critical Failure",
+          "probability": 0.020794,
+          "count": 20794
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Success"
+          ],
+          "count": 624216,
+          "probability": 0.624216
+        },
+        {
+          "outcomes": [
+            "Raise",
+            "Success"
+          ],
+          "count": 247308,
+          "probability": 0.247308
+        },
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Raise"
+          ],
+          "count": 194762,
+          "probability": 0.194762
+        },
+        {
+          "outcomes": [
+            "Critical Failure",
+            "Failure"
+          ],
+          "count": 20794,
+          "probability": 0.020794
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Success"
+          ],
+          "count": 429454,
+          "probability": 0.429454
+        },
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Raise",
+            "Success"
+          ],
+          "count": 194762,
+          "probability": 0.194762
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 167049,
+          "probability": 0.167049
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 135395,
+          "probability": 0.135395
+        },
+        {
+          "outcomes": [
+            "Raise",
+            "Success"
+          ],
+          "count": 52546,
+          "probability": 0.052546
+        },
+        {
+          "outcomes": [
+            "Critical Failure",
+            "Failure"
+          ],
+          "count": 20794,
+          "probability": 0.020794
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "1": 167177,
+        "2": 166730,
+        "3": 166238,
+        "4": 166515,
+        "5": 166406,
+        "7": 27487,
+        "8": 27938,
+        "9": 27858,
+        "10": 28009,
+        "11": 28043,
+        "13": 4543,
+        "14": 4644,
+        "15": 4731,
+        "16": 4610,
+        "17": 4615,
+        "19": 745,
+        "20": 718,
+        "21": 762,
+        "22": 737,
+        "23": 759,
+        "25": 132,
+        "26": 131,
+        "27": 122,
+        "28": 114,
+        "29": 110,
+        "31": 22,
+        "32": 16,
+        "33": 16,
+        "34": 22,
+        "35": 31,
+        "37": 5,
+        "38": 3,
+        "39": 4,
+        "40": 1,
+        "41": 4,
+        "45": 1,
+        "46": 1
+      },
+      "sweepX": 8,
+      "sweepY": null
+    },
+    {
+      "label": "Dice=10",
+      "outcomes": [
+        {
+          "label": "Raise",
+          "probability": 0.397582,
+          "count": 397582
+        },
+        {
+          "label": "Success",
+          "probability": 0.850426,
+          "count": 850426
+        },
+        {
+          "label": "Failure",
+          "probability": 0.149574,
+          "count": 149574
+        },
+        {
+          "label": "Just Trait die Success",
+          "probability": 0.700237,
+          "count": 700237
+        },
+        {
+          "label": "Critical Failure",
+          "probability": 0.016839,
+          "count": 16839
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Success"
+          ],
+          "count": 700237,
+          "probability": 0.700237
+        },
+        {
+          "outcomes": [
+            "Raise",
+            "Success"
+          ],
+          "count": 397582,
+          "probability": 0.397582
+        },
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Raise"
+          ],
+          "count": 355820,
+          "probability": 0.35582
+        },
+        {
+          "outcomes": [
+            "Critical Failure",
+            "Failure"
+          ],
+          "count": 16839,
+          "probability": 0.016839
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Raise",
+            "Success"
+          ],
+          "count": 355820,
+          "probability": 0.35582
+        },
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Success"
+          ],
+          "count": 344417,
+          "probability": 0.344417
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 132735,
+          "probability": 0.132735
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 108427,
+          "probability": 0.108427
+        },
+        {
+          "outcomes": [
+            "Raise",
+            "Success"
+          ],
+          "count": 41762,
+          "probability": 0.041762
+        },
+        {
+          "outcomes": [
+            "Critical Failure",
+            "Failure"
+          ],
+          "count": 16839,
+          "probability": 0.016839
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "1": 166661,
+        "2": 166389,
+        "3": 166315,
+        "4": 166723,
+        "5": 166416,
+        "7": 27895,
+        "8": 27828,
+        "9": 28004,
+        "10": 27687,
+        "11": 27805,
+        "13": 4643,
+        "14": 4769,
+        "15": 4780,
+        "16": 4735,
+        "17": 4638,
+        "19": 757,
+        "20": 796,
+        "21": 785,
+        "22": 809,
+        "23": 773,
+        "25": 147,
+        "26": 137,
+        "27": 119,
+        "28": 130,
+        "29": 135,
+        "31": 23,
+        "32": 23,
+        "33": 20,
+        "34": 26,
+        "35": 20,
+        "37": 3,
+        "38": 4,
+        "39": 1,
+        "41": 2,
+        "43": 1,
+        "47": 1
+      },
+      "sweepX": 10,
+      "sweepY": null
+    },
+    {
+      "label": "Dice=12",
+      "outcomes": [
+        {
+          "label": "Raise",
+          "probability": 0.497068,
+          "count": 497068
+        },
+        {
+          "label": "Success",
+          "probability": 0.87478,
+          "count": 874780
+        },
+        {
+          "label": "Failure",
+          "probability": 0.12522,
+          "count": 125220
+        },
+        {
+          "label": "Just Trait die Success",
+          "probability": 0.749282,
+          "count": 749282
+        },
+        {
+          "label": "Critical Failure",
+          "probability": 0.013843,
+          "count": 13843
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Success"
+          ],
+          "count": 749282,
+          "probability": 0.749282
+        },
+        {
+          "outcomes": [
+            "Raise",
+            "Success"
+          ],
+          "count": 497068,
+          "probability": 0.497068
+        },
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Raise"
+          ],
+          "count": 462367,
+          "probability": 0.462367
+        },
+        {
+          "outcomes": [
+            "Critical Failure",
+            "Failure"
+          ],
+          "count": 13843,
+          "probability": 0.013843
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Raise",
+            "Success"
+          ],
+          "count": 462367,
+          "probability": 0.462367
+        },
+        {
+          "outcomes": [
+            "Just Trait die Success",
+            "Success"
+          ],
+          "count": 286915,
+          "probability": 0.286915
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 111377,
+          "probability": 0.111377
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 90797,
+          "probability": 0.090797
+        },
+        {
+          "outcomes": [
+            "Raise",
+            "Success"
+          ],
+          "count": 34701,
+          "probability": 0.034701
+        },
+        {
+          "outcomes": [
+            "Critical Failure",
+            "Failure"
+          ],
+          "count": 13843,
+          "probability": 0.013843
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "1": 167057,
+        "2": 166472,
+        "3": 166204,
+        "4": 167159,
+        "5": 166517,
+        "7": 27805,
+        "8": 27722,
+        "9": 27433,
+        "10": 27982,
+        "11": 28016,
+        "13": 4646,
+        "14": 4623,
+        "15": 4560,
+        "16": 4599,
+        "17": 4569,
+        "19": 806,
+        "20": 775,
+        "21": 761,
+        "22": 768,
+        "23": 779,
+        "25": 121,
+        "26": 147,
+        "27": 138,
+        "28": 121,
+        "29": 109,
+        "31": 21,
+        "32": 16,
+        "33": 14,
+        "34": 29,
+        "35": 15,
+        "37": 1,
+        "38": 3,
+        "39": 3,
+        "40": 3,
+        "41": 2,
+        "43": 2,
+        "45": 1,
+        "47": 1
+      },
+      "sweepX": 12,
+      "sweepY": null
+    }
+  ]
+}

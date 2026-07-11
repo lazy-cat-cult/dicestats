@@ -1,0 +1,1969 @@
+{
+  "sourceHash": "72926f4d8245ab26",
+  "timestamp": "2026-07-11T14:09:08.014Z",
+  "configFingerprint": "{\"pool\":{\"terms\":[{\"count\":{\"kind\":\"literal\",\"value\":1},\"sides\":{\"kind\":\"literal\",\"value\":20},\"tag\":\"normal\",\"comment\":\"\"},{\"count\":{\"kind\":\"literal\",\"value\":1},\"sides\":{\"kind\":\"literal\",\"value\":20},\"tag\":\"additional\",\"comment\":\"\"}]},\"reroll\":[],\"pipeline\":[{\"name\":\"normal\",\"source\":\"rolled\",\"op\":{\"fn\":\"filter\",\"conditions\":{\"clauses\":[{\"field\":\"tag\",\"operator\":\"=\",\"value\":\"normal\"}],\"connectors\":[]}},\"comment\":\"\"},{\"name\":\"with_advantage\",\"source\":\"rolled\",\"op\":\"max\",\"comment\":\"\"},{\"name\":\"with_disadvantage\",\"source\":\"rolled\",\"op\":\"min\",\"comment\":\"\"},{\"name\":\"total_normal\",\"source\":\"normal\",\"op\":\"sum\",\"comment\":\"\"},{\"name\":\"total_bonus\",\"source\":\"total_normal\",\"op\":{\"fn\":\"add\",\"terms\":[{\"operand\":\"val\",\"value\":{\"kind\":\"ref\",\"name\":\"Bonus\"}}]},\"comment\":\"\"},{\"name\":\"total_bonus_adv\",\"source\":\"with_advantage\",\"op\":{\"fn\":\"add\",\"terms\":[{\"operand\":\"val\",\"value\":{\"kind\":\"ref\",\"name\":\"Bonus\"}}]},\"comment\":\"\"},{\"name\":\"total_bonus_dis\",\"source\":\"with_disadvantage\",\"op\":{\"fn\":\"add\",\"terms\":[{\"operand\":\"val\",\"value\":{\"kind\":\"ref\",\"name\":\"Bonus\"}}]},\"comment\":\"\"}],\"outcomes\":[{\"name\":\"Hit normal\",\"conditions\":[{\"source\":\"total_bonus\",\"op\":\">=\",\"value\":{\"kind\":\"ref\",\"name\":\"DC\"}},{\"source\":\"total_normal\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":20}},{\"source\":\"total_normal\",\"op\":\"!=\",\"value\":{\"kind\":\"literal\",\"value\":1}}],\"connectors\":[\"or\",\"and\"],\"comment\":\"\"},{\"name\":\"Hit advantage\",\"conditions\":[{\"source\":\"total_bonus_adv\",\"op\":\">=\",\"value\":{\"kind\":\"ref\",\"name\":\"DC\"}},{\"source\":\"with_advantage\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":20}},{\"source\":\"with_advantage\",\"op\":\"!=\",\"value\":{\"kind\":\"literal\",\"value\":1}}],\"connectors\":[\"or\",\"and\"],\"comment\":\"\"},{\"name\":\"Hit disadvantage\",\"conditions\":[{\"source\":\"total_bonus_dis\",\"op\":\">=\",\"value\":{\"kind\":\"ref\",\"name\":\"DC\"}},{\"source\":\"with_disadvantage\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":20}},{\"source\":\"with_disadvantage\",\"op\":\"!=\",\"value\":{\"kind\":\"literal\",\"value\":1}}],\"connectors\":[\"or\",\"and\"],\"comment\":\"\"}],\"sweep\":{\"x\":[2,5,7,10,12,15],\"y\":[10,15,20],\"xName\":\"Bonus\",\"yName\":\"DC\"}}",
+  "results": [
+    {
+      "label": "DC=10 · Bonus=2",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.649148,
+          "count": 649148
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.877503,
+          "count": 877503
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.421917,
+          "count": 421917
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.122497,
+          "count": 122497
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 649148,
+          "probability": 0.649148
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 421917,
+          "probability": 0.421917
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 421917,
+          "probability": 0.421917
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 421917,
+          "probability": 0.421917
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 228355,
+          "probability": 0.228355
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 227231,
+          "probability": 0.227231
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 122497,
+          "probability": 0.122497
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "3": 97352,
+        "4": 92500,
+        "5": 87439,
+        "6": 82875,
+        "7": 77627,
+        "8": 72766,
+        "9": 67524,
+        "10": 62909,
+        "11": 57545,
+        "12": 52112,
+        "13": 47368,
+        "14": 42146,
+        "15": 37349,
+        "16": 32602,
+        "17": 27455,
+        "18": 22482,
+        "19": 17663,
+        "20": 12402,
+        "21": 7402,
+        "22": 2482
+      },
+      "sweepX": 2,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=5",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.800125,
+          "count": 800125
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.959839,
+          "count": 959839
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.639861,
+          "count": 639861
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.040161,
+          "count": 40161
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 800125,
+          "probability": 0.800125
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 639861,
+          "probability": 0.639861
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 639861,
+          "probability": 0.639861
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 639861,
+          "probability": 0.639861
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 160264,
+          "probability": 0.160264
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 159714,
+          "probability": 0.159714
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 40161,
+          "probability": 0.040161
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "6": 97551,
+        "7": 92444,
+        "8": 87254,
+        "9": 82890,
+        "10": 77775,
+        "11": 72267,
+        "12": 67659,
+        "13": 61980,
+        "14": 57373,
+        "15": 52686,
+        "16": 47783,
+        "17": 42244,
+        "18": 37503,
+        "19": 32388,
+        "20": 27756,
+        "21": 22538,
+        "22": 17494,
+        "23": 12461,
+        "24": 7414,
+        "25": 2540
+      },
+      "sweepX": 5,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=7",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.8995,
+          "count": 899500
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.990075,
+          "count": 990075
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.809533,
+          "count": 809533
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.009925,
+          "count": 9925
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 899500,
+          "probability": 0.8995
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 809533,
+          "probability": 0.809533
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 809533,
+          "probability": 0.809533
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 809533,
+          "probability": 0.809533
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 90575,
+          "probability": 0.090575
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 89967,
+          "probability": 0.089967
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 9925,
+          "probability": 0.009925
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "8": 97896,
+        "9": 92571,
+        "10": 87380,
+        "11": 82427,
+        "12": 77896,
+        "13": 72436,
+        "14": 67527,
+        "15": 62020,
+        "16": 57183,
+        "17": 52289,
+        "18": 47349,
+        "19": 42451,
+        "20": 38005,
+        "21": 32389,
+        "22": 27767,
+        "23": 22487,
+        "24": 17494,
+        "25": 12466,
+        "26": 7424,
+        "27": 2543
+      },
+      "sweepX": 7,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=10",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.950238,
+          "count": 950238
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.997472,
+          "count": 997472
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.902848,
+          "count": 902848
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.002528,
+          "count": 2528
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 950238,
+          "probability": 0.950238
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 902848,
+          "probability": 0.902848
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 902848,
+          "probability": 0.902848
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 902848,
+          "probability": 0.902848
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 47390,
+          "probability": 0.04739
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 47234,
+          "probability": 0.047234
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 2528,
+          "probability": 0.002528
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "11": 97152,
+        "12": 92229,
+        "13": 87384,
+        "14": 83019,
+        "15": 77342,
+        "16": 72350,
+        "17": 67314,
+        "18": 62902,
+        "19": 57557,
+        "20": 52641,
+        "21": 47552,
+        "22": 42568,
+        "23": 37510,
+        "24": 32384,
+        "25": 27748,
+        "26": 22408,
+        "27": 17461,
+        "28": 12382,
+        "29": 7561,
+        "30": 2536
+      },
+      "sweepX": 10,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=12",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.949878,
+          "count": 949878
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.9976,
+          "count": 997600
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.902291,
+          "count": 902291
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.0024,
+          "count": 2400
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 949878,
+          "probability": 0.949878
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 902291,
+          "probability": 0.902291
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 902291,
+          "probability": 0.902291
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 902291,
+          "probability": 0.902291
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 47722,
+          "probability": 0.047722
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 47587,
+          "probability": 0.047587
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 2400,
+          "probability": 0.0024
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "13": 97709,
+        "14": 92789,
+        "15": 87591,
+        "16": 83017,
+        "17": 76967,
+        "18": 72623,
+        "19": 67541,
+        "20": 62580,
+        "21": 57157,
+        "22": 52727,
+        "23": 47539,
+        "24": 42561,
+        "25": 37591,
+        "26": 32135,
+        "27": 27521,
+        "28": 22277,
+        "29": 17191,
+        "30": 12613,
+        "31": 7399,
+        "32": 2472
+      },
+      "sweepX": 12,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=15",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.949982,
+          "count": 949982
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.997513,
+          "count": 997513
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.90273,
+          "count": 902730
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.002487,
+          "count": 2487
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 949982,
+          "probability": 0.949982
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 902730,
+          "probability": 0.90273
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 902730,
+          "probability": 0.90273
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 902730,
+          "probability": 0.90273
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 47531,
+          "probability": 0.047531
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 47252,
+          "probability": 0.047252
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 2487,
+          "probability": 0.002487
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "16": 97270,
+        "17": 92513,
+        "18": 87717,
+        "19": 83190,
+        "20": 77208,
+        "21": 72451,
+        "22": 67238,
+        "23": 62577,
+        "24": 57491,
+        "25": 52422,
+        "26": 47300,
+        "27": 42578,
+        "28": 37722,
+        "29": 32348,
+        "30": 27540,
+        "31": 22458,
+        "32": 17465,
+        "33": 12492,
+        "34": 7451,
+        "35": 2569
+      },
+      "sweepX": 15,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=15 · Bonus=2",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.40008,
+          "count": 400080
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.640133,
+          "count": 640133
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.160484,
+          "count": 160484
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.359867,
+          "count": 359867
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 400080,
+          "probability": 0.40008
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 160484,
+          "probability": 0.160484
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 160484,
+          "probability": 0.160484
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 359867,
+          "probability": 0.359867
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 240053,
+          "probability": 0.240053
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 239596,
+          "probability": 0.239596
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 160484,
+          "probability": 0.160484
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "3": 97646,
+        "4": 92356,
+        "5": 87382,
+        "6": 82589,
+        "7": 77664,
+        "8": 72152,
+        "9": 67419,
+        "10": 62359,
+        "11": 57420,
+        "12": 52976,
+        "13": 47047,
+        "14": 42506,
+        "15": 37664,
+        "16": 32498,
+        "17": 27543,
+        "18": 22599,
+        "19": 17594,
+        "20": 12434,
+        "21": 7571,
+        "22": 2581
+      },
+      "sweepX": 2,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=5",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.549814,
+          "count": 549814
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.796698,
+          "count": 796698
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.302198,
+          "count": 302198
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.203302,
+          "count": 203302
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 549814,
+          "probability": 0.549814
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 302198,
+          "probability": 0.302198
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 302198,
+          "probability": 0.302198
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 302198,
+          "probability": 0.302198
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 247616,
+          "probability": 0.247616
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 246884,
+          "probability": 0.246884
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 203302,
+          "probability": 0.203302
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "6": 97309,
+        "7": 92412,
+        "8": 87422,
+        "9": 82743,
+        "10": 77264,
+        "11": 72303,
+        "12": 67507,
+        "13": 63060,
+        "14": 57782,
+        "15": 52306,
+        "16": 47854,
+        "17": 42381,
+        "18": 37660,
+        "19": 32501,
+        "20": 27279,
+        "21": 22463,
+        "22": 17412,
+        "23": 12497,
+        "24": 7346,
+        "25": 2499
+      },
+      "sweepX": 5,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=7",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.650118,
+          "count": 650118
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.877659,
+          "count": 877659
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.422094,
+          "count": 422094
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.122341,
+          "count": 122341
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 650118,
+          "probability": 0.650118
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 422094,
+          "probability": 0.422094
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 422094,
+          "probability": 0.422094
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 422094,
+          "probability": 0.422094
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 228024,
+          "probability": 0.228024
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 227541,
+          "probability": 0.227541
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 122341,
+          "probability": 0.122341
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "8": 97778,
+        "9": 92429,
+        "10": 87441,
+        "11": 83125,
+        "12": 77146,
+        "13": 72450,
+        "14": 67537,
+        "15": 62284,
+        "16": 57415,
+        "17": 52731,
+        "18": 47316,
+        "19": 42285,
+        "20": 37565,
+        "21": 32410,
+        "22": 27413,
+        "23": 22694,
+        "24": 17480,
+        "25": 12592,
+        "26": 7445,
+        "27": 2464
+      },
+      "sweepX": 7,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=10",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.79935,
+          "count": 799350
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.959814,
+          "count": 959814
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.639488,
+          "count": 639488
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.040186,
+          "count": 40186
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 799350,
+          "probability": 0.79935
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 639488,
+          "probability": 0.639488
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 639488,
+          "probability": 0.639488
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 639488,
+          "probability": 0.639488
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 160464,
+          "probability": 0.160464
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 159862,
+          "probability": 0.159862
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 40186,
+          "probability": 0.040186
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "11": 97423,
+        "12": 92324,
+        "13": 88040,
+        "14": 82725,
+        "15": 77508,
+        "16": 72546,
+        "17": 67587,
+        "18": 62515,
+        "19": 57502,
+        "20": 52534,
+        "21": 47183,
+        "22": 42978,
+        "23": 37316,
+        "24": 32333,
+        "25": 27295,
+        "26": 22398,
+        "27": 17471,
+        "28": 12292,
+        "29": 7489,
+        "30": 2541
+      },
+      "sweepX": 10,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=12",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.900048,
+          "count": 900048
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.989892,
+          "count": 989892
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.809811,
+          "count": 809811
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.010108,
+          "count": 10108
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 900048,
+          "probability": 0.900048
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 809811,
+          "probability": 0.809811
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 809811,
+          "probability": 0.809811
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 809811,
+          "probability": 0.809811
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 90237,
+          "probability": 0.090237
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 89844,
+          "probability": 0.089844
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 10108,
+          "probability": 0.010108
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "13": 97920,
+        "14": 92269,
+        "15": 87208,
+        "16": 81955,
+        "17": 77496,
+        "18": 72379,
+        "19": 67739,
+        "20": 62643,
+        "21": 57363,
+        "22": 52957,
+        "23": 47594,
+        "24": 42663,
+        "25": 37359,
+        "26": 32500,
+        "27": 27248,
+        "28": 22374,
+        "29": 17740,
+        "30": 12570,
+        "31": 7477,
+        "32": 2546
+      },
+      "sweepX": 12,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=15",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.949896,
+          "count": 949896
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.997495,
+          "count": 997495
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.902627,
+          "count": 902627
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.002505,
+          "count": 2505
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 949896,
+          "probability": 0.949896
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 902627,
+          "probability": 0.902627
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 902627,
+          "probability": 0.902627
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 902627,
+          "probability": 0.902627
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 47599,
+          "probability": 0.047599
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 47269,
+          "probability": 0.047269
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 2505,
+          "probability": 0.002505
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "16": 97373,
+        "17": 92216,
+        "18": 87552,
+        "19": 82190,
+        "20": 77278,
+        "21": 72727,
+        "22": 67090,
+        "23": 62634,
+        "24": 57684,
+        "25": 53155,
+        "26": 47486,
+        "27": 42271,
+        "28": 37598,
+        "29": 32548,
+        "30": 27503,
+        "31": 22433,
+        "32": 17672,
+        "33": 12562,
+        "34": 7530,
+        "35": 2498
+      },
+      "sweepX": 15,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=20 · Bonus=2",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.149842,
+          "count": 149842
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.277351,
+          "count": 277351
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.022426,
+          "count": 22426
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.722649,
+          "count": 722649
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 149842,
+          "probability": 0.149842
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 22426,
+          "probability": 0.022426
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 22426,
+          "probability": 0.022426
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 722649,
+          "probability": 0.722649
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 127509,
+          "probability": 0.127509
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 127416,
+          "probability": 0.127416
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 22426,
+          "probability": 0.022426
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "3": 97654,
+        "4": 92440,
+        "5": 87287,
+        "6": 82895,
+        "7": 77822,
+        "8": 72511,
+        "9": 67086,
+        "10": 62222,
+        "11": 57554,
+        "12": 52479,
+        "13": 47392,
+        "14": 42659,
+        "15": 37312,
+        "16": 32472,
+        "17": 27276,
+        "18": 22640,
+        "19": 17873,
+        "20": 12404,
+        "21": 7505,
+        "22": 2517
+      },
+      "sweepX": 2,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=5",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.300179,
+          "count": 300179
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.50996,
+          "count": 509960
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.089572,
+          "count": 89572
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.49004,
+          "count": 490040
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 300179,
+          "probability": 0.300179
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 89572,
+          "probability": 0.089572
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 89572,
+          "probability": 0.089572
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 490040,
+          "probability": 0.49004
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 210607,
+          "probability": 0.210607
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 209781,
+          "probability": 0.209781
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 89572,
+          "probability": 0.089572
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "6": 97645,
+        "7": 92883,
+        "8": 87469,
+        "9": 82340,
+        "10": 77600,
+        "11": 72584,
+        "12": 67736,
+        "13": 62437,
+        "14": 57567,
+        "15": 52537,
+        "16": 47162,
+        "17": 42582,
+        "18": 37383,
+        "19": 32503,
+        "20": 27313,
+        "21": 22655,
+        "22": 17377,
+        "23": 12239,
+        "24": 7520,
+        "25": 2468
+      },
+      "sweepX": 5,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=7",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.399046,
+          "count": 399046
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.639358,
+          "count": 639358
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.159885,
+          "count": 159885
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.360642,
+          "count": 360642
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 399046,
+          "probability": 0.399046
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 159885,
+          "probability": 0.159885
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 159885,
+          "probability": 0.159885
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 360642,
+          "probability": 0.360642
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 240312,
+          "probability": 0.240312
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 239161,
+          "probability": 0.239161
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 159885,
+          "probability": 0.159885
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "8": 97684,
+        "9": 92479,
+        "10": 87666,
+        "11": 82341,
+        "12": 77658,
+        "13": 72395,
+        "14": 67786,
+        "15": 62370,
+        "16": 57152,
+        "17": 52161,
+        "18": 47628,
+        "19": 42795,
+        "20": 37654,
+        "21": 32657,
+        "22": 27539,
+        "23": 22344,
+        "24": 17547,
+        "25": 12270,
+        "26": 7410,
+        "27": 2464
+      },
+      "sweepX": 7,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=10",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.550602,
+          "count": 550602
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.797837,
+          "count": 797837
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.302991,
+          "count": 302991
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.202163,
+          "count": 202163
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 550602,
+          "probability": 0.550602
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 302991,
+          "probability": 0.302991
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 302991,
+          "probability": 0.302991
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 302991,
+          "probability": 0.302991
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 247611,
+          "probability": 0.247611
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 247235,
+          "probability": 0.247235
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 202163,
+          "probability": 0.202163
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "11": 97254,
+        "12": 92691,
+        "13": 87746,
+        "14": 82532,
+        "15": 77143,
+        "16": 72463,
+        "17": 67109,
+        "18": 62528,
+        "19": 57543,
+        "20": 52535,
+        "21": 47550,
+        "22": 42883,
+        "23": 37308,
+        "24": 32422,
+        "25": 27719,
+        "26": 22632,
+        "27": 17354,
+        "28": 12532,
+        "29": 7546,
+        "30": 2510
+      },
+      "sweepX": 10,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=12",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.650723,
+          "count": 650723
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.87801,
+          "count": 878010
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.423323,
+          "count": 423323
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.12199,
+          "count": 121990
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 650723,
+          "probability": 0.650723
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 423323,
+          "probability": 0.423323
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 423323,
+          "probability": 0.423323
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 423323,
+          "probability": 0.423323
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 227400,
+          "probability": 0.2274
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 227287,
+          "probability": 0.227287
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 121990,
+          "probability": 0.12199
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "13": 97214,
+        "14": 92494,
+        "15": 87562,
+        "16": 82253,
+        "17": 77427,
+        "18": 72639,
+        "19": 67088,
+        "20": 62267,
+        "21": 57982,
+        "22": 52485,
+        "23": 47891,
+        "24": 42517,
+        "25": 37622,
+        "26": 32554,
+        "27": 27428,
+        "28": 22628,
+        "29": 17303,
+        "30": 12532,
+        "31": 7535,
+        "32": 2579
+      },
+      "sweepX": 12,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=15",
+      "outcomes": [
+        {
+          "label": "Hit normal",
+          "probability": 0.800027,
+          "count": 800027
+        },
+        {
+          "label": "Hit advantage",
+          "probability": 0.959778,
+          "count": 959778
+        },
+        {
+          "label": "Hit disadvantage",
+          "probability": 0.639558,
+          "count": 639558
+        },
+        {
+          "label": "Not matched",
+          "probability": 0.040222,
+          "count": 40222
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 800027,
+          "probability": 0.800027
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage"
+          ],
+          "count": 639558,
+          "probability": 0.639558
+        },
+        {
+          "outcomes": [
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 639558,
+          "probability": 0.639558
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit disadvantage",
+            "Hit normal"
+          ],
+          "count": 639558,
+          "probability": 0.639558
+        },
+        {
+          "outcomes": [
+            "Hit advantage",
+            "Hit normal"
+          ],
+          "count": 160469,
+          "probability": 0.160469
+        },
+        {
+          "outcomes": [
+            "Hit advantage"
+          ],
+          "count": 159751,
+          "probability": 0.159751
+        },
+        {
+          "outcomes": [
+            "Not matched"
+          ],
+          "count": 40222,
+          "probability": 0.040222
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "16": 97556,
+        "17": 92705,
+        "18": 87552,
+        "19": 82629,
+        "20": 77656,
+        "21": 72114,
+        "22": 67601,
+        "23": 62602,
+        "24": 57331,
+        "25": 52417,
+        "26": 47390,
+        "27": 42397,
+        "28": 37279,
+        "29": 32398,
+        "30": 27509,
+        "31": 22547,
+        "32": 17608,
+        "33": 12618,
+        "34": 7529,
+        "35": 2562
+      },
+      "sweepX": 15,
+      "sweepY": 20
+    }
+  ]
+}

@@ -191,15 +191,20 @@ export function toggleFavorite(id: string): void {
   favoriteIds.value = toggleFavoriteId(id, favoriteIds.value);
 }
 
+export const configFingerprint = computed(() => JSON.stringify({
+  pool: dicePool.value,
+  reroll: rerollConditions.value,
+  pipeline: pipeline.value,
+  outcomes: outcomes.value,
+  sweep: sweep.value,
+}, (_key, value) => {
+  if (_key === 'id' && typeof value === 'string') return undefined;
+  return value;
+}));
+
 let lastConfigFingerprint = '';
 effect(() => {
-  const fp = JSON.stringify({
-    pool: dicePool.value,
-    reroll: rerollConditions.value,
-    pipeline: pipeline.value,
-    outcomes: outcomes.value,
-    sweep: sweep.value,
-  });
+  const fp = configFingerprint.value;
   if (lastConfigFingerprint && lastConfigFingerprint !== fp) {
     configDirty.value = true;
   }

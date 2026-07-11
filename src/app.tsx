@@ -1,4 +1,4 @@
-import { signal } from '@preact/signals';
+import { signal, effect, computed } from '@preact/signals';
 import type { SimResult, SimJob, SampleTrace } from '@/types';
 import {
   dicePool,
@@ -12,6 +12,7 @@ import {
   sweepSimCount,
   confirmedHighCost,
   configDirty,
+  configFingerprint,
   showComments,
   showPoolComments,
   showRerollComments,
@@ -40,13 +41,15 @@ import { SampleView } from '@/components/SampleView';
 import { saveConfig } from '@/state/persistence';
 import { validateConfig, canRunSimulation } from '@/utils/validation';
 import { decodeShareUrl } from '@/utils/share';
-import { computed } from '@preact/signals';
+import { saveResult, loadResult, removeResult, clearAllResults, seedEntries } from '@/state/result-cache';
+import { loadPrecomputedMap } from '@/data/precomputed';
 import { useEffect } from 'preact/hooks';
 import { Section, Button, Checkbox } from '@/components/ui';
 import { BrandHeader } from '@/components/BrandHeader';
 
 export const simResults = signal<SimResult[]>([]);
 export const simError = signal<string | null>(null);
+export const restoredFromCache = signal<boolean>(false);
 export const highCostTooltip = signal<boolean>(false);
 export const loadError = signal<string | null>(null);
 export const detailsModalOpen = signal<boolean>(false);
@@ -67,6 +70,7 @@ export function resetUiForPresetApply() {
   cancelSimulation();
   simResults.value = [];
   simError.value = null;
+  restoredFromCache.value = false;
   confirmedHighCost.value = false;
   resetSampleMode();
 }
@@ -123,6 +127,31 @@ export function App() {
     };
   }, []);
 
+  useEffect(() => {
+    return effect(() => {
+      const fp = configFingerprint.value;
+      if (!fp || isSimulating.value) return;
+      const cached = loadResult(fp);
+      if (cached && cached.length > 0) {
+        simResults.value = cached;
+        restoredFromCache.value = true;
+        simError.value = null;
+      } else {
+        simResults.value = [];
+        restoredFromCache.value = false;
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const SEED_FLAG = 'dice-calc-precomputed-seeded';
+    if (localStorage.getItem(SEED_FLAG)) return;
+    loadPrecomputedMap().then((map) => {
+      seedEntries(map);
+      localStorage.setItem(SEED_FLAG, '1');
+    });
+  }, []);
+
   function runSimulation() {
     if (!canRun.value) return;
     const total = totalIterations.value;
@@ -162,6 +191,8 @@ export function App() {
       }
       if (msg.type === 'result') {
         simResults.value = msg.results;
+        restoredFromCache.value = false;
+        saveResult(configFingerprint.value, msg.results);
         isSimulating.value = false;
         worker?.terminate();
         worker = null;
@@ -256,6 +287,17 @@ export function App() {
     };
 
     worker.postMessage({ type: 'sample', job, x: xVal ?? undefined, y: yVal ?? undefined });
+  }
+
+  function recalculate() {
+    removeResult(configFingerprint.value);
+    restoredFromCache.value = false;
+    runSimulation();
+  }
+
+  function clearCache() {
+    clearAllResults();
+    restoredFromCache.value = false;
   }
 
   const blockingErrors = validationErrors.value.filter((e) => e.blocking);
@@ -371,12 +413,12 @@ export function App() {
               <Button
                 variant="primary"
                 size="lg"
-                onClick={runSimulation}
+                onClick={restoredFromCache.value ? recalculate : runSimulation}
                 disabled={!canRun.value}
                 className="flex-1 sm:flex-none sm:min-w-[280px]"
                 ariaLabel="Run simulation with 1,000,000 rolls per sweep value"
               >
-                {isSimulating.value ? 'Running…' : hasResults ? 'Roll the Dice Again' : 'Roll the Dice'}
+                {isSimulating.value ? 'Running…' : restoredFromCache.value ? 'Recalculate' : hasResults ? 'Roll the Dice Again' : 'Roll the Dice'}
                 <span class="font-mono text-[10px] opacity-90 ml-1 normal-case tracking-[0.08em]">
                   {subLabel}
                 </span>
@@ -458,6 +500,11 @@ export function App() {
             <SampleRunningPanel />
           )}
           {hasResults && singleResult && <OddsTape result={singleResult} progress={null} />}
+          {hasResults && restoredFromCache.value && (
+            <p class="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-mute -mt-3">
+              Restored from cache
+            </p>
+          )}
           {isSimulating.value && <RunningPanel progress={simProgress.value} />}
           {simError.value && <ErrorPanel message={simError.value} />}
 
@@ -466,14 +513,26 @@ export function App() {
               eyebrow="Detail"
               title={simResults.value.length > 1 ? 'Probability Table' : 'Roll Count'}
               actions={
-                <Button
-                  variant="ghost"
-                  size="md"
-                  onClick={() => { detailsModalOpen.value = true; }}
-                  ariaLabel="Open details and statistics"
-                >
-                  Details &amp; Statistics
-                </Button>
+                <div class="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    onClick={() => { detailsModalOpen.value = true; }}
+                    ariaLabel="Open details and statistics"
+                  >
+                    Details &amp; Statistics
+                  </Button>
+                  {restoredFromCache.value && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearCache}
+                      ariaLabel="Clear all cached simulation results"
+                    >
+                      Clear cache
+                    </Button>
+                  )}
+                </div>
               }
             >
               <ResultView results={simResults.value} xName={sweep.value.xName} yName={sweep.value.yName} />

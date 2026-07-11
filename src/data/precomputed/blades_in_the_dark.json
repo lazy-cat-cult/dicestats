@@ -1,0 +1,641 @@
+{
+  "sourceHash": "c49564f7b54048e9",
+  "timestamp": "2026-07-11T14:02:57.340Z",
+  "configFingerprint": "{\"pool\":{\"terms\":[{\"count\":{\"kind\":\"ref\",\"name\":\"Dice\"},\"sides\":{\"kind\":\"literal\",\"value\":6},\"tag\":\"\",\"comment\":\"\"}]},\"reroll\":[],\"pipeline\":[{\"name\":\"best\",\"source\":\"rolled\",\"op\":\"max\",\"comment\":\"\"},{\"name\":\"sixes\",\"source\":\"rolled\",\"op\":{\"fn\":\"filter\",\"conditions\":{\"clauses\":[{\"field\":\"face\",\"operator\":\"is_max\"}],\"connectors\":[]}},\"comment\":\"\"},{\"name\":\"six_count\",\"source\":\"sixes\",\"op\":\"count\",\"comment\":\"\"}],\"outcomes\":[{\"name\":\"Critical\",\"conditions\":[{\"source\":\"six_count\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":2}}],\"connectors\":[],\"comment\":\"\"},{\"name\":\"Success\",\"conditions\":[{\"source\":\"best\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":6}}],\"connectors\":[],\"comment\":\"\"},{\"name\":\"Partial\",\"conditions\":[{\"source\":\"best\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":4}},{\"source\":\"best\",\"op\":\"<=\",\"value\":{\"kind\":\"literal\",\"value\":5}}],\"connectors\":[\"and\"],\"comment\":\"\"},{\"name\":\"Failure\",\"conditions\":[{\"source\":\"best\",\"op\":\"<=\",\"value\":{\"kind\":\"literal\",\"value\":3}}],\"connectors\":[],\"comment\":\"\"}],\"sweep\":{\"x\":[1,2,3,4,5,6,7,8],\"y\":null,\"xName\":\"Dice\",\"yName\":\"Y\"}}",
+  "results": [
+    {
+      "label": "Dice=1",
+      "outcomes": [
+        {
+          "label": "Critical",
+          "probability": 0,
+          "count": 0
+        },
+        {
+          "label": "Success",
+          "probability": 0.166439,
+          "count": 166439
+        },
+        {
+          "label": "Partial",
+          "probability": 0.333803,
+          "count": 333803
+        },
+        {
+          "label": "Failure",
+          "probability": 0.499758,
+          "count": 499758
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 499758,
+          "probability": 0.499758
+        },
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 333803,
+          "probability": 0.333803
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 166439,
+          "probability": 0.166439
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 833561,
+        "1": 166439
+      },
+      "sweepX": 1,
+      "sweepY": null
+    },
+    {
+      "label": "Dice=2",
+      "outcomes": [
+        {
+          "label": "Critical",
+          "probability": 0.027974,
+          "count": 27974
+        },
+        {
+          "label": "Success",
+          "probability": 0.305958,
+          "count": 305958
+        },
+        {
+          "label": "Partial",
+          "probability": 0.444737,
+          "count": 444737
+        },
+        {
+          "label": "Failure",
+          "probability": 0.249305,
+          "count": 249305
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 27974,
+          "probability": 0.027974
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 444737,
+          "probability": 0.444737
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 277984,
+          "probability": 0.277984
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 249305,
+          "probability": 0.249305
+        },
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 27974,
+          "probability": 0.027974
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 694042,
+        "1": 277984,
+        "2": 27974
+      },
+      "sweepX": 2,
+      "sweepY": null
+    },
+    {
+      "label": "Dice=3",
+      "outcomes": [
+        {
+          "label": "Critical",
+          "probability": 0.073925,
+          "count": 73925
+        },
+        {
+          "label": "Success",
+          "probability": 0.420808,
+          "count": 420808
+        },
+        {
+          "label": "Partial",
+          "probability": 0.454499,
+          "count": 454499
+        },
+        {
+          "label": "Failure",
+          "probability": 0.124693,
+          "count": 124693
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 73925,
+          "probability": 0.073925
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 454499,
+          "probability": 0.454499
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 346883,
+          "probability": 0.346883
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 124693,
+          "probability": 0.124693
+        },
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 73925,
+          "probability": 0.073925
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 579192,
+        "1": 346883,
+        "2": 69274,
+        "3": 4651
+      },
+      "sweepX": 3,
+      "sweepY": null
+    },
+    {
+      "label": "Dice=4",
+      "outcomes": [
+        {
+          "label": "Critical",
+          "probability": 0.131627,
+          "count": 131627
+        },
+        {
+          "label": "Success",
+          "probability": 0.51742,
+          "count": 517420
+        },
+        {
+          "label": "Partial",
+          "probability": 0.419987,
+          "count": 419987
+        },
+        {
+          "label": "Failure",
+          "probability": 0.062593,
+          "count": 62593
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 131627,
+          "probability": 0.131627
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 419987,
+          "probability": 0.419987
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 385793,
+          "probability": 0.385793
+        },
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 131627,
+          "probability": 0.131627
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 62593,
+          "probability": 0.062593
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 482580,
+        "1": 385793,
+        "2": 115527,
+        "3": 15349,
+        "4": 751
+      },
+      "sweepX": 4,
+      "sweepY": null
+    },
+    {
+      "label": "Dice=5",
+      "outcomes": [
+        {
+          "label": "Critical",
+          "probability": 0.195861,
+          "count": 195861
+        },
+        {
+          "label": "Success",
+          "probability": 0.598813,
+          "count": 598813
+        },
+        {
+          "label": "Partial",
+          "probability": 0.369849,
+          "count": 369849
+        },
+        {
+          "label": "Failure",
+          "probability": 0.031338,
+          "count": 31338
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 195861,
+          "probability": 0.195861
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 402952,
+          "probability": 0.402952
+        },
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 369849,
+          "probability": 0.369849
+        },
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 195861,
+          "probability": 0.195861
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 31338,
+          "probability": 0.031338
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 401187,
+        "1": 402952,
+        "2": 160302,
+        "3": 32162,
+        "4": 3272,
+        "5": 125
+      },
+      "sweepX": 5,
+      "sweepY": null
+    },
+    {
+      "label": "Dice=6",
+      "outcomes": [
+        {
+          "label": "Critical",
+          "probability": 0.262765,
+          "count": 262765
+        },
+        {
+          "label": "Success",
+          "probability": 0.664728,
+          "count": 664728
+        },
+        {
+          "label": "Partial",
+          "probability": 0.319514,
+          "count": 319514
+        },
+        {
+          "label": "Failure",
+          "probability": 0.015758,
+          "count": 15758
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 262765,
+          "probability": 0.262765
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 401963,
+          "probability": 0.401963
+        },
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 319514,
+          "probability": 0.319514
+        },
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 262765,
+          "probability": 0.262765
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 15758,
+          "probability": 0.015758
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 335272,
+        "1": 401963,
+        "2": 200583,
+        "3": 53477,
+        "4": 8068,
+        "5": 612,
+        "6": 25
+      },
+      "sweepX": 6,
+      "sweepY": null
+    },
+    {
+      "label": "Dice=7",
+      "outcomes": [
+        {
+          "label": "Critical",
+          "probability": 0.330116,
+          "count": 330116
+        },
+        {
+          "label": "Success",
+          "probability": 0.72131,
+          "count": 721310
+        },
+        {
+          "label": "Partial",
+          "probability": 0.27081,
+          "count": 270810
+        },
+        {
+          "label": "Failure",
+          "probability": 0.00788,
+          "count": 7880
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 330116,
+          "probability": 0.330116
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 391194,
+          "probability": 0.391194
+        },
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 330116,
+          "probability": 0.330116
+        },
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 270810,
+          "probability": 0.27081
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 7880,
+          "probability": 0.00788
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 278690,
+        "1": 391194,
+        "2": 234382,
+        "3": 78073,
+        "4": 15683,
+        "5": 1844,
+        "6": 130,
+        "7": 4
+      },
+      "sweepX": 7,
+      "sweepY": null
+    },
+    {
+      "label": "Dice=8",
+      "outcomes": [
+        {
+          "label": "Critical",
+          "probability": 0.395495,
+          "count": 395495
+        },
+        {
+          "label": "Success",
+          "probability": 0.767878,
+          "count": 767878
+        },
+        {
+          "label": "Partial",
+          "probability": 0.228197,
+          "count": 228197
+        },
+        {
+          "label": "Failure",
+          "probability": 0.003925,
+          "count": 3925
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 395495,
+          "probability": 0.395495
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Critical",
+            "Success"
+          ],
+          "count": 395495,
+          "probability": 0.395495
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 372383,
+          "probability": 0.372383
+        },
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 228197,
+          "probability": 0.228197
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 3925,
+          "probability": 0.003925
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 232122,
+        "1": 372383,
+        "2": 261177,
+        "3": 103924,
+        "4": 25749,
+        "5": 4213,
+        "6": 404,
+        "7": 28
+      },
+      "sweepX": 8,
+      "sweepY": null
+    }
+  ]
+}

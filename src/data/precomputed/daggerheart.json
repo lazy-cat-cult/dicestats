@@ -1,0 +1,3775 @@
+{
+  "sourceHash": "5f60eb35757538da",
+  "timestamp": "2026-07-11T14:06:48.382Z",
+  "configFingerprint": "{\"pool\":{\"terms\":[{\"count\":{\"kind\":\"literal\",\"value\":1},\"sides\":{\"kind\":\"literal\",\"value\":12},\"tag\":\"hope\",\"comment\":\"\"},{\"count\":{\"kind\":\"literal\",\"value\":1},\"sides\":{\"kind\":\"literal\",\"value\":12},\"tag\":\"fear\",\"comment\":\"\"}]},\"reroll\":[],\"pipeline\":[{\"name\":\"hope_face\",\"source\":\"rolled\",\"op\":{\"fn\":\"filter\",\"conditions\":{\"clauses\":[{\"field\":\"tag\",\"operator\":\"=\",\"value\":\"hope\"}],\"connectors\":[]}},\"comment\":\"\"},{\"name\":\"fear_face\",\"source\":\"rolled\",\"op\":{\"fn\":\"filter\",\"conditions\":{\"clauses\":[{\"field\":\"tag\",\"operator\":\"=\",\"value\":\"fear\"}],\"connectors\":[]}},\"comment\":\"\"},{\"name\":\"hope_value\",\"source\":\"hope_face\",\"op\":\"max\",\"comment\":\"\"},{\"name\":\"fear_value\",\"source\":\"fear_face\",\"op\":\"max\",\"comment\":\"\"},{\"name\":\"delta\",\"source\":\"hope_value\",\"op\":{\"fn\":\"subtract\",\"terms\":[{\"operand\":\"ref\",\"source2\":\"fear_value\"}]},\"comment\":\"\"},{\"name\":\"total\",\"source\":\"rolled\",\"op\":\"sum\",\"comment\":\"\"},{\"name\":\"total_bonus\",\"source\":\"total\",\"op\":{\"fn\":\"add\",\"terms\":[{\"operand\":\"val\",\"value\":{\"kind\":\"ref\",\"name\":\"Bonus\"}}]},\"comment\":\"\"}],\"outcomes\":[{\"name\":\"Critical Success\",\"conditions\":[{\"source\":\"delta\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":0}}],\"connectors\":[],\"comment\":\"\"},{\"name\":\"Success with Hope\",\"conditions\":[{\"source\":\"delta\",\"op\":\">\",\"value\":{\"kind\":\"literal\",\"value\":0}},{\"source\":\"total_bonus\",\"op\":\">=\",\"value\":{\"kind\":\"ref\",\"name\":\"DC\"}}],\"connectors\":[\"and\"],\"comment\":\"\"},{\"name\":\"Success with Fear\",\"conditions\":[{\"source\":\"delta\",\"op\":\"<\",\"value\":{\"kind\":\"literal\",\"value\":0}},{\"source\":\"total_bonus\",\"op\":\">=\",\"value\":{\"kind\":\"ref\",\"name\":\"DC\"}}],\"connectors\":[\"and\"],\"comment\":\"\"},{\"name\":\"Failure with Hope\",\"conditions\":[{\"source\":\"delta\",\"op\":\">\",\"value\":{\"kind\":\"literal\",\"value\":0}},{\"source\":\"total_bonus\",\"op\":\"<\",\"value\":{\"kind\":\"ref\",\"name\":\"DC\"}}],\"connectors\":[\"and\"],\"comment\":\"\"},{\"name\":\"Failure with Fear\",\"conditions\":[{\"source\":\"delta\",\"op\":\"<\",\"value\":{\"kind\":\"literal\",\"value\":0}},{\"source\":\"total_bonus\",\"op\":\"<\",\"value\":{\"kind\":\"ref\",\"name\":\"DC\"}}],\"connectors\":[\"and\"],\"comment\":\"\"},{\"name\":\"Overall Success\",\"conditions\":[{\"source\":\"total_bonus\",\"op\":\">=\",\"value\":{\"kind\":\"ref\",\"name\":\"DC\"}},{\"source\":\"delta\",\"op\":\"=\",\"value\":{\"kind\":\"literal\",\"value\":0}}],\"connectors\":[\"or\"],\"comment\":\"\"},{\"name\":\"Overall Failure\",\"conditions\":[{\"source\":\"total_bonus\",\"op\":\"<\",\"value\":{\"kind\":\"ref\",\"name\":\"DC\"}},{\"source\":\"delta\",\"op\":\"!=\",\"value\":{\"kind\":\"literal\",\"value\":0}}],\"connectors\":[\"and\"],\"comment\":\"\"}],\"sweep\":{\"x\":[-2,-1,0,1,2,3,4,5],\"y\":[10,15,20],\"xName\":\"Bonus\",\"yName\":\"DC\"}}",
+  "results": [
+    {
+      "label": "DC=10 · Bonus=-2",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083474,
+          "count": 83474
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.284377,
+          "count": 284377
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.284793,
+          "count": 284793
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.173102,
+          "count": 173102
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.174254,
+          "count": 174254
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.652644,
+          "count": 652644
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.347356,
+          "count": 347356
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 284793,
+          "probability": 0.284793
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 284377,
+          "probability": 0.284377
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 174254,
+          "probability": 0.174254
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 173102,
+          "probability": 0.173102
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83474,
+          "probability": 0.083474
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 284793,
+          "probability": 0.284793
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 284377,
+          "probability": 0.284377
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 174254,
+          "probability": 0.174254
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 173102,
+          "probability": 0.173102
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83474,
+          "probability": 0.083474
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 6981,
+        "1": 13991,
+        "2": 20872,
+        "3": 28107,
+        "4": 34851,
+        "5": 41451,
+        "6": 48374,
+        "7": 55746,
+        "8": 62589,
+        "9": 69119,
+        "10": 76334,
+        "11": 83569,
+        "12": 76485,
+        "13": 69034,
+        "14": 62615,
+        "15": 55194,
+        "16": 48663,
+        "17": 41678,
+        "18": 34986,
+        "19": 27985,
+        "20": 20666,
+        "21": 13676,
+        "22": 7034
+      },
+      "sweepX": -2,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=-1",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083455,
+          "count": 83455
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.318933,
+          "count": 318933
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.319573,
+          "count": 319573
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.138671,
+          "count": 138671
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.139368,
+          "count": 139368
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.721961,
+          "count": 721961
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.278039,
+          "count": 278039
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 319573,
+          "probability": 0.319573
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 318933,
+          "probability": 0.318933
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 139368,
+          "probability": 0.139368
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 138671,
+          "probability": 0.138671
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83455,
+          "probability": 0.083455
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 319573,
+          "probability": 0.319573
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 318933,
+          "probability": 0.318933
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 139368,
+          "probability": 0.139368
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 138671,
+          "probability": 0.138671
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83455,
+          "probability": 0.083455
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "1": 7015,
+        "2": 14058,
+        "3": 20870,
+        "4": 28067,
+        "5": 34919,
+        "6": 41659,
+        "7": 48719,
+        "8": 55376,
+        "9": 62251,
+        "10": 70043,
+        "11": 76079,
+        "12": 83093,
+        "13": 76179,
+        "14": 69532,
+        "15": 62147,
+        "16": 55171,
+        "17": 48766,
+        "18": 41655,
+        "19": 34882,
+        "20": 27727,
+        "21": 20949,
+        "22": 13844,
+        "23": 6999
+      },
+      "sweepX": -1,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=0",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083231,
+          "count": 83231
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.347244,
+          "count": 347244
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.347613,
+          "count": 347613
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.11094,
+          "count": 110940
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.110972,
+          "count": 110972
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.778088,
+          "count": 778088
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.221912,
+          "count": 221912
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 347613,
+          "probability": 0.347613
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 347244,
+          "probability": 0.347244
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 110972,
+          "probability": 0.110972
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 110940,
+          "probability": 0.11094
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83231,
+          "probability": 0.083231
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 347613,
+          "probability": 0.347613
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 347244,
+          "probability": 0.347244
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 110972,
+          "probability": 0.110972
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 110940,
+          "probability": 0.11094
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83231,
+          "probability": 0.083231
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "2": 6971,
+        "3": 13836,
+        "4": 20830,
+        "5": 27784,
+        "6": 34806,
+        "7": 41511,
+        "8": 48343,
+        "9": 55553,
+        "10": 62620,
+        "11": 69541,
+        "12": 76420,
+        "13": 83204,
+        "14": 76327,
+        "15": 69670,
+        "16": 62482,
+        "17": 55911,
+        "18": 48423,
+        "19": 41493,
+        "20": 34761,
+        "21": 27748,
+        "22": 20928,
+        "23": 13988,
+        "24": 6850
+      },
+      "sweepX": 0,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=1",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083332,
+          "count": 83332
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.37426,
+          "count": 374260
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.375377,
+          "count": 375377
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.083568,
+          "count": 83568
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.083463,
+          "count": 83463
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.832969,
+          "count": 832969
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.167031,
+          "count": 167031
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 375377,
+          "probability": 0.375377
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 374260,
+          "probability": 0.37426
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 83568,
+          "probability": 0.083568
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 83463,
+          "probability": 0.083463
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83332,
+          "probability": 0.083332
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 375377,
+          "probability": 0.375377
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 374260,
+          "probability": 0.37426
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 83568,
+          "probability": 0.083568
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 83463,
+          "probability": 0.083463
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83332,
+          "probability": 0.083332
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "3": 7160,
+        "4": 13715,
+        "5": 20920,
+        "6": 27979,
+        "7": 34790,
+        "8": 41683,
+        "9": 48746,
+        "10": 55396,
+        "11": 62603,
+        "12": 68947,
+        "13": 75877,
+        "14": 83283,
+        "15": 76026,
+        "16": 69522,
+        "17": 62693,
+        "18": 55488,
+        "19": 48554,
+        "20": 42228,
+        "21": 34651,
+        "22": 28034,
+        "23": 20838,
+        "24": 13873,
+        "25": 6994
+      },
+      "sweepX": 1,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=2",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083341,
+          "count": 83341
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.39455,
+          "count": 394550
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.396427,
+          "count": 396427
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.06256,
+          "count": 62560
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.063122,
+          "count": 63122
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.874318,
+          "count": 874318
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.125682,
+          "count": 125682
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 396427,
+          "probability": 0.396427
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 394550,
+          "probability": 0.39455
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83341,
+          "probability": 0.083341
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 63122,
+          "probability": 0.063122
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 62560,
+          "probability": 0.06256
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 396427,
+          "probability": 0.396427
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 394550,
+          "probability": 0.39455
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83341,
+          "probability": 0.083341
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 63122,
+          "probability": 0.063122
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 62560,
+          "probability": 0.06256
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "4": 7057,
+        "5": 13782,
+        "6": 20936,
+        "7": 27859,
+        "8": 34736,
+        "9": 42226,
+        "10": 48587,
+        "11": 55595,
+        "12": 62350,
+        "13": 69287,
+        "14": 76469,
+        "15": 83665,
+        "16": 76770,
+        "17": 69171,
+        "18": 62424,
+        "19": 55461,
+        "20": 48395,
+        "21": 41315,
+        "22": 34547,
+        "23": 27663,
+        "24": 20945,
+        "25": 13752,
+        "26": 7008
+      },
+      "sweepX": 2,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=3",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083258,
+          "count": 83258
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.416397,
+          "count": 416397
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.416865,
+          "count": 416865
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.041678,
+          "count": 41678
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.041802,
+          "count": 41802
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.91652,
+          "count": 916520
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.08348,
+          "count": 83480
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 416865,
+          "probability": 0.416865
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 416397,
+          "probability": 0.416397
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83258,
+          "probability": 0.083258
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 41802,
+          "probability": 0.041802
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 41678,
+          "probability": 0.041678
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 416865,
+          "probability": 0.416865
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 416397,
+          "probability": 0.416397
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83258,
+          "probability": 0.083258
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 41802,
+          "probability": 0.041802
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 41678,
+          "probability": 0.041678
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "5": 6864,
+        "6": 13835,
+        "7": 20928,
+        "8": 27758,
+        "9": 35025,
+        "10": 41760,
+        "11": 48559,
+        "12": 55024,
+        "13": 62496,
+        "14": 69474,
+        "15": 76414,
+        "16": 83085,
+        "17": 76186,
+        "18": 69662,
+        "19": 62669,
+        "20": 55804,
+        "21": 48877,
+        "22": 41413,
+        "23": 34817,
+        "24": 27517,
+        "25": 20911,
+        "26": 13928,
+        "27": 6994
+      },
+      "sweepX": 3,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=4",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.082906,
+          "count": 82906
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.430521,
+          "count": 430521
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.430618,
+          "count": 430618
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.02786,
+          "count": 27860
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.028095,
+          "count": 28095
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.944045,
+          "count": 944045
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.055955,
+          "count": 55955
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 430618,
+          "probability": 0.430618
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 430521,
+          "probability": 0.430521
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 82906,
+          "probability": 0.082906
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 28095,
+          "probability": 0.028095
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 27860,
+          "probability": 0.02786
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 430618,
+          "probability": 0.430618
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 430521,
+          "probability": 0.430521
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 82906,
+          "probability": 0.082906
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 28095,
+          "probability": 0.028095
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 27860,
+          "probability": 0.02786
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "6": 6900,
+        "7": 14079,
+        "8": 20993,
+        "9": 27839,
+        "10": 34574,
+        "11": 41584,
+        "12": 48921,
+        "13": 55522,
+        "14": 62745,
+        "15": 69401,
+        "16": 75971,
+        "17": 83578,
+        "18": 75883,
+        "19": 69572,
+        "20": 62320,
+        "21": 55681,
+        "22": 48503,
+        "23": 41744,
+        "24": 34956,
+        "25": 27536,
+        "26": 20982,
+        "27": 13779,
+        "28": 6937
+      },
+      "sweepX": 4,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=10 · Bonus=5",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083616,
+          "count": 83616
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.445006,
+          "count": 445006
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.443618,
+          "count": 443618
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.013989,
+          "count": 13989
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.013771,
+          "count": 13771
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.97224,
+          "count": 972240
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.02776,
+          "count": 27760
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 445006,
+          "probability": 0.445006
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 443618,
+          "probability": 0.443618
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83616,
+          "probability": 0.083616
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 13989,
+          "probability": 0.013989
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 13771,
+          "probability": 0.013771
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 445006,
+          "probability": 0.445006
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 443618,
+          "probability": 0.443618
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83616,
+          "probability": 0.083616
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 13989,
+          "probability": 0.013989
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 13771,
+          "probability": 0.013771
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "7": 6992,
+        "8": 13960,
+        "9": 20770,
+        "10": 27622,
+        "11": 34706,
+        "12": 41436,
+        "13": 48838,
+        "14": 55759,
+        "15": 62589,
+        "16": 69663,
+        "17": 76376,
+        "18": 83256,
+        "19": 76683,
+        "20": 69252,
+        "21": 61969,
+        "22": 55472,
+        "23": 48647,
+        "24": 41750,
+        "25": 34864,
+        "26": 27679,
+        "27": 20951,
+        "28": 13897,
+        "29": 6869
+      },
+      "sweepX": 5,
+      "sweepY": 10
+    },
+    {
+      "label": "DC=15 · Bonus=-2",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083471,
+          "count": 83471
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.110707,
+          "count": 110707
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.110934,
+          "count": 110934
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.347189,
+          "count": 347189
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.347699,
+          "count": 347699
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.305112,
+          "count": 305112
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.694888,
+          "count": 694888
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 347699,
+          "probability": 0.347699
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 347189,
+          "probability": 0.347189
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 110934,
+          "probability": 0.110934
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 110707,
+          "probability": 0.110707
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83471,
+          "probability": 0.083471
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 347699,
+          "probability": 0.347699
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 347189,
+          "probability": 0.347189
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 110934,
+          "probability": 0.110934
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 110707,
+          "probability": 0.110707
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83471,
+          "probability": 0.083471
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 7045,
+        "1": 13898,
+        "2": 20975,
+        "3": 27785,
+        "4": 34518,
+        "5": 41429,
+        "6": 48630,
+        "7": 55700,
+        "8": 62526,
+        "9": 69741,
+        "10": 76145,
+        "11": 83947,
+        "12": 76064,
+        "13": 69468,
+        "14": 62683,
+        "15": 55391,
+        "16": 48746,
+        "17": 41318,
+        "18": 34726,
+        "19": 27700,
+        "20": 20726,
+        "21": 13922,
+        "22": 6917
+      },
+      "sweepX": -2,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=-1",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083332,
+          "count": 83332
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.138978,
+          "count": 138978
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.138879,
+          "count": 138879
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.318834,
+          "count": 318834
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.319977,
+          "count": 319977
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.361189,
+          "count": 361189
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.638811,
+          "count": 638811
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 319977,
+          "probability": 0.319977
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 318834,
+          "probability": 0.318834
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 138978,
+          "probability": 0.138978
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 138879,
+          "probability": 0.138879
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83332,
+          "probability": 0.083332
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 319977,
+          "probability": 0.319977
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 318834,
+          "probability": 0.318834
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 138978,
+          "probability": 0.138978
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 138879,
+          "probability": 0.138879
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83332,
+          "probability": 0.083332
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "1": 6935,
+        "2": 14058,
+        "3": 20723,
+        "4": 27775,
+        "5": 34703,
+        "6": 41544,
+        "7": 48678,
+        "8": 55469,
+        "9": 62533,
+        "10": 69849,
+        "11": 75979,
+        "12": 83371,
+        "13": 76009,
+        "14": 69592,
+        "15": 62431,
+        "16": 55536,
+        "17": 48430,
+        "18": 41629,
+        "19": 34888,
+        "20": 28082,
+        "21": 20969,
+        "22": 13892,
+        "23": 6925
+      },
+      "sweepX": -1,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=0",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083492,
+          "count": 83492
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.173756,
+          "count": 173756
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.173051,
+          "count": 173051
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.284701,
+          "count": 284701
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.285,
+          "count": 285000
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.430299,
+          "count": 430299
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.569701,
+          "count": 569701
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 285000,
+          "probability": 0.285
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 284701,
+          "probability": 0.284701
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 173756,
+          "probability": 0.173756
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 173051,
+          "probability": 0.173051
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83492,
+          "probability": 0.083492
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 285000,
+          "probability": 0.285
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 284701,
+          "probability": 0.284701
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 173756,
+          "probability": 0.173756
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 173051,
+          "probability": 0.173051
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83492,
+          "probability": 0.083492
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "2": 6816,
+        "3": 13889,
+        "4": 20712,
+        "5": 28026,
+        "6": 34987,
+        "7": 41656,
+        "8": 48750,
+        "9": 55497,
+        "10": 62716,
+        "11": 69390,
+        "12": 75959,
+        "13": 83191,
+        "14": 76461,
+        "15": 69100,
+        "16": 62219,
+        "17": 55350,
+        "18": 48667,
+        "19": 41871,
+        "20": 34955,
+        "21": 27905,
+        "22": 20946,
+        "23": 13838,
+        "24": 7099
+      },
+      "sweepX": 0,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=1",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083377,
+          "count": 83377
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.208941,
+          "count": 208941
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.208482,
+          "count": 208482
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.249941,
+          "count": 249941
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.249259,
+          "count": 249259
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.5008,
+          "count": 500800
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.4992,
+          "count": 499200
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 249941,
+          "probability": 0.249941
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 249259,
+          "probability": 0.249259
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 208941,
+          "probability": 0.208941
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 208482,
+          "probability": 0.208482
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83377,
+          "probability": 0.083377
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 249941,
+          "probability": 0.249941
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 249259,
+          "probability": 0.249259
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 208941,
+          "probability": 0.208941
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 208482,
+          "probability": 0.208482
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83377,
+          "probability": 0.083377
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "3": 6950,
+        "4": 13873,
+        "5": 20657,
+        "6": 27685,
+        "7": 34796,
+        "8": 41973,
+        "9": 48684,
+        "10": 55438,
+        "11": 62140,
+        "12": 69551,
+        "13": 76176,
+        "14": 83008,
+        "15": 76436,
+        "16": 69925,
+        "17": 62636,
+        "18": 55742,
+        "19": 48828,
+        "20": 41722,
+        "21": 34610,
+        "22": 27649,
+        "23": 20724,
+        "24": 13917,
+        "25": 6880
+      },
+      "sweepX": 1,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=2",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.082998,
+          "count": 82998
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.249995,
+          "count": 249995
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.250906,
+          "count": 250906
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.207492,
+          "count": 207492
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.208609,
+          "count": 208609
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.583899,
+          "count": 583899
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.416101,
+          "count": 416101
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 250906,
+          "probability": 0.250906
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 249995,
+          "probability": 0.249995
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 208609,
+          "probability": 0.208609
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 207492,
+          "probability": 0.207492
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 82998,
+          "probability": 0.082998
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 250906,
+          "probability": 0.250906
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 249995,
+          "probability": 0.249995
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 208609,
+          "probability": 0.208609
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 207492,
+          "probability": 0.207492
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 82998,
+          "probability": 0.082998
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "4": 6965,
+        "5": 13885,
+        "6": 20786,
+        "7": 27906,
+        "8": 34680,
+        "9": 41578,
+        "10": 48860,
+        "11": 55610,
+        "12": 62246,
+        "13": 69325,
+        "14": 75799,
+        "15": 83582,
+        "16": 76155,
+        "17": 69608,
+        "18": 62320,
+        "19": 55518,
+        "20": 49148,
+        "21": 41744,
+        "22": 34785,
+        "23": 28036,
+        "24": 20826,
+        "25": 13877,
+        "26": 6761
+      },
+      "sweepX": 2,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=3",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083333,
+          "count": 83333
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.283922,
+          "count": 283922
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.284867,
+          "count": 284867
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.174138,
+          "count": 174138
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.17374,
+          "count": 173740
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.652122,
+          "count": 652122
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.347878,
+          "count": 347878
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 284867,
+          "probability": 0.284867
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 283922,
+          "probability": 0.283922
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 174138,
+          "probability": 0.174138
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 173740,
+          "probability": 0.17374
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83333,
+          "probability": 0.083333
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 284867,
+          "probability": 0.284867
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 283922,
+          "probability": 0.283922
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 174138,
+          "probability": 0.174138
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 173740,
+          "probability": 0.17374
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83333,
+          "probability": 0.083333
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "5": 7068,
+        "6": 13979,
+        "7": 20950,
+        "8": 27554,
+        "9": 34426,
+        "10": 41815,
+        "11": 48763,
+        "12": 55776,
+        "13": 62664,
+        "14": 69713,
+        "15": 76173,
+        "16": 83064,
+        "17": 76624,
+        "18": 69448,
+        "19": 62528,
+        "20": 55543,
+        "21": 48710,
+        "22": 41474,
+        "23": 34521,
+        "24": 27609,
+        "25": 20982,
+        "26": 13659,
+        "27": 6957
+      },
+      "sweepX": 3,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=4",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083825,
+          "count": 83825
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.319464,
+          "count": 319464
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.319295,
+          "count": 319295
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.138492,
+          "count": 138492
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.138924,
+          "count": 138924
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.722584,
+          "count": 722584
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.277416,
+          "count": 277416
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 319464,
+          "probability": 0.319464
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 319295,
+          "probability": 0.319295
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 138924,
+          "probability": 0.138924
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 138492,
+          "probability": 0.138492
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83825,
+          "probability": 0.083825
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 319464,
+          "probability": 0.319464
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 319295,
+          "probability": 0.319295
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 138924,
+          "probability": 0.138924
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 138492,
+          "probability": 0.138492
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83825,
+          "probability": 0.083825
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "6": 6956,
+        "7": 13988,
+        "8": 20876,
+        "9": 27848,
+        "10": 34709,
+        "11": 41555,
+        "12": 48685,
+        "13": 55246,
+        "14": 62544,
+        "15": 69576,
+        "16": 76382,
+        "17": 83652,
+        "18": 76513,
+        "19": 69394,
+        "20": 62466,
+        "21": 55336,
+        "22": 48501,
+        "23": 41597,
+        "24": 34630,
+        "25": 27936,
+        "26": 20859,
+        "27": 13820,
+        "28": 6931
+      },
+      "sweepX": 4,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=15 · Bonus=5",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.082792,
+          "count": 82792
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.347413,
+          "count": 347413
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.347219,
+          "count": 347219
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.111464,
+          "count": 111464
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.111112,
+          "count": 111112
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.777424,
+          "count": 777424
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.222576,
+          "count": 222576
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 347413,
+          "probability": 0.347413
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 347219,
+          "probability": 0.347219
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 111464,
+          "probability": 0.111464
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 111112,
+          "probability": 0.111112
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 82792,
+          "probability": 0.082792
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 347413,
+          "probability": 0.347413
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 347219,
+          "probability": 0.347219
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 111464,
+          "probability": 0.111464
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 111112,
+          "probability": 0.111112
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 82792,
+          "probability": 0.082792
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "7": 6763,
+        "8": 13875,
+        "9": 20833,
+        "10": 27862,
+        "11": 34827,
+        "12": 41792,
+        "13": 48625,
+        "14": 55464,
+        "15": 62707,
+        "16": 69925,
+        "17": 76639,
+        "18": 83152,
+        "19": 76145,
+        "20": 69217,
+        "21": 62269,
+        "22": 55417,
+        "23": 48731,
+        "24": 41694,
+        "25": 34586,
+        "26": 27889,
+        "27": 20717,
+        "28": 14025,
+        "29": 6846
+      },
+      "sweepX": 5,
+      "sweepY": 15
+    },
+    {
+      "label": "DC=20 · Bonus=-2",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083246,
+          "count": 83246
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.013899,
+          "count": 13899
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.013821,
+          "count": 13821
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.445094,
+          "count": 445094
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.44394,
+          "count": 443940
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.110966,
+          "count": 110966
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.889034,
+          "count": 889034
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 445094,
+          "probability": 0.445094
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 443940,
+          "probability": 0.44394
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83246,
+          "probability": 0.083246
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 13899,
+          "probability": 0.013899
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 13821,
+          "probability": 0.013821
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 445094,
+          "probability": 0.445094
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 443940,
+          "probability": 0.44394
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83246,
+          "probability": 0.083246
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 13899,
+          "probability": 0.013899
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 13821,
+          "probability": 0.013821
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 6919,
+        "1": 13896,
+        "2": 21025,
+        "3": 27736,
+        "4": 34978,
+        "5": 41289,
+        "6": 48548,
+        "7": 55864,
+        "8": 62329,
+        "9": 69312,
+        "10": 76512,
+        "11": 83481,
+        "12": 75881,
+        "13": 69715,
+        "14": 62822,
+        "15": 55050,
+        "16": 48496,
+        "17": 41904,
+        "18": 34698,
+        "19": 27753,
+        "20": 20887,
+        "21": 13978,
+        "22": 6927
+      },
+      "sweepX": -2,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=-1",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083238,
+          "count": 83238
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.027678,
+          "count": 27678
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.027893,
+          "count": 27893
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.430553,
+          "count": 430553
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.430638,
+          "count": 430638
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.138809,
+          "count": 138809
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.861191,
+          "count": 861191
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 430638,
+          "probability": 0.430638
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 430553,
+          "probability": 0.430553
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83238,
+          "probability": 0.083238
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 27893,
+          "probability": 0.027893
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 27678,
+          "probability": 0.027678
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 430638,
+          "probability": 0.430638
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 430553,
+          "probability": 0.430553
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83238,
+          "probability": 0.083238
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 27893,
+          "probability": 0.027893
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 27678,
+          "probability": 0.027678
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "1": 6975,
+        "2": 13567,
+        "3": 20530,
+        "4": 27816,
+        "5": 34702,
+        "6": 41812,
+        "7": 48653,
+        "8": 55490,
+        "9": 62816,
+        "10": 69581,
+        "11": 76378,
+        "12": 83610,
+        "13": 76464,
+        "14": 69219,
+        "15": 62281,
+        "16": 55873,
+        "17": 48445,
+        "18": 41917,
+        "19": 34485,
+        "20": 27731,
+        "21": 20785,
+        "22": 13920,
+        "23": 6950
+      },
+      "sweepX": -1,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=0",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083589,
+          "count": 83589
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.04139,
+          "count": 41390
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.041743,
+          "count": 41743
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.416351,
+          "count": 416351
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.416927,
+          "count": 416927
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.166722,
+          "count": 166722
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.833278,
+          "count": 833278
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 416927,
+          "probability": 0.416927
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 416351,
+          "probability": 0.416351
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83589,
+          "probability": 0.083589
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 41743,
+          "probability": 0.041743
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 41390,
+          "probability": 0.04139
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 416927,
+          "probability": 0.416927
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 416351,
+          "probability": 0.416351
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83589,
+          "probability": 0.083589
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 41743,
+          "probability": 0.041743
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 41390,
+          "probability": 0.04139
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "2": 7082,
+        "3": 13929,
+        "4": 20935,
+        "5": 27839,
+        "6": 34973,
+        "7": 41610,
+        "8": 48771,
+        "9": 55312,
+        "10": 62805,
+        "11": 69127,
+        "12": 76045,
+        "13": 84106,
+        "14": 76252,
+        "15": 69658,
+        "16": 61933,
+        "17": 55767,
+        "18": 48434,
+        "19": 41572,
+        "20": 34604,
+        "21": 27496,
+        "22": 20940,
+        "23": 13968,
+        "24": 6842
+      },
+      "sweepX": 0,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=1",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.08343,
+          "count": 83430
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.062314,
+          "count": 62314
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.062719,
+          "count": 62719
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.395302,
+          "count": 395302
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.396235,
+          "count": 396235
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.208463,
+          "count": 208463
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.791537,
+          "count": 791537
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 396235,
+          "probability": 0.396235
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 395302,
+          "probability": 0.395302
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83430,
+          "probability": 0.08343
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 62719,
+          "probability": 0.062719
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 62314,
+          "probability": 0.062314
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 396235,
+          "probability": 0.396235
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 395302,
+          "probability": 0.395302
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83430,
+          "probability": 0.08343
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 62719,
+          "probability": 0.062719
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 62314,
+          "probability": 0.062314
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "3": 6964,
+        "4": 13942,
+        "5": 20737,
+        "6": 27729,
+        "7": 34858,
+        "8": 41341,
+        "9": 48650,
+        "10": 55616,
+        "11": 62343,
+        "12": 69970,
+        "13": 75927,
+        "14": 83036,
+        "15": 76547,
+        "16": 69812,
+        "17": 62438,
+        "18": 55803,
+        "19": 48464,
+        "20": 41745,
+        "21": 34572,
+        "22": 27790,
+        "23": 20888,
+        "24": 13902,
+        "25": 6926
+      },
+      "sweepX": 1,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=2",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083898,
+          "count": 83898
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.082588,
+          "count": 82588
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.083386,
+          "count": 83386
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.374526,
+          "count": 374526
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.375602,
+          "count": 375602
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.249872,
+          "count": 249872
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.750128,
+          "count": 750128
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 375602,
+          "probability": 0.375602
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 374526,
+          "probability": 0.374526
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83898,
+          "probability": 0.083898
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 83386,
+          "probability": 0.083386
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 82588,
+          "probability": 0.082588
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 375602,
+          "probability": 0.375602
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 374526,
+          "probability": 0.374526
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83898,
+          "probability": 0.083898
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 83386,
+          "probability": 0.083386
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 82588,
+          "probability": 0.082588
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "4": 6988,
+        "5": 13885,
+        "6": 20994,
+        "7": 27852,
+        "8": 35010,
+        "9": 41846,
+        "10": 48714,
+        "11": 55402,
+        "12": 62424,
+        "13": 69411,
+        "14": 76213,
+        "15": 83426,
+        "16": 76261,
+        "17": 69527,
+        "18": 62641,
+        "19": 55572,
+        "20": 48556,
+        "21": 41682,
+        "22": 34571,
+        "23": 27532,
+        "24": 20783,
+        "25": 13771,
+        "26": 6939
+      },
+      "sweepX": 2,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=3",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083558,
+          "count": 83558
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.111072,
+          "count": 111072
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.111199,
+          "count": 111199
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.346871,
+          "count": 346871
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.3473,
+          "count": 347300
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.305829,
+          "count": 305829
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.694171,
+          "count": 694171
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 347300,
+          "probability": 0.3473
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 346871,
+          "probability": 0.346871
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 111199,
+          "probability": 0.111199
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 111072,
+          "probability": 0.111072
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83558,
+          "probability": 0.083558
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 347300,
+          "probability": 0.3473
+        },
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 346871,
+          "probability": 0.346871
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 111199,
+          "probability": 0.111199
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 111072,
+          "probability": 0.111072
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83558,
+          "probability": 0.083558
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "5": 6915,
+        "6": 13892,
+        "7": 20993,
+        "8": 27942,
+        "9": 35204,
+        "10": 41426,
+        "11": 48430,
+        "12": 55496,
+        "13": 62495,
+        "14": 69029,
+        "15": 76045,
+        "16": 83449,
+        "17": 76176,
+        "18": 69583,
+        "19": 62814,
+        "20": 55534,
+        "21": 48718,
+        "22": 41718,
+        "23": 34691,
+        "24": 27864,
+        "25": 20900,
+        "26": 13741,
+        "27": 6945
+      },
+      "sweepX": 3,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=4",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083415,
+          "count": 83415
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.138644,
+          "count": 138644
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.138973,
+          "count": 138973
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.31978,
+          "count": 319780
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.319188,
+          "count": 319188
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.361032,
+          "count": 361032
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.638968,
+          "count": 638968
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 319780,
+          "probability": 0.31978
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 319188,
+          "probability": 0.319188
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 138973,
+          "probability": 0.138973
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 138644,
+          "probability": 0.138644
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83415,
+          "probability": 0.083415
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 319780,
+          "probability": 0.31978
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 319188,
+          "probability": 0.319188
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 138973,
+          "probability": 0.138973
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 138644,
+          "probability": 0.138644
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83415,
+          "probability": 0.083415
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "6": 6871,
+        "7": 14003,
+        "8": 20691,
+        "9": 28167,
+        "10": 34829,
+        "11": 41733,
+        "12": 48732,
+        "13": 55544,
+        "14": 62391,
+        "15": 69395,
+        "16": 76448,
+        "17": 83172,
+        "18": 76071,
+        "19": 69526,
+        "20": 62490,
+        "21": 55690,
+        "22": 48399,
+        "23": 41666,
+        "24": 34609,
+        "25": 27644,
+        "26": 20999,
+        "27": 13811,
+        "28": 7119
+      },
+      "sweepX": 4,
+      "sweepY": 20
+    },
+    {
+      "label": "DC=20 · Bonus=5",
+      "outcomes": [
+        {
+          "label": "Critical Success",
+          "probability": 0.083096,
+          "count": 83096
+        },
+        {
+          "label": "Success with Hope",
+          "probability": 0.173868,
+          "count": 173868
+        },
+        {
+          "label": "Success with Fear",
+          "probability": 0.173882,
+          "count": 173882
+        },
+        {
+          "label": "Failure with Hope",
+          "probability": 0.285241,
+          "count": 285241
+        },
+        {
+          "label": "Failure with Fear",
+          "probability": 0.283913,
+          "count": 283913
+        },
+        {
+          "label": "Overall Success",
+          "probability": 0.430846,
+          "count": 430846
+        },
+        {
+          "label": "Overall Failure",
+          "probability": 0.569154,
+          "count": 569154
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 285241,
+          "probability": 0.285241
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 283913,
+          "probability": 0.283913
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 173882,
+          "probability": 0.173882
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 173868,
+          "probability": 0.173868
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83096,
+          "probability": 0.083096
+        }
+      ],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure with Hope",
+            "Overall Failure"
+          ],
+          "count": 285241,
+          "probability": 0.285241
+        },
+        {
+          "outcomes": [
+            "Failure with Fear",
+            "Overall Failure"
+          ],
+          "count": 283913,
+          "probability": 0.283913
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Fear"
+          ],
+          "count": 173882,
+          "probability": 0.173882
+        },
+        {
+          "outcomes": [
+            "Overall Success",
+            "Success with Hope"
+          ],
+          "count": 173868,
+          "probability": 0.173868
+        },
+        {
+          "outcomes": [
+            "Critical Success",
+            "Overall Success"
+          ],
+          "count": 83096,
+          "probability": 0.083096
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "7": 6858,
+        "8": 13915,
+        "9": 20663,
+        "10": 27748,
+        "11": 34913,
+        "12": 41443,
+        "13": 48612,
+        "14": 55840,
+        "15": 62351,
+        "16": 68965,
+        "17": 76172,
+        "18": 83238,
+        "19": 76968,
+        "20": 69966,
+        "21": 62356,
+        "22": 55557,
+        "23": 48543,
+        "24": 41785,
+        "25": 34812,
+        "26": 27885,
+        "27": 20738,
+        "28": 13761,
+        "29": 6911
+      },
+      "sweepX": 5,
+      "sweepY": 20
+    }
+  ]
+}

@@ -1,0 +1,397 @@
+{
+  "sourceHash": "bc8676650e2f459d",
+  "timestamp": "2026-07-11T14:10:03.096Z",
+  "configFingerprint": "{\"pool\":{\"terms\":[{\"count\":{\"kind\":\"literal\",\"value\":2},\"sides\":{\"kind\":\"literal\",\"value\":6},\"tag\":\"\",\"comment\":\"\"}]},\"reroll\":[],\"pipeline\":[{\"name\":\"total\",\"source\":\"rolled\",\"op\":\"sum\",\"comment\":\"\"},{\"name\":\"total_mod\",\"source\":\"total\",\"op\":{\"fn\":\"add\",\"terms\":[{\"operand\":\"val\",\"value\":{\"kind\":\"ref\",\"name\":\"Bonus\"}}]},\"comment\":\"\"}],\"outcomes\":[{\"name\":\"Success\",\"conditions\":[{\"source\":\"total_mod\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":10}}],\"connectors\":[],\"comment\":\"\"},{\"name\":\"Partial\",\"conditions\":[{\"source\":\"total_mod\",\"op\":\">=\",\"value\":{\"kind\":\"literal\",\"value\":7}},{\"source\":\"total_mod\",\"op\":\"<=\",\"value\":{\"kind\":\"literal\",\"value\":9}}],\"connectors\":[\"and\"],\"comment\":\"\"},{\"name\":\"Failure\",\"conditions\":[{\"source\":\"total_mod\",\"op\":\"<=\",\"value\":{\"kind\":\"literal\",\"value\":6}}],\"connectors\":[],\"comment\":\"\"}],\"sweep\":{\"x\":[-2,-1,0,1,2,3],\"y\":null,\"xName\":\"Bonus\",\"yName\":\"Y\"}}",
+  "results": [
+    {
+      "label": "Bonus=-2",
+      "outcomes": [
+        {
+          "label": "Success",
+          "probability": 0.028127,
+          "count": 28127
+        },
+        {
+          "label": "Partial",
+          "probability": 0.249607,
+          "count": 249607
+        },
+        {
+          "label": "Failure",
+          "probability": 0.722266,
+          "count": 722266
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 722266,
+          "probability": 0.722266
+        },
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 249607,
+          "probability": 0.249607
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 28127,
+          "probability": 0.028127
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "0": 27639,
+        "1": 55315,
+        "2": 83406,
+        "3": 111235,
+        "4": 138754,
+        "5": 167031,
+        "6": 138886,
+        "7": 110776,
+        "8": 83270,
+        "9": 55561,
+        "10": 28127
+      },
+      "sweepX": -2,
+      "sweepY": null
+    },
+    {
+      "label": "Bonus=-1",
+      "outcomes": [
+        {
+          "label": "Success",
+          "probability": 0.083732,
+          "count": 83732
+        },
+        {
+          "label": "Partial",
+          "probability": 0.333748,
+          "count": 333748
+        },
+        {
+          "label": "Failure",
+          "probability": 0.58252,
+          "count": 582520
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 582520,
+          "probability": 0.58252
+        },
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 333748,
+          "probability": 0.333748
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 83732,
+          "probability": 0.083732
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "1": 27732,
+        "2": 55403,
+        "3": 83424,
+        "4": 110813,
+        "5": 139166,
+        "6": 165982,
+        "7": 139091,
+        "8": 111057,
+        "9": 83600,
+        "10": 55872,
+        "11": 27860
+      },
+      "sweepX": -1,
+      "sweepY": null
+    },
+    {
+      "label": "Bonus=0",
+      "outcomes": [
+        {
+          "label": "Success",
+          "probability": 0.166497,
+          "count": 166497
+        },
+        {
+          "label": "Partial",
+          "probability": 0.415933,
+          "count": 415933
+        },
+        {
+          "label": "Failure",
+          "probability": 0.41757,
+          "count": 417570
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 417570,
+          "probability": 0.41757
+        },
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 415933,
+          "probability": 0.415933
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 166497,
+          "probability": 0.166497
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "2": 28089,
+        "3": 55618,
+        "4": 83488,
+        "5": 111670,
+        "6": 138705,
+        "7": 165520,
+        "8": 139291,
+        "9": 111122,
+        "10": 83238,
+        "11": 55453,
+        "12": 27806
+      },
+      "sweepX": 0,
+      "sweepY": null
+    },
+    {
+      "label": "Bonus=1",
+      "outcomes": [
+        {
+          "label": "Success",
+          "probability": 0.277465,
+          "count": 277465
+        },
+        {
+          "label": "Partial",
+          "probability": 0.444163,
+          "count": 444163
+        },
+        {
+          "label": "Failure",
+          "probability": 0.278372,
+          "count": 278372
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 444163,
+          "probability": 0.444163
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 278372,
+          "probability": 0.278372
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 277465,
+          "probability": 0.277465
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "3": 27660,
+        "4": 55420,
+        "5": 83579,
+        "6": 111713,
+        "7": 138208,
+        "8": 166958,
+        "9": 138997,
+        "10": 111139,
+        "11": 83220,
+        "12": 55661,
+        "13": 27445
+      },
+      "sweepX": 1,
+      "sweepY": null
+    },
+    {
+      "label": "Bonus=2",
+      "outcomes": [
+        {
+          "label": "Success",
+          "probability": 0.41635,
+          "count": 416350
+        },
+        {
+          "label": "Partial",
+          "probability": 0.41699,
+          "count": 416990
+        },
+        {
+          "label": "Failure",
+          "probability": 0.16666,
+          "count": 166660
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 416990,
+          "probability": 0.41699
+        },
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 416350,
+          "probability": 0.41635
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 166660,
+          "probability": 0.16666
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "4": 27624,
+        "5": 55701,
+        "6": 83335,
+        "7": 111535,
+        "8": 138663,
+        "9": 166792,
+        "10": 138779,
+        "11": 110430,
+        "12": 83205,
+        "13": 56093,
+        "14": 27843
+      },
+      "sweepX": 2,
+      "sweepY": null
+    },
+    {
+      "label": "Bonus=3",
+      "outcomes": [
+        {
+          "label": "Success",
+          "probability": 0.583499,
+          "count": 583499
+        },
+        {
+          "label": "Partial",
+          "probability": 0.333391,
+          "count": 333391
+        },
+        {
+          "label": "Failure",
+          "probability": 0.08311,
+          "count": 83110
+        },
+        {
+          "label": "Not matched",
+          "probability": 0,
+          "count": 0
+        }
+      ],
+      "overlaps": [],
+      "matchSets": [
+        {
+          "outcomes": [
+            "Success"
+          ],
+          "count": 583499,
+          "probability": 0.583499
+        },
+        {
+          "outcomes": [
+            "Partial"
+          ],
+          "count": 333391,
+          "probability": 0.333391
+        },
+        {
+          "outcomes": [
+            "Failure"
+          ],
+          "count": 83110,
+          "probability": 0.08311
+        }
+      ],
+      "totalRolls": 1000000,
+      "distribution": {
+        "5": 27864,
+        "6": 55246,
+        "7": 83800,
+        "8": 110980,
+        "9": 138611,
+        "10": 166759,
+        "11": 138619,
+        "12": 111209,
+        "13": 83481,
+        "14": 55520,
+        "15": 27911
+      },
+      "sweepX": 3,
+      "sweepY": null
+    }
+  ]
+}
