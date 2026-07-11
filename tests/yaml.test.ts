@@ -254,6 +254,57 @@ describe('yaml pipeline parser', () => {
     expect((cfg.pipeline[4]?.op as { fn: string }).fn).toBe('multiply');
     expect((cfg.pipeline[5]?.op as { fn: string }).fn).toBe('divide');
   });
+
+  it('parses highest with literal N', () => {
+    const cfg = parsePreset([
+      'name: T',
+      'pool: 4d6',
+      'pipeline:',
+      '  - best = highest rolled 3',
+      'outcomes:',
+      '  - F when best >= 0',
+    ].join('\n'));
+    const p = cfg.pipeline[0]!;
+    if (typeof p.op === 'object' && p.op.fn === 'highest') {
+      expect(p.op.n).toEqual({ kind: 'literal', value: 3 });
+      expect(cfg.pipeline[0]?.source).toBe('rolled');
+    } else {
+      expect.fail('expected highest op');
+    }
+  });
+
+  it('parses lowest with variable N', () => {
+    const cfg = parsePreset([
+      'name: T',
+      'pool: 4d6',
+      'pipeline:',
+      '  - worst = lowest rolled N',
+      'outcomes:',
+      '  - F when worst >= 0',
+    ].join('\n'));
+    const p = cfg.pipeline[0]!;
+    if (typeof p.op === 'object' && p.op.fn === 'lowest') {
+      expect(p.op.n).toEqual({ kind: 'ref', name: 'N' });
+    } else {
+      expect.fail('expected lowest op');
+    }
+  });
+
+  it('round-trips highest and lowest', () => {
+    const yaml = [
+      'name: T',
+      'pool: 4d6',
+      'pipeline:',
+      '  - best = highest rolled 3',
+      '  - total = sum best',
+      'outcomes:',
+      '  - F when total >= 0',
+    ].join('\n');
+    const cfg = parsePreset(yaml);
+    const reserialized = serializePreset(cfg);
+    const reparsed = parsePreset(reserialized);
+    expect(normalizeIds(reparsed)).toEqual(normalizeIds(cfg));
+  });
 });
 
 describe('yaml outcome parser', () => {

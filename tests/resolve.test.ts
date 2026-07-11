@@ -556,4 +556,130 @@ describe('evaluatePipeline', () => {
       expect(env.get('total')).toBe(-1);
     });
   });
+
+  describe('highest', () => {
+    it('returns top N dice sorted descending', () => {
+      const rolled: TaggedDie[] = [
+        { face: 3, tag: '' },
+        { face: 6, tag: '' },
+        { face: 2, tag: '' },
+        { face: 5, tag: '' },
+      ];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'best', source: 'rolled', op: { fn: 'highest', n: literalExpr(3) }, comment: '' },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      const best = env.get('best') as TaggedDie[];
+      expect(best.length).toBe(3);
+      expect(best[0].face).toBe(6);
+      expect(best[1].face).toBe(5);
+      expect(best[2].face).toBe(3);
+    });
+
+    it('returns all dice when N exceeds length', () => {
+      const rolled: TaggedDie[] = [
+        { face: 4, tag: '' },
+        { face: 1, tag: '' },
+      ];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'best', source: 'rolled', op: { fn: 'highest', n: literalExpr(10) }, comment: '' },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      const best = env.get('best') as TaggedDie[];
+      expect(best.length).toBe(2);
+    });
+
+    it('returns empty vector when N = 0', () => {
+      const rolled: TaggedDie[] = [
+        { face: 5, tag: '' },
+        { face: 3, tag: '' },
+      ];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'best', source: 'rolled', op: { fn: 'highest', n: literalExpr(0) }, comment: '' },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      const best = env.get('best') as TaggedDie[];
+      expect(best.length).toBe(0);
+    });
+
+    it('preserves original order for ties (stable sort)', () => {
+      const rolled: TaggedDie[] = [
+        { face: 5, tag: 'a' },
+        { face: 5, tag: 'b' },
+        { face: 3, tag: '' },
+      ];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'best', source: 'rolled', op: { fn: 'highest', n: literalExpr(2) }, comment: '' },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      const best = env.get('best') as TaggedDie[];
+      expect(best.length).toBe(2);
+      expect(best[0].tag).toBe('a');
+      expect(best[1].tag).toBe('b');
+    });
+
+    it('works with sweep variable N', () => {
+      const rolled: TaggedDie[] = [
+        { face: 4, tag: '' },
+        { face: 6, tag: '' },
+        { face: 1, tag: '' },
+      ];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'best', source: 'rolled', op: { fn: 'highest', n: { kind: 'ref', name: 'N' } }, comment: '' },
+      ];
+      const env = evaluatePipeline(rolled, pipeline, { N: 2 });
+      const best = env.get('best') as TaggedDie[];
+      expect(best.length).toBe(2);
+      expect(best[0].face).toBe(6);
+      expect(best[1].face).toBe(4);
+    });
+  });
+
+  describe('lowest', () => {
+    it('returns bottom N dice sorted ascending', () => {
+      const rolled: TaggedDie[] = [
+        { face: 3, tag: '' },
+        { face: 6, tag: '' },
+        { face: 2, tag: '' },
+        { face: 5, tag: '' },
+      ];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'worst', source: 'rolled', op: { fn: 'lowest', n: literalExpr(3) }, comment: '' },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      const worst = env.get('worst') as TaggedDie[];
+      expect(worst.length).toBe(3);
+      expect(worst[0].face).toBe(2);
+      expect(worst[1].face).toBe(3);
+      expect(worst[2].face).toBe(5);
+    });
+
+    it('returns empty vector when N = 0', () => {
+      const rolled: TaggedDie[] = [
+        { face: 5, tag: '' },
+        { face: 3, tag: '' },
+      ];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'worst', source: 'rolled', op: { fn: 'lowest', n: literalExpr(0) }, comment: '' },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      const worst = env.get('worst') as TaggedDie[];
+      expect(worst.length).toBe(0);
+    });
+
+    it('chains with sum', () => {
+      const rolled: TaggedDie[] = [
+        { face: 1, tag: '' },
+        { face: 4, tag: '' },
+        { face: 6, tag: '' },
+        { face: 3, tag: '' },
+      ];
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'best', source: 'rolled', op: { fn: 'highest', n: literalExpr(3) }, comment: '' },
+        { id: 'p2', name: 'total', source: 'best', op: 'sum', comment: '' },
+      ];
+      const env = evaluatePipeline(rolled, pipeline);
+      expect(env.get('total')).toBe(13); // 6 + 4 + 3
+    });
+  });
 });

@@ -47,7 +47,9 @@ export interface RerollCondition {
 
 export type VectorFunction =
   | { fn: 'filter'; conditions: ConditionChain }
-  | { fn: 'remove'; conditions: ConditionChain };
+  | { fn: 'remove'; conditions: ConditionChain }
+  | { fn: 'highest'; n: Expr }
+  | { fn: 'lowest'; n: Expr };
 
 export type ScalarBinaryOp = 'add' | 'subtract' | 'multiply' | 'divide';
 

@@ -1,7 +1,7 @@
 import type { NamedValue, TaggedDie, PipelineValue, VectorFunction, ScalarFunction, ScalarBinaryOp, ScalarBinaryTerm, ScalarCeilFloorOp, ScalarMaxMinNamedOp, SwitchBranch } from '@/types';
 import { compare } from '@/types';
 import { matchConditions } from '@/domain/matching';
-import { evalExpr } from '@/utils/expression';
+import { evalExpr, exprToInteger } from '@/utils/expression';
 
 function applyVectorOp(source: TaggedDie[], op: VectorFunction, termsSides: { sides: number; tag: string }[],   vars: Record<string, number>): TaggedDie[] {
   if (op.fn === 'filter') {
@@ -9,6 +9,15 @@ function applyVectorOp(source: TaggedDie[], op: VectorFunction, termsSides: { si
   }
   if (op.fn === 'remove') {
     return source.filter((die) => !matchConditions(die, op.conditions, termsSides, vars));
+  }
+  if (op.fn === 'highest' || op.fn === 'lowest') {
+    const n = exprToInteger(op.n, vars, { min: 0, max: source.length });
+    if (n === 0) return [];
+    if (n >= source.length) return [...source];
+    const dir = op.fn === 'highest' ? -1 : 1;
+    return [...source]
+      .sort((a, b) => dir * (a.face - b.face))
+      .slice(0, n);
   }
   return source;
 }
@@ -111,7 +120,7 @@ export function evaluatePipeline(
     if (sourceVal === undefined) continue;
 
     const op = nv.op;
-    if (typeof op === 'object' && op !== null && 'fn' in op && (op.fn === 'filter' || op.fn === 'remove')) {
+    if (typeof op === 'object' && op !== null && 'fn' in op && (op.fn === 'filter' || op.fn === 'remove' || op.fn === 'highest' || op.fn === 'lowest')) {
       if (!Array.isArray(sourceVal)) continue;
       env.set(nv.name, applyVectorOp(sourceVal as TaggedDie[], op as VectorFunction, termsSides, vars));
     } else if (op === 'count') {

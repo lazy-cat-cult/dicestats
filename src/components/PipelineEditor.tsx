@@ -105,7 +105,7 @@ export function PipelineEditor() {
         {pipe.map((nv, i) => {
           const sources = getAvailableSources(pipe, i);
           const currentOp = nv.op;
-          const isVectorOp = typeof currentOp === 'object' && 'fn' in currentOp && (currentOp.fn === 'filter' || currentOp.fn === 'remove');
+          const isVectorOp = typeof currentOp === 'object' && 'fn' in currentOp && (currentOp.fn === 'filter' || currentOp.fn === 'remove' || currentOp.fn === 'highest' || currentOp.fn === 'lowest');
           const isBinary = typeof currentOp === 'object' && 'fn' in currentOp && SCALAR_BINARY_OPS.includes(currentOp.fn as ScalarBinaryOp) && 'terms' in currentOp;
           const isSwitch = typeof currentOp === 'object' && 'fn' in currentOp && currentOp.fn === 'switch' && 'branches' in currentOp;
           const sourceType = nv.source === 'rolled' ? 'vector' : (() => {
@@ -173,6 +173,8 @@ export function PipelineEditor() {
                       const fn = v;
                       if (fn === 'filter' || fn === 'remove') {
                         updateRow(i, { op: { fn, conditions: emptyCondition() } as VectorFunction });
+                      } else if (fn === 'highest' || fn === 'lowest') {
+                        updateRow(i, { op: { fn, n: literalExpr(1) } as VectorFunction });
                       } else if (fn === 'count' || fn === 'sum' || fn === 'max' || fn === 'min' || fn === 'sub') {
                         updateRow(i, { op: fn as ScalarFunction });
                       }
@@ -181,6 +183,8 @@ export function PipelineEditor() {
                 options={[
                       { value: 'filter', label: 'filter' },
                       { value: 'remove', label: 'remove' },
+                      { value: 'highest', label: 'highest' },
+                      { value: 'lowest', label: 'lowest' },
                       { value: 'count', label: 'count' },
                       { value: 'sum', label: 'sum' },
                       { value: 'max', label: 'max' },
@@ -227,6 +231,21 @@ export function PipelineEditor() {
                     }}
                     variant="pipeline"
                     availableVars={availableVars}
+                  />
+                </div>
+              )}
+
+              {isVectorOp && typeof currentOp === 'object' && 'fn' in currentOp && (currentOp.fn === 'highest' || currentOp.fn === 'lowest') && 'n' in currentOp && (
+                <div class="mt-1.5 flex items-center gap-1.5 pl-1 border-l border-rule">
+                  <span class="font-mono text-[11px] text-ink-soft">N =</span>
+                  <ExprInput
+                    value={(currentOp as { fn: 'highest' | 'lowest'; n: Expr }).n}
+                    onChange={(expr: Expr) => {
+                      updateRow(i, { op: { ...currentOp, n: expr } as VectorFunction });
+                    }}
+                    ariaLabel="N"
+                    availableVars={availableVars}
+                    className="w-32"
                   />
                 </div>
               )}

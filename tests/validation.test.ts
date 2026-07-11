@@ -194,6 +194,31 @@ describe('validateConfig', () => {
       const errors = validateConfig(validPool, validRerollConditions, pipeline2, [validOutcome], validSweep);
       expect(errors.some((e) => e.blocking && e.message.includes('Maximum 20 pipeline'))).toBe(true);
     });
+
+    it('reports error for highest with N < 0', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'best', source: 'rolled', op: { fn: 'highest', n: literalExpr(-1) }, comment: '' },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('N must be >= 0'))).toBe(true);
+    });
+
+    it('reports error for lowest on scalar source', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'total', source: 'rolled', op: 'sum', comment: '' },
+        { id: 'p2', name: 'worst', source: 'total', op: { fn: 'lowest', n: literalExpr(2) }, comment: '' },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('Cannot apply lowest to scalar source'))).toBe(true);
+    });
+
+    it('reports error for highest with non-finite N', () => {
+      const pipeline: NamedValue[] = [
+        { id: 'p1', name: 'best', source: 'rolled', op: { fn: 'highest', n: { kind: 'literal', value: Infinity } }, comment: '' },
+      ];
+      const errors = validateConfig(validPool, validRerollConditions, pipeline, [validOutcome], validSweep);
+      expect(errors.some((e) => e.blocking && e.message.includes('N evaluates to non-finite'))).toBe(true);
+    });
   });
 
   describe('reroll condition validation', () => {

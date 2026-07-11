@@ -706,6 +706,14 @@ function parsePipelineEntry(text: string, comment: string, branches?: string[]):
     return { name, source, op: fn as ScalarFunction, comment };
   }
 
+  const highestLowestM = new RegExp('^(highest|lowest)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+(\\S+)$', 'i').exec(expr);
+  if (highestLowestM) {
+    const fn = highestLowestM[1]!.toLowerCase() as 'highest' | 'lowest';
+    const source = highestLowestM[2]!;
+    const nText = highestLowestM[3]!;
+    return { name, source, op: { fn, n: parseExprFromText(nText, `Pipeline "${name}" N`) } as VectorFunction, comment };
+  }
+
   throw new PresetError(`Could not parse pipeline expression: "${expr}"`);
 }
 
@@ -727,6 +735,8 @@ function serializePipelineEntry(nv: NamedValue): YamlNode {
       clauseStr += ` ${op.conditions.connectors[i]} ${clauses[i + 1] || ''}`;
     }
     v = `${nv.name} = ${op.fn} ${nv.source} where ${clauseStr}`;
+  } else if (op.fn === 'highest' || op.fn === 'lowest') {
+    v = `${nv.name} = ${op.fn} ${nv.source} ${exprToString(op.n, 'yaml')}`;
   } else if (op.fn === 'ceil' || op.fn === 'floor') {
     v = `${nv.name} = ${op.fn} ${nv.source}`;
   } else if (op.fn === 'add' || op.fn === 'subtract' || op.fn === 'multiply' || op.fn === 'divide') {

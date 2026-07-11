@@ -233,6 +233,28 @@ export function validateConfig(
       }
     }
 
+    if (typeof nv.op === 'object' && nv.op !== null && 'fn' in nv.op && (nv.op.fn === 'highest' || nv.op.fn === 'lowest')) {
+      const nExpr = (nv.op as { fn: 'highest' | 'lowest'; n: Expr }).n;
+      const testVars: Record<string, number> = {};
+      testVars[sweep.xName] = 1;
+      if (sweep.y) testVars[sweep.yName] = 1;
+      const nVal = evalExpr(nExpr, testVars);
+      if (!Number.isFinite(nVal)) {
+        errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" N evaluates to non-finite value`, blocking: true });
+      } else if (nVal < 0) {
+        errors.push({ id: nextId(), message: `Pipeline row "${nv.name}" N must be >= 0`, blocking: true });
+      }
+      if (nv.source !== 'rolled') {
+        const srcVal = pipeline.find((p) => p.name === nv.source);
+        if (srcVal) {
+          const srcType = inferType(srcVal, pipeline);
+          if (srcType === 'scalar') {
+            errors.push({ id: nextId(), message: `Cannot apply ${nv.op.fn} to scalar source "${nv.source}"`, blocking: true });
+          }
+        }
+      }
+    }
+
     if (typeof nv.op === 'object' && nv.op !== null && 'fn' in nv.op && nv.op.fn === 'switch') {
       if (nv.source !== 'rolled') {
         const srcVal = pipeline.find((p) => p.name === nv.source);
@@ -404,6 +426,9 @@ export function validateConfig(
           }
         }
       }
+      if (op.fn === 'highest' || op.fn === 'lowest') {
+        collectRefs((op as { fn: 'highest' | 'lowest'; n: Expr }).n, `Pipeline "${nv.name}" N`);
+      }
     }
   }
 
@@ -450,7 +475,7 @@ export function inferTypeFromOp(nv: NamedValue): 'vector' | 'scalar' {
   const op = nv.op;
   if (op === 'count' || op === 'sum' || op === 'max' || op === 'min' || op === 'sub') return 'scalar';
   if (typeof op === 'object' && op !== null && 'fn' in op) {
-    if (op.fn === 'filter' || op.fn === 'remove') return 'vector';
+    if (op.fn === 'filter' || op.fn === 'remove' || op.fn === 'highest' || op.fn === 'lowest') return 'vector';
     return 'scalar';
   }
   return 'vector';
